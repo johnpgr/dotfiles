@@ -1,5 +1,3 @@
-eval "$(zoxide init zsh)"
-eval "$(~/.local/bin/mise activate zsh)"
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
 
@@ -72,9 +70,35 @@ ZSH_THEME="robbyrussell"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+plugins=(git zsh-syntax-highlighting zsh-autosuggestions)
 
 source $ZSH/oh-my-zsh.sh
+
+function sesh-sessions() {
+  {
+    exec </dev/tty
+    exec <&1
+    local session
+    session=$(sesh list | fzf-tmux -p 55%,60% \
+    --no-sort --ansi --border-label ' sesh ' --prompt '⚡  ' \
+    --header '  ^a all ^t tmux ^g configs ^x zoxide ^d tmux kill ^f find' \
+    --bind 'tab:down,btab:up' \
+    --bind 'ctrl-a:change-prompt(⚡  )+reload(sesh list)' \
+    --bind 'ctrl-t:change-prompt(🪟  )+reload(sesh list -t)' \
+    --bind 'ctrl-g:change-prompt(⚙️  )+reload(sesh list -c)' \
+    --bind 'ctrl-x:change-prompt(📁  )+reload(sesh list -z)' \
+    --bind 'ctrl-f:change-prompt(🔎  )+reload(fd -H -d 2 -t d -E .Trash . ~)' \
+    --bind 'ctrl-d:execute(tmux kill-session -t {})+change-prompt(⚡  )+reload(sesh list)'
+)
+    [[ -z "$session" ]] && return
+    sesh connect $session
+  }
+}
+
+zle     -N             sesh-sessions
+bindkey -M emacs '\es' sesh-sessions
+bindkey -M vicmd '\es' sesh-sessions
+bindkey -M viins '\es' sesh-sessions
 
 # User configuration
 
@@ -104,52 +128,13 @@ source $ZSH/oh-my-zsh.sh
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
-#
-
-function sesh-sessions() {
-  {
-    exec </dev/tty
-    exec <&1
-    local session
-    session=$(sesh list | fzf-tmux -p 55%,60% \
-    --no-sort --ansi --border-label ' sesh ' --prompt '⚡  ' \
-    --header '  ^a all ^t tmux ^g configs ^x zoxide ^d tmux kill ^f find' \
-    --bind 'tab:down,btab:up' \
-    --bind 'ctrl-a:change-prompt(⚡  )+reload(sesh list)' \
-    --bind 'ctrl-t:change-prompt(🪟  )+reload(sesh list -t)' \
-    --bind 'ctrl-g:change-prompt(⚙️  )+reload(sesh list -c)' \
-    --bind 'ctrl-x:change-prompt(📁  )+reload(sesh list -z)' \
-    --bind 'ctrl-f:change-prompt(🔎  )+reload(fd -H -d 2 -t d -E .Trash . ~)' \
-    --bind 'ctrl-d:execute(tmux kill-session -t {})+change-prompt(⚡  )+reload(sesh list)'
-)
-    [[ -z "$session" ]] && return
-    sesh connect $session
-  }
-}
-
-zle     -N             sesh-sessions
-bindkey -M emacs '\es' sesh-sessions
-bindkey -M vicmd '\es' sesh-sessions
-bindkey -M viins '\es' sesh-sessions
-
-export ANDROID_HOME="$HOME/Android/sdk/"
-export ENCORE_INSTALL="$HOME/.encore"
-export PATH="$ENCORE_INSTALL/bin:$PATH"
-export TERM="xterm-kitty"
-
-alias android="$HOME/Android/sdk/emulator/emulator -avd Medium_Phone_API_35 -gpu host"
-alias la="exa -la --icons"
-alias ls="exa --icons"
-alias cls="clear"
-alias viclean="NVIM_APPNAME=NativeVim nvim"
 alias vi="nvim"
 
-# bun completions
-[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
+export PATH=$PATH:$HOME/.local/kitty.app/bin
+export PATH=$PATH:$HOME/.local/bin
+export PATH=$PATH:$HOME/.fly/bin
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
 
-# Turso
-export PATH="$PATH:$HOME/.turso"
-#vlang
-export PATH="$PATH:$HOME/.config/v"
-#v_analyzer
-export PATH="$PATH:$HOME/.config/v-analyzer/bin"
+eval "$(zoxide init zsh)"
+eval "$(/home/johnpgr/.local/bin/mise activate zsh)"
