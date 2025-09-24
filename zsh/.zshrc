@@ -8,7 +8,7 @@ export ZSH="$HOME/.oh-my-zsh"
 # load a random theme each time Oh My Zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="robbyrussell"
+ZSH_THEME="half-life"
 
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
@@ -70,7 +70,7 @@ ZSH_THEME="robbyrussell"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git zsh-syntax-highlighting zsh-autosuggestions)
+plugins=(git zoxide tmux)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -108,14 +108,14 @@ bindkey -M viins '\es' sesh-sessions
 # export LANG=en_US.UTF-8
 
 # Preferred editor for local and remote sessions
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='nvim'
-# fi
+if [[ -n $SSH_CONNECTION ]]; then
+  export EDITOR='vim'
+else
+  export EDITOR='nvim'
+fi
 
 # Compilation flags
-# export ARCHFLAGS="-arch $(uname -m)"
+export ARCHFLAGS="-arch $(uname -m)"
 
 # Set personal aliases, overriding those provided by Oh My Zsh libs,
 # plugins, and themes. Aliases can be placed here, though Oh My Zsh
@@ -128,13 +128,15 @@ bindkey -M viins '\es' sesh-sessions
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
-alias vi="nvim"
+alias ls='ls --color=auto'
+alias grep='grep --color=auto'
+alias vi='nvim'
 
-export PATH=$PATH:$HOME/.local/kitty.app/bin
-export PATH=$PATH:$HOME/.local/bin
-export PATH=$PATH:$HOME/.fly/bin
-export SDKMAN_DIR="$HOME/.sdkman"
-[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+export GALLIUM_DRIVER=d3d12
+export LIBVA_DRIVER_NAME=d3d12
+export MESA_LOADER_DRIVER_OVERRIDE=d3d12
+export MESA_GL_VERSION_OVERRIDE=4.6
+export MESA_D3D12_DEFAULT_ADAPTER_NAME="NVIDIA"
+export PATH=$PATH:$HOME/.local/share/bob/nvim-bin
 
-eval "$(zoxide init zsh)"
-eval "$(/home/johnpgr/.local/bin/mise activate zsh)"
+eval "$(mise activate zsh)"
