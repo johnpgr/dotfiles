@@ -8,7 +8,7 @@ export ZSH="$HOME/.oh-my-zsh"
 # load a random theme each time Oh My Zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="half-life"
+ZSH_THEME="edvardm"
 
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
@@ -70,7 +70,7 @@ ZSH_THEME="half-life"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git zoxide tmux)
+plugins=(git zoxide tmux mise)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -131,6 +131,8 @@ export ARCHFLAGS="-arch $(uname -m)"
 alias ls='ls --color=auto'
 alias grep='grep --color=auto'
 alias vi='nvim'
+alias clang='zig cc'
+alias clang++='zig c++'
 
 export GALLIUM_DRIVER=d3d12
 export LIBVA_DRIVER_NAME=d3d12
@@ -138,5 +140,3 @@ export MESA_LOADER_DRIVER_OVERRIDE=d3d12
 export MESA_GL_VERSION_OVERRIDE=4.6
 export MESA_D3D12_DEFAULT_ADAPTER_NAME="NVIDIA"
 export PATH=$PATH:$HOME/.local/share/bob/nvim-bin
-
-eval "$(mise activate zsh)"
