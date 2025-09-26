@@ -25,7 +25,7 @@ vim.g.gruvbox_sign_column = "bg0"
 vim.g.gruvbox_italicize_comments = 0
 vim.g.gruvbox_invert_selection = 0
 vim.g.mapleader = " "
-vim.o.cursorline = true
+vim.o.cursorline = false
 vim.o.number = true
 vim.o.relativenumber = false
 vim.o.confirm = true
@@ -207,6 +207,8 @@ vim.pack.add {
     { src = "https://github.com/nvim-lua/plenary.nvim" },
     { src = "https://github.com/farmergreg/vim-lastplace" },
     { src = "https://github.com/vague2k/vague.nvim" },
+    { src = "https://github.com/rose-pine/neovim",
+        name = "rosepine" },
     { src = "https://github.com/NeogitOrg/neogit" },
     { src = "https://github.com/sindrets/diffview.nvim" },
     { src = "https://github.com/lewis6991/gitsigns.nvim" },
@@ -461,7 +463,6 @@ wk.add {
     { "<leader>c",  group = "copilot" },
     { "<leader>l",  group = "lsp" },
     { "<leader>t",  group = "toggle" },
-    { "<leader>ld", group = "diagnostics" },
     { "<leader>i",  group = "insert" },
     { "<leader>d",  group = "db" },
 }
@@ -575,6 +576,9 @@ local permission_hlgroups = {
 }
 
 require "oil".setup {
+    lsp_file_methods = {
+        enabled = false, -- bugged on nvim 0.12
+    },
     columns = {
         {
             "permissions",
@@ -628,6 +632,14 @@ require "vague".setup {
     transparent = false,
     bold = false,
     italic = false,
+}
+
+require "rose-pine".setup {
+    styles = {
+        bold = false,
+        italic = false,
+        transparency = true,
+    },
 }
 
 require "outline".setup { outline_window = { position = "left" } }
@@ -1030,6 +1042,7 @@ require "neogit".setup {
     console_timeout = 5000,
     auto_show_console = false,
 }
+
 require "lazydev".setup {
     library = {
         -- See the configuration section for more details
@@ -1699,8 +1712,8 @@ vim.keymap.set("n", "<leader>lr", vim.lsp.buf.rename, { desc = "Rename symbol" }
 vim.keymap.set("n", "<leader>lf", require("conform").format, { desc = "Format buffer" })
 vim.keymap.set("n", "<leader>la", vim.lsp.buf.code_action, { desc = "Code action" })
 vim.keymap.set("i", "<C-s>", vim.lsp.buf.signature_help, { desc = "Signature help" })
-vim.keymap.set("n", "<leader>ldf", vim.diagnostic.open_float, { desc = "Floating diagnostic" })
-vim.keymap.set("n", "<leader>ldl", vim.diagnostic.setqflist, { desc = "Diagnostic list" })
+vim.keymap.set("n", "<M-k>", vim.diagnostic.open_float, { desc = "Floating diagnostic" })
+vim.keymap.set("n", "<leader>ld", vim.diagnostic.setqflist, { desc = "Diagnostic list" })
 
 vim.keymap.set("n", "<leader>q", quicker.toggle, { desc = "Quickfix list" })
 
