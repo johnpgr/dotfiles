@@ -230,7 +230,6 @@ vim.pack.add {
     { src = "https://github.com/echasnovski/mini.comment" },
     { src = "https://github.com/folke/which-key.nvim" },
     { src = "https://github.com/morhetz/gruvbox" },
-    { src = "https://github.com/rafamadriz/friendly-snippets" },
     { src = "https://github.com/L3MON4D3/LuaSnip" },
     { src = "https://github.com/saghen/blink.cmp" },
     { src = "https://github.com/rafamadriz/friendly-snippets" },
@@ -369,15 +368,6 @@ blink.setup {
                 -- make lazydev completions top priority (see `:h blink.cmp`)
                 score_offset = 100,
             },
-            lsp = {
-                name = 'LSP',
-                module = 'blink.cmp.sources.lsp',
-                transform_items = function(_, items)
-                    return vim.tbl_filter(function(item)
-                        return item.kind ~= require('blink.cmp.types').CompletionItemKind.Keyword
-                    end, items)
-                end,
-            },
         },
         per_filetype = {
             sql = { "snippets", "dadbod", "buffer" },
@@ -387,7 +377,7 @@ blink.setup {
     completion = {
         list = { selection = { preselect = false, auto_insert = false } },
         menu = {
-            auto_show = false,
+            auto_show = true,
             max_height = 20,
             draw = {
                 columns = {
@@ -404,7 +394,7 @@ blink.setup {
     },
     cmdline = {
         completion = {
-            menu = { auto_show = false, draw = {
+            menu = { auto_show = true, draw = {
                 columns = {
                     { "label", "label_description" },
                 },
@@ -682,14 +672,18 @@ local default_picker_config = {
     theme = "dropdown",
     previewer = false,
     layout_config = {
-        width = 0.5,
+        width = 0.6,
     },
     results_title = false,
 }
+
 local telescope = require "telescope"
 local telescope_builtin = require "telescope.builtin"
 local telescope_themes = require "telescope.themes"
+local telescope_finders = require "telescope.finders"
+local telescope_pickers = require "telescope.pickers"
 local telescope_actions = require "telescope.actions"
+local telescope_sorters = require "telescope.sorters"
 local telescope_action_state = require "telescope.actions.state"
 local telescope_utils = require "telescope.utils"
 
@@ -995,7 +989,9 @@ copilot_chat.setup {
     },
 }
 
-local luasnip = require("luasnip")
+require "luasnip.loaders.from_vscode".lazy_load()
+
+local luasnip = require "luasnip"
 luasnip.setup {}
 local snippet = luasnip.snippet
 local text_node = luasnip.text_node
@@ -1081,7 +1077,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
             }
 
             telescope_pickers.new(
-                telescope_themes.get_ivy(vim.tbl_extend("force", default_picker_config,
+                telescope_themes.get_dropdown(vim.tbl_extend("force", default_picker_config,
                     { prompt_title = "Typescript LSP actions" })),
                 {
                     finder = telescope_finders.new_table({
@@ -1096,8 +1092,8 @@ vim.api.nvim_create_autocmd("LspAttach", {
                             }
                         end,
                     }),
-                    sorter = telescope_sorter,
-                    attach_mappings = function(prompt_bufnr, map)
+                    sorter = telescope_sorters.get_generic_fuzzy_sorter(),
+                    attach_mappings = function(prompt_bufnr, _)
                         telescope_actions.select_default:replace(function()
                             local selection = telescope_action_state.get_selected_entry()
                             telescope_actions.close(prompt_bufnr)
