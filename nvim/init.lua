@@ -247,6 +247,7 @@ vim.pack.add {
     { src = "https://github.com/tpope/vim-dadbod" },
     { src = "https://github.com/kristijanhusak/vim-dadbod-completion" },
     { src = "https://github.com/kristijanhusak/vim-dadbod-ui" },
+    { src = "https://github.com/yioneko/nvim-vtsls" },
 }
 
 require "nvim-treesitter.configs".setup {
@@ -1050,6 +1051,65 @@ require "lazydev".setup {
         { path = "${3rd}/luv/library", words = { "vim%.uv" } },
     },
 }
+
+require "lspconfig.configs".vtsls = require "vtsls".lspconfig
+
+vim.api.nvim_create_autocmd("LspAttach", {
+    callback = function(args)
+        local client = vim.lsp.get_client_by_id(args.data.client_id)
+        if not client or client.name ~= "vtsls" then
+            return
+        end
+
+        vim.keymap.set("n", "<leader>lt", function()
+            local items = {
+                { name = "restart_tsserver",       desc = "Does not restart vtsls itself, but restarts the underlying tsserver." },
+                { name = "open_tsserver_log",      desc = "It will open prompt if logging has not been enabled." },
+                { name = "reload_projects",        desc = "Reload tsserver projects for the workspace." },
+                { name = "select_ts_version",      desc = "Select version of ts either from workspace or global." },
+                { name = "goto_project_config",    desc = "Open tsconfig.json." },
+                { name = "goto_source_definition", desc = "Go to the source definition instead of typings." },
+                { name = "file_references",        desc = "Show references of the current file." },
+                { name = "rename_file",            desc = "Rename the current file and update all the related paths in the project." },
+                { name = "organize_imports",       desc = "Organize imports in the current file." },
+                { name = "sort_imports",           desc = "Sort imports in the current file." },
+                { name = "remove_unused_imports",  desc = "Remove unused imports from the current file." },
+                { name = "fix_all",                desc = "Apply all available code fixes." },
+                { name = "remove_unused",          desc = "Remove unused variables and symbols." },
+                { name = "add_missing_imports",    desc = "Add missing imports for unresolved symbols." },
+                { name = "source_actions",         desc = "Pick applicable source actions (same as above)" },
+            }
+
+            telescope_pickers.new(
+                telescope_themes.get_ivy(vim.tbl_extend("force", default_picker_config,
+                    { prompt_title = "Typescript LSP actions" })),
+                {
+                    finder = telescope_finders.new_table({
+                        results = items,
+                        entry_maker = function(entry)
+                            return {
+                                value = entry.name,
+                                display = string.format("%-24s %s", entry.name, entry.desc or ""),
+                                ordinal = (entry.name or "") .. " " .. (entry.desc or ""),
+                                name = entry.name,
+                                desc = entry.desc,
+                            }
+                        end,
+                    }),
+                    sorter = telescope_sorter,
+                    attach_mappings = function(prompt_bufnr, map)
+                        telescope_actions.select_default:replace(function()
+                            local selection = telescope_action_state.get_selected_entry()
+                            telescope_actions.close(prompt_bufnr)
+                            if not selection or not selection.value then return end
+                            vim.cmd("VtsExec " .. selection.value)
+                        end)
+                        return true
+                    end,
+                }):find()
+        end, { desc = "Typescript LSP actions (vtsls)", buffer = args.buf })
+    end,
+})
 
 vim.lsp.enable {
     "lua_ls",
