@@ -70,7 +70,7 @@ ZSH_THEME="crcandy"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git zoxide tmux mise)
+plugins=(git zoxide tmux)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -140,3 +140,4 @@ export MESA_LOADER_DRIVER_OVERRIDE=d3d12
 export MESA_GL_VERSION_OVERRIDE=4.6
 export MESA_D3D12_DEFAULT_ADAPTER_NAME="NVIDIA"
 export PATH=$PATH:$HOME/.local/share/bob/nvim-bin
+export PATH=$PATH:$HOME/.local/bin
