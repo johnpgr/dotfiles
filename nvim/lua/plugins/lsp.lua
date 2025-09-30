@@ -114,7 +114,7 @@ return {
 									vim.tbl_extend(
 										"force",
 										default_picker_config,
-										{ prompt_title = "Typescript LSP actions" }
+										{ prompt_title = "" }
 									)
 								),
 								{

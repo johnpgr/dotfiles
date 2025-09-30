@@ -197,7 +197,7 @@ function M.open_yank_history()
 	require("telescope.pickers")
 		.new(
 			require("telescope.themes").get_dropdown(vim.tbl_extend("force", require("utils").default_picker_config, {
-				prompt_title = "Clipboard history",
+				prompt_title = "",
 			})),
 			{
 				finder = require("telescope.finders").new_table({

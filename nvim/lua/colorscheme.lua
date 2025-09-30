@@ -37,10 +37,6 @@ function M.load_persisted_colorscheme()
 	if #recent > 0 then
 		pcall(vim.cmd.colorscheme, recent[1].name)
 		vim.cmd([[
-            " hi Normal guibg=none
-            " hi StatusLine guibg=none
-            " hi StatusLineNC guibg=none
-
             hi! link MsgSeparator WinSeparator
             hi Operator guibg=none
             hi MatchParen guifg=bg
@@ -48,7 +44,8 @@ function M.load_persisted_colorscheme()
             hi WinBarNC guibg=none
             hi NormalFloat guibg=none
             hi FloatBorder guibg=none
-            hi MiniPickPrompt guibg=none
+            hi WhichKeyBorder guibg=none
+            hi TelescopeBorder guibg=none
         ]])
 	end
 end

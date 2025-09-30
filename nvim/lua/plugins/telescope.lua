@@ -68,7 +68,7 @@ return {
 			{
 				"<leader>fr",
 				function()
-					require("telescope.builtin").oldfiles({ prompt_title = "Recent files" })
+					require("telescope.builtin").oldfiles({ prompt_title = "" })
 				end,
 				desc = "Recent files",
 			},
@@ -105,7 +105,7 @@ return {
 				function()
 					require("telescope.builtin").oldfiles({
 						only_cwd = true,
-						prompt_title = "Recent files in workspace",
+						prompt_title = "",
 					})
 				end,
 				desc = "Recent files in workspace",
@@ -121,14 +121,14 @@ return {
 			{
 				"<leader>,",
 				function()
-					require("telescope.builtin").buffers({ prompt_title = "Open workspace buffers", only_cwd = true })
+					require("telescope.builtin").buffers({ prompt_title = "", only_cwd = true })
 				end,
 				desc = "Switch workspace buffers",
 			},
 			{
 				"<leader><",
 				function()
-					require("telescope.builtin").buffers({ prompt_title = "Open buffers" })
+					require("telescope.builtin").buffers({ prompt_title = "" })
 				end,
 				desc = "Switch buffers",
 			},
@@ -210,7 +210,7 @@ return {
 						grouped = true,
 						dir_icon = vim.g.icons_enabled and "" or " ",
 						dir_icon_hl = "Directory",
-						prompt_title = "Find Files",
+						prompt_title = "",
 						mappings = {
 							i = {
 								["<Tab>"] = function(bufnr)

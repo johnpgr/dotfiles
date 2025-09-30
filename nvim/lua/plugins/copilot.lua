@@ -21,7 +21,7 @@ end
 
 local function find_chat_history()
 	require("telescope.builtin").find_files({
-		prompt_title = "CopilotChat History",
+		prompt_title = "",
 		cwd = require("CopilotChat").config.history_path,
 		hidden = true,
 		follow = true,

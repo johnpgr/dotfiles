@@ -16,6 +16,7 @@ M.default_picker_config = {
 		width = 0.6,
 	},
 	results_title = false,
+    prompt_title = "",
 }
 
 -- Fuzzy find within the current buffer with live preview navigation

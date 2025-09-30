@@ -38,13 +38,19 @@ return {
 			incremental_selection = {
 				enable = true,
 				keymaps = {
-					init_selection = "vv",
-					node_incremental = "vv",
+					init_selection = "<C-space>",
+					node_incremental = "<C-space>",
 				},
 			},
 		})
 
 		local ts_start = vim.treesitter.start
+        ---@diagnostic disable-next-line: duplicate-set-field
+        vim.treesitter.start = function(bufnr, lang)
+            if lang == "tmux" then return end
+            return ts_start(bufnr, lang)
+        end
+
 		if not vim.g.treesitter_enabled then
 			---@diagnostic disable-next-line: duplicate-set-field
 			vim.treesitter.start = function(bufnr, lang)
