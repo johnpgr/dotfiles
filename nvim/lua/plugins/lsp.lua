@@ -35,7 +35,7 @@ return {
 				"clangd",
 				"html",
 				"jsonls",
-				"pyright",
+				"basedpyright",
 				"zls",
 				"tailwindcss",
 				"dartls",

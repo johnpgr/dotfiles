@@ -44,8 +44,8 @@ function M.load_persisted_colorscheme()
             hi WinBarNC guibg=none
             hi NormalFloat guibg=none
             hi FloatBorder guibg=none
-            hi WhichKeyBorder guibg=none
             hi TelescopeBorder guibg=none
+            hi WhichKeyBorder guibg=none
         ]])
 	end
 end
