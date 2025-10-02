@@ -1,5 +1,3 @@
-local is_neovide = require("utils").is_neovide
-
 -- General plugins
 return {
 	-- Dependency plugins (loaded by other plugins)

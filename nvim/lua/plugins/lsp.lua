@@ -1,3 +1,4 @@
+local default_picker_config = require "utils".default_picker_config
 -- LSP floating window config
 local lsp_floating_preview_original = vim.lsp.util.open_floating_preview
 ---@diagnostic disable-next-line: duplicate-set-field
@@ -34,6 +35,7 @@ return {
 				"jdtls",
 				"clangd",
 				"html",
+                "cssls",
 				"jsonls",
 				"basedpyright",
 				"zls",
