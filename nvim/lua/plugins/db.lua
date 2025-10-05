@@ -40,11 +40,6 @@ return {
 	{
 		"kristijanhusak/vim-dadbod-ui",
 		keys = {
-			{ "<F1>", "<cmd>OverseerRun<cr>", desc = "Run task" },
-			{ "<F2>", "<cmd>OverseerToggle bottom<cr>", desc = "Task list (bottom)" },
-			{ "<F3>", "<cmd>OverseerToggle right<cr>", desc = "Task list (right)" },
-			{ "<A-r>", "<cmd>OverseerQuickAction restart<cr>", desc = "Restart last task" },
-			{ "<F5>", "<cmd>OverseerQuickAction restart<cr>", desc = "Restart last task" },
 			{ "<leader>db", toggle_dbui_tab, desc = "DBUI" },
 			{ "<leader>da", "<cmd>DBUIAddConnection<cr>", desc = "Add new connection" },
 		},

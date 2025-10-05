@@ -45,12 +45,6 @@ return {
 		})
 
 		local ts_start = vim.treesitter.start
-        ---@diagnostic disable-next-line: duplicate-set-field
-        vim.treesitter.start = function(bufnr, lang)
-            if lang == "tmux" then return end
-            return ts_start(bufnr, lang)
-        end
-
 		if not vim.g.treesitter_enabled then
 			---@diagnostic disable-next-line: duplicate-set-field
 			vim.treesitter.start = function(bufnr, lang)

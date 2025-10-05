@@ -3,21 +3,6 @@ local M = {}
 M.config_db_uri = vim.fn.stdpath("data") .. "/nvim_config.db"
 M.is_neovide = vim.g.neovide ~= nil
 M.is_kitty = os.getenv("TERM") == "xterm-kitty"
-M.default_picker_config = {
-	borderchars = {
-		{ "─", "│", "─", "│", "┌", "┐", "┘", "└" },
-		prompt = { "─", "│", " ", "│", "┌", "┐", "│", "│" },
-		results = { "─", "│", "─", "│", "├", "┤", "┘", "└" },
-		preview = { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
-	},
-	theme = "dropdown",
-	previewer = false,
-	layout_config = {
-		width = 0.6,
-	},
-	results_title = false,
-    prompt_title = "",
-}
 
 -- Fuzzy find within the current buffer with live preview navigation
 --
@@ -41,131 +26,177 @@ M.default_picker_config = {
 -- - <CR>: Jump to selected line and close picker
 -- - <C-q>: Send all results to quickfix list and open it
 function M.fuzzy_find_current_buffer()
-	local original_win = vim.api.nvim_get_current_win()
-	local original_bufnr = vim.api.nvim_get_current_buf()
+    local original_win = vim.api.nvim_get_current_win()
+    local original_bufnr = vim.api.nvim_get_current_buf()
 
-	local action_state = require("telescope.actions.state")
-	local actions = require("telescope.actions")
+    local action_state = require("telescope.actions.state")
+    local actions = require("telescope.actions")
 
-	local opts = vim.tbl_extend("force", M.default_picker_config, {
-		fuzzy = false,
-		exact = true,
-		attach_mappings = function(prompt_bufnr, map)
-			local function jump_to_selection()
-				local selection = action_state.get_selected_entry()
-				if selection and selection.lnum then
-					local line_count = vim.api.nvim_buf_line_count(original_bufnr)
+    local opts = vim.tbl_extend("force", require("telescope.config").values, {
+        fuzzy = false,
+        exact = true,
+        attach_mappings = function(prompt_bufnr, map)
+            local function jump_to_selection()
+                local selection = action_state.get_selected_entry()
+                if selection and selection.lnum then
+                    local line_count = vim.api.nvim_buf_line_count(original_bufnr)
 
-					if selection.lnum > 0 and selection.lnum <= line_count then
-						local line = vim.api.nvim_buf_get_lines(
-							original_bufnr,
-							selection.lnum - 1,
-							selection.lnum,
-							false
-						)[1] or ""
-						local col = math.min(selection.col or 0, #line)
+                    if selection.lnum > 0 and selection.lnum <= line_count then
+                        local line = vim.api.nvim_buf_get_lines(
+                            original_bufnr,
+                            selection.lnum - 1,
+                            selection.lnum,
+                            false
+                        )[1] or ""
+                        local col = math.min(selection.col or 0, #line)
 
-						vim.cmd("normal! m'")
-						vim.api.nvim_win_set_cursor(original_win, { selection.lnum, col })
+                        vim.cmd("normal! m'")
+                        vim.api.nvim_win_set_cursor(original_win, { selection.lnum, col })
 
-						if vim.api.nvim_win_is_valid(original_win) then
-							vim.api.nvim_win_call(original_win, function()
-								vim.cmd("normal! zz")
-							end)
-						end
-					end
-				end
-			end
+                        if vim.api.nvim_win_is_valid(original_win) then
+                            vim.api.nvim_win_call(original_win, function()
+                                vim.cmd("normal! zz")
+                            end)
+                        end
+                    end
+                end
+            end
 
-			actions.select_default:replace(function()
-				jump_to_selection()
-				actions.close(prompt_bufnr)
-			end)
+            actions.select_default:replace(function()
+                jump_to_selection()
+                actions.close(prompt_bufnr)
+            end)
 
-			local move_selection_next = function()
-				actions.move_selection_next(prompt_bufnr)
-				jump_to_selection()
-			end
+            local move_selection_next = function()
+                actions.move_selection_next(prompt_bufnr)
+                jump_to_selection()
+            end
 
-			local move_selection_previous = function()
-				actions.move_selection_previous(prompt_bufnr)
-				jump_to_selection()
-			end
+            local move_selection_previous = function()
+                actions.move_selection_previous(prompt_bufnr)
+                jump_to_selection()
+            end
 
-			map("i", "<Down>", move_selection_next)
-			map("i", "<C-n>", move_selection_next)
-			map("i", "<Up>", move_selection_previous)
-			map("i", "<C-p>", move_selection_previous)
+            map("i", "<Down>", move_selection_next)
+            map("i", "<C-n>", move_selection_next)
+            map("i", "<Up>", move_selection_previous)
+            map("i", "<C-p>", move_selection_previous)
 
-			map("n", "j", move_selection_next)
-			map("n", "k", move_selection_previous)
+            map("n", "j", move_selection_next)
+            map("n", "k", move_selection_previous)
 
-			map("i", "<C-q>", function()
-				actions.send_to_qflist(prompt_bufnr)
-				vim.cmd("copen")
-			end)
+            map("i", "<C-q>", function()
+                actions.send_to_qflist(prompt_bufnr)
+                vim.cmd("copen")
+            end)
 
-			map("n", "<C-q>", function()
-				actions.send_to_qflist(prompt_bufnr)
-				vim.cmd("copen")
-			end)
+            map("n", "<C-q>", function()
+                actions.send_to_qflist(prompt_bufnr)
+                vim.cmd("copen")
+            end)
 
-			return true
-		end,
-		on_input_filter_cb = function(prompt)
-			if prompt and #prompt > 0 then
-				vim.fn.setreg("/", prompt)
-				vim.cmd("let v:hlsearch=1")
-			end
-			return prompt
-		end,
-	})
-	require("telescope.builtin").current_buffer_fuzzy_find(opts)
+            return true
+        end,
+        on_input_filter_cb = function(prompt)
+            if prompt and #prompt > 0 then
+                vim.fn.setreg("/", prompt)
+                vim.cmd("let v:hlsearch=1")
+            end
+            return prompt
+        end,
+    })
+    require("telescope.builtin").current_buffer_fuzzy_find(opts)
 end
 
 function M.jump_to_error_loc()
-	local line = vim.fn.getline(".")
-	local file, lnum, col = string.match(line, "([^:]+):(%d+):(%d+)")
+    local line = vim.fn.getline(".")
+    local file, lnum, col = string.match(line, "([^:]+):(%d+):(%d+)")
 
-	if not (file and lnum and col) then
-		return false
-	end
+    if not (file and lnum and col) then
+        return false
+    end
 
-	if vim.fn.filereadable(file) ~= 1 then
-		vim.notify("File not found: " .. file, vim.log.levels.ERROR)
-		return false
-	end
+    if vim.fn.filereadable(file) ~= 1 then
+        vim.notify("File not found: " .. file, vim.log.levels.ERROR)
+        return false
+    end
 
-	lnum = tonumber(lnum)
-	col = tonumber(col)
+    lnum = tonumber(lnum)
+    col = tonumber(col)
 
-	local bufnr = vim.fn.bufnr(vim.fn.fnamemodify(file, ":p"))
-	local win_id = nil
+    local bufnr = vim.fn.bufnr(vim.fn.fnamemodify(file, ":p"))
+    local win_id = nil
 
-	if bufnr ~= -1 then
-		local wins = vim.fn.getbufinfo(bufnr)[1].windows
-		if #wins > 0 then
-			win_id = wins[1]
-		end
-	end
+    if bufnr ~= -1 then
+        local wins = vim.fn.getbufinfo(bufnr)[1].windows
+        if #wins > 0 then
+            win_id = wins[1]
+        end
+    end
 
-	if win_id then
-		vim.fn.win_gotoid(win_id)
-	else
-		local window_above = vim.fn.winnr("#")
+    if win_id then
+        vim.fn.win_gotoid(win_id)
+    else
+        local window_above = vim.fn.winnr("#")
 
-		if window_above ~= 0 then
-			vim.cmd("wincmd k")
-			vim.cmd("edit " .. file)
-		else
-			vim.cmd("topleft split " .. file)
-		end
-	end
+        if window_above ~= 0 then
+            vim.cmd("wincmd k")
+            vim.cmd("edit " .. file)
+        else
+            vim.cmd("topleft split " .. file)
+        end
+    end
 
-	vim.api.nvim_win_set_cursor(0, { lnum, col - 1 })
-	vim.cmd("normal! zz")
+    vim.api.nvim_win_set_cursor(0, { lnum, col - 1 })
+    vim.cmd("normal! zz")
 
-	return true
+    return true
+end
+
+function M.live_multi_grep(opts)
+    opts = opts or {}
+    opts.cwd = opts.cwd or vim.uv.cwd()
+
+    local finders = require "telescope.finders"
+    local pickers = require "telescope.pickers"
+    local make_entry = require "telescope.make_entry"
+    local sorters = require "telescope.sorters"
+
+    local finder = finders.new_async_job {
+        command_generator = function(prompt)
+            if not prompt or prompt == "" then
+                return nil
+            end
+
+            local pieces = vim.split(prompt, "  ")
+            local args = { "rg" }
+
+            if pieces[1] then
+                table.insert(args, "-e")
+                table.insert(args, pieces[1])
+            end
+
+            if pieces[2] then
+                table.insert(args, "-g")
+                table.insert(args, pieces[2])
+            end
+
+            ---@diagnostic disable-next-line: deprecated
+            return vim.tbl_flatten {
+                args,
+                { "--color=never", "--no-heading", "--with-filename", "--line-number", "--column", "--smart-case" }
+            }
+        end,
+        entry_maker = make_entry.gen_from_vimgrep(opts),
+        cwd = opts.cwd,
+    }
+
+    pickers.new(opts, {
+        debounce = 100,
+        finder = finder,
+        prompt_title = "Live grep",
+        sorter = sorters.empty()
+    }):find()
 end
 
 return M

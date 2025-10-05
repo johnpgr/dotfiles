@@ -3,11 +3,9 @@ return {
 	"stevearc/overseer.nvim",
 	cmd = { "OverseerRun", "OverseerToggle", "OverseerQuickAction" },
 	keys = {
-		{ "<F1>", "<cmd>OverseerRun<cr>", desc = "Run task" },
-		{ "<F2>", "<cmd>OverseerToggle bottom<cr>", desc = "Task list (bottom)" },
-		{ "<F3>", "<cmd>OverseerToggle right<cr>", desc = "Task list (right)" },
+		{ "<M-b>", "<cmd>OverseerRun<cr>", desc = "Run task" },
+		{ "<M-B>", "<cmd>OverseerToggle bottom<cr>", desc = "Task list (bottom)" },
 		{ "<A-r>", "<cmd>OverseerQuickAction restart<cr>", desc = "Restart last task" },
-		{ "<F5>", "<cmd>OverseerQuickAction restart<cr>", desc = "Restart last task" },
 	},
 	config = function()
 		require("overseer").setup({

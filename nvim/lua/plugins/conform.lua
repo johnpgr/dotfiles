@@ -16,6 +16,7 @@ return {
 				javascriptreact = { "prettierd", "prettier", stop_after_first = true, lsp_format = "fallback" },
 				typescript = { "prettierd", "prettier", stop_after_first = true, lsp_format = "fallback" },
 				typescriptreact = { "prettierd", "prettier", stop_after_first = true, lsp_format = "fallback" },
+                astro = { "prettierd", "prettier", stop_after_first = true, lsp_format = "fallback" },
 			},
 		})
 	end,

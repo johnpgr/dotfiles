@@ -16,13 +16,13 @@ local uri = vim.fn.stdpath("data") .. "/nvim_config.db"
 
 ---@class YankTbl: sqlite_tbl
 local entries_table = tbl("yank_entries", {
-	id = true, -- same as { type = "integer", required = true, primary = true }
-	content = { "text", required = true },
-	created_at = { "integer", default = strftime("%s", "now") },
-	last_used_at = { "integer", default = strftime("%s", "now") },
-	usage_count = { "integer", default = 0 },
-	line_count = { "integer", default = 1 },
-	char_count = { "integer", default = 0 },
+    id = true, -- same as { type = "integer", required = true, primary = true }
+    content = { "text", required = true },
+    created_at = { "integer", default = strftime("%s", "now") },
+    last_used_at = { "integer", default = strftime("%s", "now") },
+    usage_count = { "integer", default = 0 },
+    line_count = { "integer", default = 1 },
+    char_count = { "integer", default = 0 },
 })
 
 ---@class YankDB: sqlite_db
@@ -32,305 +32,311 @@ M.db = sqlite({ uri = uri, entries = entries_table })
 ---Add a yank entry
 ---@param content string
 function entries_table:add(content)
-	if not content or content == "" or content == "\n" then
-		return
-	end
+    if not content or content == "" or content == "\n" then
+        return
+    end
 
-	local lines = vim.split(content, "\n", { plain = true })
-	local line_count = #lines
-	local char_count = #content
-	local created_at = os.time()
+    local lines = vim.split(content, "\n", { plain = true })
+    local line_count = #lines
+    local char_count = #content
+    local created_at = os.time()
 
-	-- Check if exact content exists in recent entries
-	local existing = entries_table:get({
-		where = { content = content },
-		limit = 1,
-	})
+    -- Check if exact content exists in recent entries
+    local existing = entries_table:get({
+        where = { content = content },
+        limit = 1,
+    })
 
-	if #existing > 0 then
-		-- Update existing entry
-		local entry = existing[1]
-		if (created_at - entry.created_at) < 300 then
-			-- Too recent, skip
-			return entry.id
-		else
-			-- Update last_used_at and usage_count
-			entries_table:update({
-				where = { id = entry.id },
-				set = {
-					last_used_at = created_at,
-					usage_count = entry.usage_count + 1,
-				},
-			})
-			return entry.id
-		end
-	else
-		-- Insert new entry
-		local id = entries_table:insert({
-			content = content,
-			created_at = created_at,
-			last_used_at = created_at,
-			usage_count = 0,
-			line_count = line_count,
-			char_count = char_count,
-		})
+    if #existing > 0 then
+        -- Update existing entry
+        local entry = existing[1]
+        if (created_at - entry.created_at) < 300 then
+            -- Too recent, skip
+            return entry.id
+        else
+            -- Update last_used_at and usage_count
+            entries_table:update({
+                where = { id = entry.id },
+                set = {
+                    last_used_at = created_at,
+                    usage_count = entry.usage_count + 1,
+                },
+            })
+            return entry.id
+        end
+    else
+        -- Insert new entry
+        local id = entries_table:insert({
+            content = content,
+            created_at = created_at,
+            last_used_at = created_at,
+            usage_count = 0,
+            line_count = line_count,
+            char_count = char_count,
+        })
 
-		-- Keep only last 100 entries
-		local total_count = entries_table:count()
-		if total_count > 100 then
-			local oldest = entries_table:get({
-				order_by = { asc = "created_at" },
-				limit = total_count - 100,
-			})
+        -- Keep only last 100 entries
+        local total_count = entries_table:count()
+        if total_count > 100 then
+            local oldest = entries_table:get({
+                order_by = { asc = "created_at" },
+                limit = total_count - 100,
+            })
 
-			for _, entry in ipairs(oldest) do
-				entries_table:remove({ id = entry.id })
-			end
-		end
+            for _, entry in ipairs(oldest) do
+                entries_table:remove({ id = entry.id })
+            end
+        end
 
-		return id
-	end
+        return id
+    end
 end
 
 ---Get all yank entries with time-weighted scoring
 function entries_table:get_with_score(q)
-	local items = entries_table:get(q or {})
-	local current_time = os.time()
+    local items = entries_table:get(q or {})
+    local current_time = os.time()
 
-	-- Add scoring to each item
-	for _, entry in ipairs(items) do
-		-- Calculate age bonus (newer entries get higher scores)
-		local age_hours = (current_time - entry.created_at) / 3600
-		local age_bonus = math.max(0, 100 - age_hours)
+    -- Add scoring to each item
+    for _, entry in ipairs(items) do
+        -- Calculate age bonus (newer entries get higher scores)
+        local age_hours = (current_time - entry.created_at) / 3600
+        local age_bonus = math.max(0, 100 - age_hours)
 
-		-- Calculate usage score based on usage_count and recency
-		local usage_score = entry.usage_count * 10
+        -- Calculate usage score based on usage_count and recency
+        local usage_score = entry.usage_count * 10
 
-		-- Bonus for recently used items
-		local last_used_hours = (current_time - entry.last_used_at) / 3600
-		local recency_bonus = math.max(0, 50 - last_used_hours)
+        -- Bonus for recently used items
+        local last_used_hours = (current_time - entry.last_used_at) / 3600
+        local recency_bonus = math.max(0, 50 - last_used_hours)
 
-		-- Combine all scores
-		entry.score = age_bonus + usage_score + recency_bonus
-	end
+        -- Combine all scores
+        entry.score = age_bonus + usage_score + recency_bonus
+    end
 
-	-- Sort by combined score (highest first)
-	table.sort(items, function(a, b)
-		return (a.score or 0) > (b.score or 0)
-	end)
+    -- Sort by combined score (highest first)
+    table.sort(items, function(a, b)
+        return (a.score or 0) > (b.score or 0)
+    end)
 
-	return items
+    return items
 end
 
 ---Record usage of a yank entry
 ---@param id number
 function entries_table:use(id)
-	local current_time = os.time()
-	local entry = entries_table:get({ where = { id = id }, limit = 1 })[1]
+    local current_time = os.time()
+    local entry = entries_table:get({ where = { id = id }, limit = 1 })[1]
 
-	if entry then
-		entries_table:update({
-			where = { id = id },
-			set = {
-				last_used_at = current_time,
-				usage_count = entry.usage_count + 1,
-			},
-		})
-	end
+    if entry then
+        entries_table:update({
+            where = { id = id },
+            set = {
+                last_used_at = current_time,
+                usage_count = entry.usage_count + 1,
+            },
+        })
+    end
 end
 
 ---Delete a yank entry
 ---@param id string
 function entries_table:delete_entry(id)
-	return entries_table:remove({ id = id })
+    return entries_table:remove({ id = id })
 end
 
 function M.open_yank_history()
-	local origin_buf = vim.api.nvim_get_current_buf()
-	local origin_win = vim.api.nvim_get_current_win()
-	local cursor = vim.api.nvim_win_get_cursor(origin_win)
-	local row, col = cursor[1], cursor[2]
-	local ns = vim.api.nvim_create_namespace("YankHistoryPreview")
+    local pickers = require "telescope.pickers"
+    local finders = require "telescope.finders"
+    local themes = require "telescope.themes"
+    local sorters = require "telescope.config"
+    local actions = require "telescope.actions"
+    local action_state = require "telescope.actions.state"
 
-	local function clear_preview()
-		if vim.api.nvim_buf_is_loaded(origin_buf) then
-			vim.api.nvim_buf_clear_namespace(origin_buf, ns, 0, -1)
-		end
-	end
+    local opts = require "utils".default_picker_config
 
-	-- Move data fetching inside this function so it's refreshed each time
-	local history = entries_table:get_with_score({
-		order_by = { desc = "created_at" },
-		limit = 100,
-	})
+    local origin_buf = vim.api.nvim_get_current_buf()
+    local origin_win = vim.api.nvim_get_current_win()
+    local cursor = vim.api.nvim_win_get_cursor(origin_win)
+    local row, col = cursor[1], cursor[2]
+    local ns = vim.api.nvim_create_namespace("YankHistoryPreview")
 
-	if #history == 0 then
-		vim.notify("No yank history found", vim.log.levels.WARN)
-		return
-	end
+    local function clear_preview()
+        if vim.api.nvim_buf_is_loaded(origin_buf) then
+            vim.api.nvim_buf_clear_namespace(origin_buf, ns, 0, -1)
+        end
+    end
 
-	-- Convert to format expected by telescope
-	local registers = {}
-	for _, entry in ipairs(history) do
-		local display_content = entry.content:gsub("\n", "\\n")
-		if #display_content > 80 then
-			display_content = display_content:sub(1, 80) .. "..."
-		end
+    -- Move data fetching inside this function so it's refreshed each time
+    local history = entries_table:get_with_score({
+        order_by = { desc = "created_at" },
+        limit = 100,
+    })
 
-		local time_str = os.date("%H:%M", entry.created_at)
-		local usage_info = entry.usage_count
-				and entry.usage_count > 0
-				and string.format(" (used %dx)", entry.usage_count)
-			or ""
-		local display = string.format("[%s]%s %s", time_str, usage_info, display_content)
+    if #history == 0 then
+        vim.notify("No yank history found", vim.log.levels.WARN)
+        return
+    end
 
-		table.insert(registers, {
-			content = entry.content,
-			display = display,
-			timestamp = entry.created_at,
-			line_count = entry.line_count or 1,
-			id = entry.id,
-			score = entry.score or 0,
-		})
-	end
+    -- Convert to format expected by telescope
+    local registers = {}
+    for _, entry in ipairs(history) do
+        local display_content = entry.content:gsub("\n", "\\n")
+        if #display_content > 80 then
+            display_content = display_content:sub(1, 80) .. "..."
+        end
 
-	require("telescope.pickers")
-		.new(
-			require("telescope.themes").get_dropdown(vim.tbl_extend("force", require("utils").default_picker_config, {
-				prompt_title = "",
-			})),
-			{
-				finder = require("telescope.finders").new_table({
-					results = registers,
-					entry_maker = function(entry)
-						return {
-							value = entry.content,
-							display = entry.display,
-							ordinal = entry.display,
-							entry = entry,
-						}
-					end,
-				}),
-				sorter = require("telescope.config").values.generic_sorter({}),
-				attach_mappings = function(prompt_bufnr, map)
-					local actions = require("telescope.actions")
+        local time_str = os.date("%H:%M", entry.created_at)
+        local usage_info = entry.usage_count
+            and entry.usage_count > 0
+            and string.format(" (used %dx)", entry.usage_count)
+            or ""
+        local display = string.format("[%s]%s %s", time_str, usage_info, display_content)
 
-					local function update_preview()
-						if not vim.api.nvim_buf_is_loaded(origin_buf) then
-							return
-						end
-						clear_preview()
-						local sel = require("telescope.actions.state").get_selected_entry()
-						if not sel or not sel.value then
-							return
-						end
-						local content = sel.value
-						if type(content) ~= "string" then
-							return
-						end
-						local lines = vim.split(content, "\n", { plain = true })
-						if #lines == 0 then
-							return
-						end
+        table.insert(registers, {
+            content = entry.content,
+            display = display,
+            timestamp = entry.created_at,
+            line_count = entry.line_count or 1,
+            id = entry.id,
+            score = entry.score or 0,
+        })
+    end
 
-						if #lines == 1 then
-							vim.api.nvim_buf_set_extmark(origin_buf, ns, row - 1, col, {
-								virt_text = { { lines[1], "Comment" } },
-								virt_text_pos = "inline",
-								hl_mode = "combine",
-							})
-						else
-							local virt_lines = {}
-							for i = 2, #lines do
-								virt_lines[#virt_lines + 1] = { { lines[i], "Comment" } }
-							end
-							vim.api.nvim_buf_set_extmark(origin_buf, ns, row - 1, col, {
-								virt_text = { { lines[1], "Comment" } },
-								virt_text_pos = "inline",
-								virt_lines = virt_lines,
-								hl_mode = "combine",
-							})
-						end
-					end
+    local finder = finders.new_table({
+        results = registers,
+        entry_maker = function(entry)
+            return {
+                value = entry.content,
+                display = entry.display,
+                ordinal = entry.display,
+                entry = entry,
+            }
+        end,
+    })
+    local sorter = sorters.values.generic_sorter({})
 
-					local function move_next()
-						actions.move_selection_next(prompt_bufnr)
-						update_preview()
-					end
-					local function move_prev()
-						actions.move_selection_previous(prompt_bufnr)
-						update_preview()
-					end
+    pickers.new(
+        themes.get_dropdown(opts),
+        {
+            finder = finder,
+            sorter = sorter,
+            attach_mappings = function(prompt_bufnr, map)
+                local function update_preview()
+                    if not vim.api.nvim_buf_is_loaded(origin_buf) then
+                        return
+                    end
+                    clear_preview()
+                    local sel = action_state.get_selected_entry()
+                    if not sel or not sel.value then
+                        return
+                    end
+                    local content = sel.value
+                    if type(content) ~= "string" then
+                        return
+                    end
+                    local lines = vim.split(content, "\n", { plain = true })
+                    if #lines == 0 then
+                        return
+                    end
 
-					map("i", "<Down>", move_next)
-					map("i", "<C-n>", move_next)
-					map("i", "<Up>", move_prev)
-					map("i", "<C-p>", move_prev)
-					map("n", "j", move_next)
-					map("n", "k", move_prev)
+                    if #lines == 1 then
+                        vim.api.nvim_buf_set_extmark(origin_buf, ns, row - 1, col, {
+                            virt_text = { { lines[1], "Comment" } },
+                            virt_text_pos = "inline",
+                            hl_mode = "combine",
+                        })
+                    else
+                        local virt_lines = {}
+                        for i = 2, #lines do
+                            virt_lines[#virt_lines + 1] = { { lines[i], "Comment" } }
+                        end
+                        vim.api.nvim_buf_set_extmark(origin_buf, ns, row - 1, col, {
+                            virt_text = { { lines[1], "Comment" } },
+                            virt_text_pos = "inline",
+                            virt_lines = virt_lines,
+                            hl_mode = "combine",
+                        })
+                    end
+                end
 
-					-- Add delete mapping
-					local function delete_entry()
-						local selection = require("telescope.actions.state").get_selected_entry()
-						if not selection or not selection.entry.id then
-							return
-						end
+                local function move_next()
+                    actions.move_selection_next(prompt_bufnr)
+                    update_preview()
+                end
+                local function move_prev()
+                    actions.move_selection_previous(prompt_bufnr)
+                    update_preview()
+                end
 
-						entries_table:delete_entry(selection.entry.id)
-						move_next()
-						actions.close(prompt_bufnr)
-						open_yank_history()
-					end
+                map("i", "<Down>", move_next)
+                map("i", "<C-n>", move_next)
+                map("i", "<Up>", move_prev)
+                map("i", "<C-p>", move_prev)
+                map("n", "j", move_next)
+                map("n", "k", move_prev)
 
-					map("i", "<C-d>", delete_entry)
-					map("n", "D", delete_entry)
+                -- Add delete mapping
+                local function delete_entry()
+                    local selection = action_state.get_selected_entry()
+                    if not selection or not selection.entry.id then
+                        return
+                    end
 
-					vim.defer_fn(update_preview, 20)
+                    entries_table:delete_entry(selection.entry.id)
+                    move_next()
+                    actions.close(prompt_bufnr)
+                    M.open_yank_history()
+                end
 
-					actions.select_default:replace(function()
-						clear_preview()
-						actions.close(prompt_bufnr)
-						local selection = require("telescope.actions.state").get_selected_entry()
-						if selection then
-							local content = selection.value
-							local lines = vim.split(content, "\n")
-							local cur = vim.api.nvim_win_get_cursor(0)
-							local r, c = cur[1], cur[2]
+                map("i", "<C-d>", delete_entry)
+                map("n", "D", delete_entry)
 
-							-- Record usage
-							entries_table:use(selection.entry.id)
+                vim.defer_fn(update_preview, 20)
 
-							if #lines == 1 then
-								local current_line = vim.api.nvim_get_current_line()
-								local new_line = current_line:sub(1, c) .. content .. current_line:sub(c + 1)
-								vim.api.nvim_set_current_line(new_line)
-								vim.api.nvim_win_set_cursor(0, { r, c + #content })
-							else
-								local current_line = vim.api.nvim_get_current_line()
-								local before = current_line:sub(1, c)
-								local after = current_line:sub(c + 1)
+                actions.select_default:replace(function()
+                    clear_preview()
+                    actions.close(prompt_bufnr)
+                    local selection = action_state.get_selected_entry()
+                    if selection then
+                        local content = selection.value
+                        local lines = vim.split(content, "\n")
+                        local cur = vim.api.nvim_win_get_cursor(0)
+                        local r, c = cur[1], cur[2]
 
-								lines[1] = before .. lines[1]
-								lines[#lines] = lines[#lines] .. after
+                        -- Record usage
+                        entries_table:use(selection.entry.id)
 
-								vim.api.nvim_buf_set_lines(0, r - 1, r, false, lines)
-								vim.api.nvim_win_set_cursor(0, { r + #lines - 1, #lines[#lines] - #after })
-							end
-						end
-					end)
+                        if #lines == 1 then
+                            local current_line = vim.api.nvim_get_current_line()
+                            local new_line = current_line:sub(1, c) .. content .. current_line:sub(c + 1)
+                            vim.api.nvim_set_current_line(new_line)
+                            vim.api.nvim_win_set_cursor(0, { r, c + #content })
+                        else
+                            local current_line = vim.api.nvim_get_current_line()
+                            local before = current_line:sub(1, c)
+                            local after = current_line:sub(c + 1)
 
-					-- Clear preview when the picker buffer is wiped
-					vim.api.nvim_create_autocmd("BufWipeout", {
-						buffer = prompt_bufnr,
-						once = true,
-						callback = clear_preview,
-					})
+                            lines[1] = before .. lines[1]
+                            lines[#lines] = lines[#lines] .. after
 
-					return true
-				end,
-			}
-		)
-		:find()
+                            vim.api.nvim_buf_set_lines(0, r - 1, r, false, lines)
+                            vim.api.nvim_win_set_cursor(0, { r + #lines - 1, #lines[#lines] - #after })
+                        end
+                    end
+                end)
+
+                -- Clear preview when the picker buffer is wiped
+                vim.api.nvim_create_autocmd("BufWipeout", {
+                    buffer = prompt_bufnr,
+                    once = true,
+                    callback = clear_preview,
+                })
+
+                return true
+            end,
+        }
+    ):find()
 end
 
 return M

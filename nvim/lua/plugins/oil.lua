@@ -34,73 +34,73 @@ return {
             ["x"] = "DiagnosticSignOk",
         }
 
-        local function oil_action_run_cmd_on_file()
-            local oil = require("oil")
-            local entry = oil.get_cursor_entry()
-            local cwd = oil.get_current_dir()
-
-            if not entry then
-                return
-            end
-
-            vim.ui.input({ prompt = "Enter command: " }, function(cmd)
-                if not cmd then
-                    return
-                end
-
-                local full_path = cwd .. entry.name
-
-                local function show_terminal(cmd_array)
-                    vim.cmd("botright new")
-                    vim.fn.jobstart(cmd_array, {
-                        on_exit = function(_, code)
-                            if code ~= 0 then
-                                vim.notify("Command exited with code: " .. code, vim.log.levels.WARN)
-                            end
-                        end,
-                        term = true,
-                    })
-                    vim.cmd("startinsert")
-                end
-
-                if cmd and cmd ~= "" then
-                    local command_string = cmd .. " " .. vim.fn.shellescape(full_path)
-                    show_terminal({ "sh", "-c", command_string })
-                else
-                    local stat = vim.uv.fs_stat(full_path)
-                    if stat and stat.type == "file" then
-                        if bit.band(stat.mode, tonumber("100", 8)) > 0 then
-                            show_terminal({ full_path })
-                        else
-                            vim.ui.select({ "Yes", "No" }, {
-                                prompt = "File is not executable. Make it executable and run?",
-                            }, function(choice)
-                                if choice == "Yes" then
-                                    local chmod_res = vim.system({ "chmod", "+x", full_path }):wait()
-                                    if chmod_res.code == 0 then
-                                        vim.notify("Made file executable: " .. entry.name)
-                                        show_terminal({ full_path })
-                                    else
-                                        vim.notify(
-                                            "Failed to make file executable: " .. entry.name,
-                                            vim.log.levels.ERROR
-                                        )
-                                    end
-                                else
-                                    vim.notify("Aborted execution of: " .. entry.name)
-                                end
-                            end)
-                        end
-                    else
-                        vim.notify("Not a valid file: " .. entry.name, vim.log.levels.WARN)
-                    end
-                end
-            end)
-        end
+        -- local function oil_action_run_cmd_on_file()
+        --     local oil = require("oil")
+        --     local entry = oil.get_cursor_entry()
+        --     local cwd = oil.get_current_dir()
+        --
+        --     if not entry then
+        --         return
+        --     end
+        --
+        --     vim.ui.input({ prompt = "Enter command: " }, function(cmd)
+        --         if not cmd then
+        --             return
+        --         end
+        --
+        --         local full_path = cwd .. entry.name
+        --
+        --         local function show_terminal(cmd_array)
+        --             vim.cmd("botright new")
+        --             vim.fn.jobstart(cmd_array, {
+        --                 on_exit = function(_, code)
+        --                     if code ~= 0 then
+        --                         vim.notify("Command exited with code: " .. code, vim.log.levels.WARN)
+        --                     end
+        --                 end,
+        --                 term = true,
+        --             })
+        --             vim.cmd("startinsert")
+        --         end
+        --
+        --         if cmd and cmd ~= "" then
+        --             local command_string = cmd .. " " .. vim.fn.shellescape(full_path)
+        --             show_terminal({ "sh", "-c", command_string })
+        --         else
+        --             local stat = vim.uv.fs_stat(full_path)
+        --             if stat and stat.type == "file" then
+        --                 if bit.band(stat.mode, tonumber("100", 8)) > 0 then
+        --                     show_terminal({ full_path })
+        --                 else
+        --                     vim.ui.select({ "Yes", "No" }, {
+        --                         prompt = "File is not executable. Make it executable and run?",
+        --                     }, function(choice)
+        --                         if choice == "Yes" then
+        --                             local chmod_res = vim.system({ "chmod", "+x", full_path }):wait()
+        --                             if chmod_res.code == 0 then
+        --                                 vim.notify("Made file executable: " .. entry.name)
+        --                                 show_terminal({ full_path })
+        --                             else
+        --                                 vim.notify(
+        --                                     "Failed to make file executable: " .. entry.name,
+        --                                     vim.log.levels.ERROR
+        --                                 )
+        --                             end
+        --                         else
+        --                             vim.notify("Aborted execution of: " .. entry.name)
+        --                         end
+        --                     end)
+        --                 end
+        --             else
+        --                 vim.notify("Not a valid file: " .. entry.name, vim.log.levels.WARN)
+        --             end
+        --         end
+        --     end)
+        -- end
 
         require("oil").setup({
             lsp_file_methods = {
-                enabled = vim.version().minor >= 12 and false or true,
+                enabled = vim.version().minor ~= 12
             },
             -- columns = {
             -- 	{
@@ -135,7 +135,6 @@ return {
                 ["<Left>"] = { "actions.parent", mode = "n" },
                 ["<Right>"] = { "actions.select", mode = "n" },
                 ["H"] = "actions.toggle_hidden",
-                ["<F1>"] = oil_action_run_cmd_on_file,
             },
             confirmation = {
                 border = "single",
