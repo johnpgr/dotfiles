@@ -5,13 +5,13 @@ return {
 	"nvim-telescope/telescope.nvim",
 	cmd = "Telescope",
 	keys = {
-		{
-			"<leader>sc",
-			function()
-				require("telescope.builtin").colorscheme()
-			end,
-			desc = "Search colorscheme",
-		},
+		-- {
+		-- 	"<leader>sc",
+		-- 	function()
+		-- 		require("telescope.builtin").colorscheme()
+		-- 	end,
+		-- 	desc = "Search colorscheme",
+		-- },
 		{
 			"<leader>sh",
 			function()
@@ -334,36 +334,36 @@ return {
 				highlights = {
 					preview = true,
 				},
-				colorscheme = {
-					previewer = false,
-					enable_preview = true,
-					mappings = {
-						n = {
-							["<CR>"] = function(bufnr)
-								local actions = require("telescope.actions")
-								local action_state = require("telescope.actions.state")
-								local selection = action_state.get_selected_entry()
-								local colors_selected = selection.value
-
-								require("colorscheme").persist_colorscheme(colors_selected)
-								actions.close(bufnr)
-								vim.cmd("colorscheme " .. colors_selected)
-							end,
-						},
-						i = {
-							["<CR>"] = function(bufnr)
-								local actions = require("telescope.actions")
-								local action_state = require("telescope.actions.state")
-								local selection = action_state.get_selected_entry()
-								local colors_selected = selection.value
-
-								require("colorscheme").persist_colorscheme(colors_selected)
-								actions.close(bufnr)
-								vim.cmd("colorscheme " .. colors_selected)
-							end,
-						},
-					},
-				},
+				-- colorscheme = {
+				-- 	previewer = false,
+				-- 	enable_preview = true,
+				-- 	mappings = {
+				-- 		n = {
+				-- 			["<CR>"] = function(bufnr)
+				-- 				local actions = require("telescope.actions")
+				-- 				local action_state = require("telescope.actions.state")
+				-- 				local selection = action_state.get_selected_entry()
+				-- 				local colors_selected = selection.value
+				--
+				-- 				require("colorscheme").persist_colorscheme(colors_selected)
+				-- 				actions.close(bufnr)
+				-- 				vim.cmd("colorscheme " .. colors_selected)
+				-- 			end,
+				-- 		},
+				-- 		i = {
+				-- 			["<CR>"] = function(bufnr)
+				-- 				local actions = require("telescope.actions")
+				-- 				local action_state = require("telescope.actions.state")
+				-- 				local selection = action_state.get_selected_entry()
+				-- 				local colors_selected = selection.value
+				--
+				-- 				require("colorscheme").persist_colorscheme(colors_selected)
+				-- 				actions.close(bufnr)
+				-- 				vim.cmd("colorscheme " .. colors_selected)
+				-- 			end,
+				-- 		},
+				-- 	},
+				-- },
 			},
 		})
 

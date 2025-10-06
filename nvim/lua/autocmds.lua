@@ -52,10 +52,10 @@ vim.api.nvim_create_autocmd("LspAttach", {
 	end,
 })
 
-vim.api.nvim_create_autocmd("VimEnter", {
-	callback = require("colorscheme").load_persisted_colorscheme,
-	once = true,
-})
+-- vim.api.nvim_create_autocmd("VimEnter", {
+-- 	callback = require("colorscheme").load_persisted_colorscheme,
+-- 	once = true,
+-- })
 
 local highlight_group = vim.api.nvim_create_augroup("YankHighlight", { clear = true })
 vim.api.nvim_create_autocmd("TextYankPost", {

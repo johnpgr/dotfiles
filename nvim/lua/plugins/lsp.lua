@@ -13,8 +13,8 @@ end
 vim.diagnostic.config({
 	severity_sort = true,
 	float = { border = "single", source = "if_many" },
-	underline = { severity = vim.diagnostic.severity.ERROR },
-    virtual_lines = true,
+	-- underline = { severity = vim.diagnostic.severity.ERROR },
+    -- virtual_lines = true,
 	-- virtual_text = {
 	-- 	source = "if_many",
 	-- 	spacing = 2,

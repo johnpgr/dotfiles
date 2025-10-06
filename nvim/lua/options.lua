@@ -1,4 +1,4 @@
-vim.g.treesitter_enabled = false
+vim.g.treesitter_enabled = true
 vim.g.icons_enabled = true
 vim.g.c_syntax_for_h = false
 vim.g.gruvbox_contrast_dark = "hard"

@@ -84,7 +84,7 @@ return {
 		},
 		config = function()
 			require("neogit").setup({
-				graph_style = is_kitty and "kitty" or "ascii",
+				graph_style = require "utils".is_kitty and "kitty" or "ascii",
 				commit_editor = {
 					kind = "vsplit",
 					show_staged_diff = false,
