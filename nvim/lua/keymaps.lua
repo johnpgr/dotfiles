@@ -1,3 +1,4 @@
+vim.keymap.set("n", "<leader>w", "<cmd>update<cr>", { desc = "Write" })
 vim.keymap.set("n", "]t", "<cmd>tabnext<cr>", { desc = "Tab next" })
 vim.keymap.set("n", "[t", "<cmd>tabprev<cr>", { desc = "Tab prev" })
 vim.keymap.set("n", "<C-q>", "<cmd>quit<cr>", { desc = "Quit" })
@@ -120,6 +121,7 @@ vim.keymap.set("n", "gd", function()
 		vim.lsp.buf.definition()
 	end
 end, { desc = "Goto definition" })
+
 vim.keymap.set("n", "<leader>lr", vim.lsp.buf.rename, { desc = "Rename symbol" })
 vim.keymap.set("n", "<leader>lf", function()
 	require("conform").format()
@@ -127,7 +129,6 @@ end, { desc = "Format buffer" })
 vim.keymap.set("n", "<leader>la", vim.lsp.buf.code_action, { desc = "Code action" })
 vim.keymap.set("i", "<C-s>", vim.lsp.buf.signature_help, { desc = "Signature help" })
 vim.keymap.set("n", "<leader>ld", vim.diagnostic.open_float, { desc = "Diagnostic" })
-vim.keymap.set("n", "<leader>ll", vim.diagnostic.setqflist, { desc = "Diagnostic List" })
 
 -- Quickfix keymaps
 vim.keymap.set("n", "]q", function()

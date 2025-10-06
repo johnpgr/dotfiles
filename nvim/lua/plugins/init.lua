@@ -36,15 +36,6 @@ return {
         priority = 1000,
     },
     {
-        "vague2k/vague.nvim",
-        config = function()
-            require("vague").setup({
-                bold = false,
-                italic = false,
-            })
-        end
-    },
-    {
         "rose-pine/neovim",
         name = "rosepine",
         lazy = false,
@@ -63,6 +54,7 @@ return {
         "navarasu/onedark.nvim",
         config = function()
             require('onedark').setup {
+                style = 'warm', -- Default theme style. Choose between 'dark', 'darker', 'cool', 'deep', 'warm', 'warmer' and 'light'
                 code_style = {
                     comments = 'none',
                     keywords = 'none',
@@ -71,6 +63,22 @@ return {
                     variables = 'none'
                 },
             }
+        end
+    },
+    { 'datsfilipe/vesper.nvim',
+        config = function ()
+            require('vesper').setup({
+                transparent = false, -- Boolean: Sets the background to transparent
+                italics = {
+                    comments = false, -- Boolean: Italicizes comments
+                    keywords = false, -- Boolean: Italicizes keywords
+                    functions = false, -- Boolean: Italicizes functions
+                    strings = false, -- Boolean: Italicizes strings
+                    variables = false, -- Boolean: Italicizes variables
+                },
+                overrides = {}, -- A dictionary of group names, can be a function returning a dictionary or a table.
+                palette_overrides = {}
+            })
         end
     },
     -- Session management
@@ -108,7 +116,7 @@ return {
         config = function()
             require("ibl").setup({
                 indent = { char = "│" },
-                enabled = false,
+                enabled = true,
                 scope = { enabled = false },
             })
         end,

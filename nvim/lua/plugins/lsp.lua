@@ -14,13 +14,14 @@ vim.diagnostic.config({
 	severity_sort = true,
 	float = { border = "single", source = "if_many" },
 	underline = { severity = vim.diagnostic.severity.ERROR },
-	virtual_text = {
-		source = "if_many",
-		spacing = 2,
-		format = function(diagnostic)
-			return diagnostic.message
-		end,
-	},
+    virtual_lines = true,
+	-- virtual_text = {
+	-- 	source = "if_many",
+	-- 	spacing = 2,
+	-- 	format = function(diagnostic)
+	-- 		return diagnostic.message
+	-- 	end,
+	-- },
 })
 
 -- LSP plugins

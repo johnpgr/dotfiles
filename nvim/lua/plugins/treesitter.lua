@@ -44,15 +44,15 @@ return {
 			},
 		})
 
-		local ts_start = vim.treesitter.start
-		if not vim.g.treesitter_enabled then
-			---@diagnostic disable-next-line: duplicate-set-field
-			vim.treesitter.start = function(bufnr, lang)
-				if lang ~= "markdown" then
-					return
-				end
-				return ts_start(bufnr, lang)
-			end
-		end
+		-- local ts_start = vim.treesitter.start
+		-- if not vim.g.treesitter_enabled then
+		-- 	---@diagnostic disable-next-line: duplicate-set-field
+		-- 	vim.treesitter.start = function(bufnr, lang)
+		-- 		if lang ~= "markdown" then
+		-- 			return
+		-- 		end
+		-- 		return ts_start(bufnr, lang)
+		-- 	end
+		-- end
 	end,
 }

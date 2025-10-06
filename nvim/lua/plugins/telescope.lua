@@ -125,6 +125,13 @@ return {
 		},
 		{ "<leader>sb", utils.fuzzy_find_current_buffer, desc = "Search buffer" },
 		{
+			"<leader>ll",
+			function()
+				require("telescope.builtin").diagnostics({ path_display = { "filename_first" } })
+			end,
+			desc = "Diagnostic List",
+		},
+		{
 			"<leader>sB",
 			function()
 				require("telescope.builtin").live_grep({ grep_open_files = true })
@@ -167,6 +174,13 @@ return {
 			desc = "Search spelling suggestion",
 		},
 		{
+			"<leader>st",
+			function()
+				require("telescope.builtin").builtin()
+			end,
+			desc = "Telescope builtin pickers",
+		},
+		{
 			"<leader>glg",
 			function()
 				require("telescope").extensions.gh.gist(
@@ -192,6 +206,27 @@ return {
 				)
 			end,
 			desc = "List pull requests",
+		},
+		{
+			"grr",
+			function()
+				require("telescope.builtin").lsp_references()
+			end,
+			desc = "LSP References",
+		},
+		{
+			"grt",
+			function()
+				require("telescope.builtin").lsp_type_definitions()
+			end,
+			desc = "LSP References",
+		},
+		{
+			"grt",
+			function()
+				require("telescope.builtin").lsp_implementations()
+			end,
+			desc = "LSP References",
 		},
 	},
 	dependencies = {

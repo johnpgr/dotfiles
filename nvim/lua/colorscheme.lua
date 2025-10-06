@@ -38,6 +38,7 @@ function M.load_persisted_colorscheme()
 		pcall(vim.cmd.colorscheme, recent[1].name)
 		vim.cmd([[
             hi! link MsgSeparator WinSeparator
+            hi! link PmenuExtra Pmenu
             hi Operator guibg=none
             hi MatchParen guifg=bg
             hi WinBar guibg=none
