@@ -75,6 +75,11 @@ return {
             keymap = {
                 preset = "default",
                 ["<C-space>"] = { toggle_menu },
+                ["<CR>"] = {
+                    emacs_tab,
+                    "snippet_forward",
+                    "fallback",
+                },
                 ["<Tab>"] = {
                     emacs_tab,
                     "snippet_forward",
@@ -102,7 +107,7 @@ return {
                 },
             },
             completion = {
-                list = { selection = { preselect = false, auto_insert = false } },
+                list = { selection = { preselect = true, auto_insert = false } },
                 menu = {
                     auto_show = true,
                     max_height = 20,

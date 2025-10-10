@@ -3,8 +3,8 @@ return {
 	"stevearc/overseer.nvim",
 	cmd = { "OverseerRun", "OverseerToggle", "OverseerQuickAction" },
 	keys = {
-		{ "<M-b>", "<cmd>OverseerRun<cr>", desc = "Run task" },
-		{ "<M-B>", "<cmd>OverseerToggle bottom<cr>", desc = "Task list (bottom)" },
+		{ "<leader>bt", "<cmd>OverseerRun<cr>", desc = "Run build task" },
+		{ "<leader>tt", "<cmd>OverseerToggle bottom<cr>", desc = "Build tasks" },
 		{ "<A-r>", "<cmd>OverseerQuickAction restart<cr>", desc = "Restart last task" },
 	},
 	config = function()

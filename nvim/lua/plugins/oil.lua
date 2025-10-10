@@ -102,25 +102,25 @@ return {
             lsp_file_methods = {
                 enabled = vim.version().minor ~= 12
             },
-            -- columns = {
-            -- 	{
-            -- 		"permissions",
-            -- 		highlight = function(permission_str)
-            -- 			local hls = {}
-            -- 			for i = 1, #permission_str do
-            -- 				local char = permission_str:sub(i, i)
-            -- 				table.insert(hls, { permission_hlgroups[char], i - 1, i })
-            -- 			end
-            -- 			return hls
-            -- 		end,
-            -- 	},
-            -- 	{ "size", highlight = "Special" },
-            -- 	{ "mtime", highlight = "Number" },
-            -- 	{
-            -- 		"icon",
-            -- 		add_padding = false,
-            -- 	},
-            -- },
+            columns = {
+            	{
+            		"permissions",
+            		highlight = function(permission_str)
+            			local hls = {}
+            			for i = 1, #permission_str do
+            				local char = permission_str:sub(i, i)
+            				table.insert(hls, { permission_hlgroups[char], i - 1, i })
+            			end
+            			return hls
+            		end,
+            	},
+            	{ "size", highlight = "Special" },
+            	{ "mtime", highlight = "Number" },
+            	{
+            		"icon",
+            		add_padding = false,
+            	},
+            },
             skip_confirm_for_simple_edits = true,
             keymaps = {
                 ["q"] = "actions.close",
