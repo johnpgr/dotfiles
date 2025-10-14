@@ -41,7 +41,7 @@ return {
             require("gitsigns").setup({
                 attach_to_untracked = true,
                 preview_config = {
-                    border = "single",
+                    border = "solid",
                 },
             })
         end,

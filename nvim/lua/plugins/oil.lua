@@ -135,7 +135,7 @@ return {
                 ["H"] = "actions.toggle_hidden",
             },
             confirmation = {
-                border = "single",
+                border = "solid",
             },
             win_options = {
                 winbar = "%!v:lua.get_oil_winbar()",
