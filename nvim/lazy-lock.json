@@ -30,7 +30,7 @@
   "quicker.nvim": { "branch": "master", "commit": "12a2291869a326424b1cbee937f4f80334433012" },
   "sonokai": { "branch": "master", "commit": "cf50520d1cddf7a4e7bccae650cdf0a6dd362a10" },
   "sqlite.lua": { "branch": "master", "commit": "50092d60feb242602d7578398c6eb53b4a8ffe7b" },
-  "telescope-file-browser.nvim": { "branch": "absolute-path-prompt-prefix", "commit": "97b7ebad2c63fc22265bde7c93f17692b2611129" },
+  "telescope-env.nvim": { "branch": "master", "commit": "00a703cc7b713cdda0a981d88fddf3ce25502af5" },
   "telescope-fzf-native.nvim": { "branch": "main", "commit": "1f08ed60cafc8f6168b72b80be2b2ea149813e55" },
   "telescope-github.nvim": { "branch": "master", "commit": "ee95c509901c3357679e9f2f9eaac3561c811736" },
   "telescope-symbols.nvim": { "branch": "master", "commit": "a6d0127a53d39b9fc2af75bd169d288166118aec" },

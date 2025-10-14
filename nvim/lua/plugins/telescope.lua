@@ -13,6 +13,13 @@ return {
             desc = "Search colorscheme",
         },
         {
+            "<leader>se",
+            function()
+                require("telescope").extensions.env.env()
+            end,
+            desc = "Search environment variables",
+        },
+        {
             "<leader>sw",
             function()
                 require("telescope.builtin").grep_string()
@@ -78,7 +85,7 @@ return {
             desc = "Search option",
         },
         {
-            "<leader>fr",
+            "<leader>fR",
             function()
                 require("telescope.builtin").oldfiles()
             end,
@@ -101,7 +108,7 @@ return {
             desc = "Find file in plugins",
         },
         {
-            "<leader>fR",
+            "<leader>fr",
             function()
                 require("telescope.builtin").oldfiles({
                     only_cwd = true,
@@ -218,15 +225,12 @@ return {
             "nvim-telescope/telescope-ui-select.nvim",
         },
         {
-            "johnpgr/telescope-file-browser.nvim",
-            branch = "absolute-path-prompt-prefix",
-        },
-        {
             "nvim-telescope/telescope-symbols.nvim",
         },
         {
             "nvim-telescope/telescope-github.nvim",
         },
+        { "LinArcX/telescope-env.nvim" },
     },
     config = function()
         require("telescope").setup({
@@ -310,5 +314,6 @@ return {
         require("telescope").load_extension("ui-select")
         require("telescope").load_extension("fzf")
         require("telescope").load_extension("gh")
+        require("telescope").load_extension("env")
     end,
 }
