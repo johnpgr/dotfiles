@@ -217,7 +217,7 @@ function M.open_yank_history()
     local sorter = sorters.values.generic_sorter({})
 
     pickers
-        .new(themes.get_dropdown(opts), {
+        .new({}, {
             finder = finder,
             sorter = sorter,
             attach_mappings = function(prompt_bufnr, map)

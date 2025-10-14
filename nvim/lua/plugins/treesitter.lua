@@ -49,10 +49,16 @@ return {
         if not vim.g.treesitter_enabled then
             ---@diagnostic disable-next-line: duplicate-set-field
             vim.treesitter.start = function(bufnr, lang)
-                if lang ~= "markdown" then
-                    return
+                bufnr = bufnr or vim.api.nvim_get_current_buf()
+                local bufname = vim.api.nvim_buf_get_name(bufnr)
+
+                if bufname == "" then
+                    return ts_start(bufnr, lang)
                 end
-                return ts_start(bufnr, lang)
+
+                if lang == "markdown" then
+                    return ts_start(bufnr, lang)
+                end
             end
         end
     end,

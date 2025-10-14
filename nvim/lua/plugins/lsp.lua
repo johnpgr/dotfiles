@@ -115,7 +115,7 @@ return {
 
                     vim.keymap.set("n", "<leader>lt", function()
                         require("telescope.pickers")
-                            .new(require("telescope.themes").get_dropdown({ prompt_title = "" }), {
+                            .new({}, {
                                 finder = require("telescope.finders").new_table({
                                     results = items,
                                     entry_maker = function(entry)

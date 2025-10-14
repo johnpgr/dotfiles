@@ -87,39 +87,18 @@ return {
         {
             "<leader>fn",
             function()
-                require("telescope").extensions.file_browser.file_browser({ path = vim.fn.stdpath("config") })
+                require("telescope.builtin").find_files({ path = vim.fn.stdpath("config") })
             end,
             desc = "Browse .config/nvim",
         },
         {
-            "<leader>ff",
-            function()
-                require("telescope").extensions.file_browser.file_browser()
-            end,
-            desc = "Find file",
-        },
-        {
             "<leader>fp",
             function()
-                require("telescope").extensions.file_browser.file_browser({
+                require("telescope.builtin").find_files({
                     path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy"),
                 })
             end,
             desc = "Find file in plugins",
-        },
-        {
-            "<leader>.",
-            function()
-                require("telescope").extensions.file_browser.file_browser()
-            end,
-            desc = "Find file",
-        },
-        {
-            "<leader>fw",
-            function()
-                require("telescope").extensions.file_browser.file_browser({ path = vim.fn.getcwd() })
-            end,
-            desc = "Find file in workspace",
         },
         {
             "<leader>fR",
@@ -190,27 +169,21 @@ return {
         {
             "<leader>glg",
             function()
-                require("telescope").extensions.gh.gist(
-                    require("telescope.themes").get_dropdown(require("telescope.config").values)
-                )
+                require("telescope").extensions.gh.gist()
             end,
             desc = "List gists",
         },
         {
             "<leader>gli",
             function()
-                require("telescope").extensions.gh.issues(
-                    require("telescope.themes").get_dropdown(require("telescope.config").values)
-                )
+                require("telescope").extensions.gh.issues()
             end,
             desc = "List issues",
         },
         {
             "<leader>glp",
             function()
-                require("telescope").extensions.gh.pull_request(
-                    require("telescope.themes").get_dropdown(require("telescope.config").values)
-                )
+                require("telescope").extensions.gh.pull_request()
             end,
             desc = "List pull requests",
         },
@@ -258,24 +231,15 @@ return {
     config = function()
         require("telescope").setup({
             defaults = {
-                theme = "dropdown",
-                preview = false,
-                borderchars = {
-                    { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
-                    prompt = { "─", "│", " ", "│", "┌", "┐", "│", "│" },
-                    results = { "─", "│", "─", "│", "├", "┤", "┘", "└" },
-                    preview = { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
-                },
                 sorting_strategy = "ascending",
-                layout_strategy = "center",
+                layout_strategy = "horizontal",
+                borderchars = { "", "", "", "", "", "", "", "" },
                 layout_config = {
-                    preview_cutoff = 0, -- Preview should always show (unless previewer = false)
-                    width = 0.6,
-                    height = function(_, _, max_lines)
-                        return math.min(max_lines, 15)
-                    end,
+                    width = 400,
+                    height = 100,
+                    prompt_position = "top",
+                    preview_cutoff = 40,
                 },
-                results_title = "",
                 mappings = {
                     i = {
                         ["<C-q>"] = function(bufnr)
@@ -287,48 +251,17 @@ return {
                 },
             },
             extensions = {
-                file_browser = {
-                    path = "%:p:h",
-                    prompt_path = true,
-                    git_status = false,
-                    hide_parent_dir = true,
-                    grouped = true,
-                    dir_icon = vim.g.icons_enabled and "" or " ",
-                    dir_icon_hl = "Directory",
-                    prompt_title = "Find Files",
-                    results_title = "",
-                    mappings = {
-                        i = {
-                            ["<Tab>"] = function(bufnr)
-                                local fb_actions = require("telescope").extensions.file_browser.actions
-                                local entry = require("telescope.actions.state").get_selected_entry()
-                                local entry_path = entry.Path
-
-                                if entry_path:is_dir() then
-                                    fb_actions.open_dir(bufnr, nil, entry.path)
-                                else
-                                    local picker = require("telescope.actions.state").get_current_picker(bufnr)
-                                    picker:set_prompt(entry.ordinal)
-                                end
-                            end,
-                            ["<C-w>"] = function(prompt_bufnr, bypass)
-                                local fb_actions = require("telescope").extensions.file_browser.actions
-                                local current_picker =
-                                    require("telescope.actions.state").get_current_picker(prompt_bufnr)
-
-                                if current_picker:_get_prompt() == "" then
-                                    fb_actions.goto_parent_dir(prompt_bufnr, bypass)
-                                else
-                                    local prompt = current_picker:_get_prompt()
-                                    local new_prompt = prompt:match("^(.-)%s*%S*$") or ""
-                                    current_picker:set_prompt(new_prompt)
-                                end
-                            end,
-                        },
-                    },
-                },
                 fzf = {},
-                ["ui-select"] = {},
+                ["ui-select"] = {
+                    require("telescope.themes").get_ivy({
+                        previewer = false,
+                        borderchars = { " ", " ", " ", " ", " ", " ", " ", " " },
+                        layout_config = {
+                            height = 12,
+                        },
+                        results_title = false,
+                    }),
+                },
             },
             pickers = {
                 buffers = {
@@ -376,7 +309,6 @@ return {
 
         require("telescope").load_extension("ui-select")
         require("telescope").load_extension("fzf")
-        require("telescope").load_extension("file_browser")
         require("telescope").load_extension("gh")
     end,
 }

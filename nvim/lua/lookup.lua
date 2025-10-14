@@ -154,6 +154,7 @@ local function get_provider(query)
     local conf = require("telescope.config").values
     local actions = require("telescope.actions")
     local action_state = require("telescope.actions.state")
+    local themes = require("telescope.themes")
 
     local selected_provider = nil
     local co = coroutine.running()
@@ -162,31 +163,41 @@ local function get_provider(query)
     local sorted_providers = sort_providers_by_usage()
 
     pickers
-        .new({}, {
-            prompt_title = string.format("Search '%s' on:", query),
-            finder = finders.new_table({
-                results = sorted_providers,
-                entry_maker = function(entry)
-                    local display_text = entry.name
-                    return {
-                        value = entry,
-                        display = display_text,
-                        ordinal = entry.name,
-                    }
-                end,
+        .new(
+            themes.get_ivy({
+                previewer = false,
+                borderchars = { " ", " ", " ", " ", " ", " ", " ", " " },
+                layout_config = {
+                    height = 12,
+                },
+                results_title = false,
             }),
-            sorter = conf.generic_sorter({}),
-            attach_mappings = function(prompt_bufnr, map)
-                actions.select_default:replace(function()
-                    selected_provider = action_state.get_selected_entry().value
-                    actions.close(prompt_bufnr)
-                    if co then
-                        coroutine.resume(co)
-                    end
-                end)
-                return true
-            end,
-        })
+            {
+                prompt_title = string.format("Search '%s' on:", query),
+                finder = finders.new_table({
+                    results = sorted_providers,
+                    entry_maker = function(entry)
+                        local display_text = entry.name
+                        return {
+                            value = entry,
+                            display = display_text,
+                            ordinal = entry.name,
+                        }
+                    end,
+                }),
+                sorter = conf.generic_sorter({}),
+                attach_mappings = function(prompt_bufnr, map)
+                    actions.select_default:replace(function()
+                        selected_provider = action_state.get_selected_entry().value
+                        actions.close(prompt_bufnr)
+                        if co then
+                            coroutine.resume(co)
+                        end
+                    end)
+                    return true
+                end,
+            }
+        )
         :find()
 
     if co then

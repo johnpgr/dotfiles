@@ -31,8 +31,15 @@ function M.fuzzy_find_current_buffer()
 
     local action_state = require("telescope.actions.state")
     local actions = require("telescope.actions")
+    local themes = require("telescope.themes")
 
-    local opts = vim.tbl_extend("force", require("telescope.config").values, {
+    local opts = themes.get_ivy({
+        previewer = false,
+        borderchars = { " ", " ", " ", " ", " ", " ", " ", " " },
+        layout_config = {
+            height = 12,
+        },
+        results_title = false,
         fuzzy = false,
         exact = true,
         attach_mappings = function(prompt_bufnr, map)
@@ -105,6 +112,7 @@ function M.fuzzy_find_current_buffer()
             return prompt
         end,
     })
+
     require("telescope.builtin").current_buffer_fuzzy_find(opts)
 end
 
@@ -161,6 +169,7 @@ function M.live_multi_grep(opts)
     local pickers = require("telescope.pickers")
     local make_entry = require("telescope.make_entry")
     local sorters = require("telescope.sorters")
+    local config = require("telescope.config").values
 
     local finder = finders.new_async_job({
         command_generator = function(prompt)
@@ -193,6 +202,7 @@ function M.live_multi_grep(opts)
 
     pickers
         .new(opts, {
+            previewer = config.grep_previewer(opts),
             debounce = 100,
             finder = finder,
             prompt_title = "Live grep",
