@@ -26,11 +26,26 @@ return {
             end
         end
 
+
         local function emacs_tab(cmp)
             if require("blink.cmp").is_visible() then
                 return cmp.select_and_accept()
             elseif has_words_before() then
                 return cmp.insert_next()
+            end
+        end
+
+        local function smart_tab(cmp)
+            -- If blink menu is visible, handle completion
+            if require("blink.cmp").is_visible() then
+                return cmp.accept() or cmp.snippet_forward()
+            end
+
+            -- Check if copilot has a suggestion
+            local copilot_suggestion = require("copilot.suggestion")
+            if copilot_suggestion.is_visible() then
+                copilot_suggestion.accept()
+                return true
             end
         end
 
@@ -80,12 +95,8 @@ return {
                     "snippet_forward",
                     "fallback",
                 },
-                ["<Tab>"] = {
-                    "accept",
-                    "snippet_forward",
-                    "fallback",
-                },
-                ["<S-Tab>"] = { "insert_prev" },
+                ["<Tab>"] = { smart_tab, "fallback" },
+                ["<S-Tab>"] = { "insert_prev", "snippet_backward", "fallback" },
             },
             snippets = {
                 preset = "luasnip",

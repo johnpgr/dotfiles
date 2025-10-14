@@ -83,86 +83,115 @@ local function find_chat_history()
 end
 
 return {
-    "CopilotC-Nvim/CopilotChat.nvim",
-    cmd = { "CopilotChat", "CopilotChatToggle", "CopilotChatPrompts" },
-    keys = {
-        { "<leader>cc", "<cmd>CopilotChatToggle<cr>", desc = "Copilot chat" },
-        { "<leader>cp", "<cmd>CopilotChatPrompts<cr>", desc = "Copilot chat prompts" },
-        {
-            "<leader>cx",
-            function()
-                vim.g.chat_title = nil
-                require("CopilotChat").reset()
-            end,
-            desc = "Copilot chat reset",
-        },
-        { "<leader>ch", find_chat_history, desc = "Copilot chat history" },
+    {
+        "zbirenbaum/copilot.lua",
+        cmd = "Copilot",
+        event = "InsertEnter",
+        config = function()
+            require("copilot").setup({
+                suggestion = {
+                    enabled = true,
+                    auto_trigger = true,
+                    hide_during_completion = true,
+                    debounce = 75,
+                    trigger_on_accept = true,
+                    keymap = {
+                        accept = "<M-l>",
+                        accept_word = false,
+                        accept_line = false,
+                        next = "<M-]>",
+                        prev = "<M-[>",
+                        dismiss = "<C-]>",
+                    },
+                },
+            })
+        end,
     },
-    config = function()
-        require("CopilotChat").setup({
-            callback = function(res)
-                if vim.g.chat_title then
-                    vim.defer_fn(function()
-                        require("CopilotChat").save(vim.g.chat_title)
-                    end, 100)
-                    return
-                end
-
-                require("CopilotChat").ask(title_prompt:format(res.content), {
-                    headless = true,
-                    model = "gpt-4.1",
-                    callback = function(res2)
-                        vim.g.chat_title = vim.trim(res2.content)
-                        require("CopilotChat").save(vim.g.chat_title)
-                    end,
-                })
-            end,
-            model = "gpt-4.1",
-            chat_autocomplete = true,
-            mappings = {
-                complete = {
-                    insert = "",
-                },
-                reset = {
-                    normal = "",
-                    insert = "",
-                },
+    {
+        "CopilotC-Nvim/CopilotChat.nvim",
+        cmd = { "CopilotChat", "CopilotChatToggle", "CopilotChatPrompts" },
+        keys = {
+            { "<leader>cc", "<cmd>CopilotChatToggle<cr>", desc = "Copilot chat" },
+            { "<leader>cp", "<cmd>CopilotChatPrompts<cr>", desc = "Copilot chat prompts" },
+            {
+                "<leader>cx",
+                function()
+                    vim.g.chat_title = nil
+                    require("CopilotChat").reset()
+                end,
+                desc = "Copilot chat reset",
             },
-        })
+            { "<leader>ch", find_chat_history, desc = "Copilot chat history" },
+        },
 
-        local function get_working_directory_files()
-            local files = {}
-            local handle = io.popen("rg --files")
-            if handle then
-                for file in handle:lines() do
-                    local trigger = vim.fn.fnamemodify(file, ":t:r")
-                    files[#files + 1] = {
-                        trigger = trigger,
-                        path = "> #file:" .. file,
-                    }
+        config = function()
+            require("CopilotChat").setup({
+                callback = function(res)
+                    if vim.g.chat_title then
+                        vim.defer_fn(function()
+                            require("CopilotChat").save(vim.g.chat_title)
+                        end, 100)
+                        return
+                    end
+
+                    require("CopilotChat").ask(title_prompt:format(res.content), {
+                        headless = true,
+                        model = "gpt-4.1",
+                        callback = function(res2)
+                            vim.g.chat_title = vim.trim(res2.content)
+                            require("CopilotChat").save(vim.g.chat_title)
+                        end,
+                    })
+                end,
+                model = "gpt-4.1",
+                chat_autocomplete = true,
+                mappings = {
+                    complete = {
+                        insert = "",
+                    },
+                    reset = {
+                        normal = "",
+                        insert = "",
+                    },
+                },
+            })
+
+            local function get_working_directory_files()
+                local files = {}
+                local handle = io.popen("rg --files")
+                if handle then
+                    for file in handle:lines() do
+                        local trigger = vim.fn.fnamemodify(file, ":t:r")
+                        files[#files + 1] = {
+                            trigger = trigger,
+                            path = "> #file:" .. file,
+                        }
+                    end
+                    handle:close()
                 end
-                handle:close()
+                return files
             end
-            return files
-        end
 
-        vim.api.nvim_create_autocmd("WinEnter", {
-            pattern = "copilot-chat",
-            callback = function()
-                vim.opt_local.foldcolumn = "0"
-                vim.opt_local.number = false
-                vim.opt_local.cursorline = false
+            vim.api.nvim_create_autocmd("WinEnter", {
+                pattern = "copilot-chat",
+                callback = function()
+                    vim.opt_local.foldcolumn = "0"
+                    vim.opt_local.number = false
+                    vim.opt_local.cursorline = false
 
-                local snippets = {}
-                for _, file_info in ipairs(get_working_directory_files()) do
-                    snippets[#snippets + 1] =
-                        require("luasnip").snippet(file_info.trigger, { require("luasnip").text_node(file_info.path) })
-                end
+                    local snippets = {}
+                    for _, file_info in ipairs(get_working_directory_files()) do
+                        snippets[#snippets + 1] = require("luasnip").snippet(
+                            file_info.trigger,
+                            { require("luasnip").text_node(file_info.path) }
+                        )
+                    end
 
-                require("luasnip.session.snippet_collection").clear_snippets("copilot-chat")
-                require("luasnip").add_snippets("copilot-chat", snippets)
-                vim.treesitter.start()
-            end,
-        })
-    end,
+                    require("luasnip.session.snippet_collection").clear_snippets("copilot-chat")
+                    require("luasnip").add_snippets("copilot-chat", snippets)
+                    vim.treesitter.start()
+                end,
+            })
+        end,
+    },
 }
