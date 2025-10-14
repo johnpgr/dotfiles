@@ -100,27 +100,27 @@ return {
 
         require("oil").setup({
             lsp_file_methods = {
-                enabled = vim.version().minor ~= 12
+                enabled = vim.version().minor ~= 12,
             },
-            columns = {
-            	{
-            		"permissions",
-            		highlight = function(permission_str)
-            			local hls = {}
-            			for i = 1, #permission_str do
-            				local char = permission_str:sub(i, i)
-            				table.insert(hls, { permission_hlgroups[char], i - 1, i })
-            			end
-            			return hls
-            		end,
-            	},
-            	{ "size", highlight = "Special" },
-            	{ "mtime", highlight = "Number" },
-            	{
-            		"icon",
-            		add_padding = false,
-            	},
-            },
+            -- columns = {
+            -- 	{
+            -- 		"permissions",
+            -- 		highlight = function(permission_str)
+            -- 			local hls = {}
+            -- 			for i = 1, #permission_str do
+            -- 				local char = permission_str:sub(i, i)
+            -- 				table.insert(hls, { permission_hlgroups[char], i - 1, i })
+            -- 			end
+            -- 			return hls
+            -- 		end,
+            -- 	},
+            -- 	{ "size", highlight = "Special" },
+            -- 	{ "mtime", highlight = "Number" },
+            -- 	{
+            -- 		"icon",
+            -- 		add_padding = false,
+            -- 	},
+            -- },
             skip_confirm_for_simple_edits = true,
             keymaps = {
                 ["q"] = "actions.close",
@@ -130,8 +130,6 @@ return {
                 ["<F5>"] = "actions.refresh",
                 ["~"] = { "actions.cd", opts = { scope = "tab" }, mode = "n" },
                 ["-"] = { "actions.parent", mode = "n" },
-                ["h"] = { "actions.parent", mode = "n" },
-                ["l"] = { "actions.select", mode = "n" },
                 ["<Left>"] = { "actions.parent", mode = "n" },
                 ["<Right>"] = { "actions.select", mode = "n" },
                 ["H"] = "actions.toggle_hidden",
@@ -143,7 +141,6 @@ return {
                 winbar = "%!v:lua.get_oil_winbar()",
                 number = false,
                 relativenumber = false,
-                signcolumn = "yes",
             },
             use_default_keymaps = false,
             watch_for_changes = true,

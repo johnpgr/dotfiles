@@ -76,12 +76,12 @@ return {
                 preset = "default",
                 ["<C-space>"] = { toggle_menu },
                 ["<CR>"] = {
-                    emacs_tab,
+                    "accept",
                     "snippet_forward",
                     "fallback",
                 },
                 ["<Tab>"] = {
-                    emacs_tab,
+                    "accept",
                     "snippet_forward",
                     "fallback",
                 },
@@ -117,7 +117,7 @@ return {
                             source_name = {
                                 text = function(ctx)
                                     return "[" .. ctx.source_name .. "]"
-                                end
+                                end,
                             },
                             label = {
                                 text = function(ctx)
@@ -150,7 +150,6 @@ return {
             },
             fuzzy = { implementation = "prefer_rust_with_warning" },
         })
-
 
         require("colorful-menu").setup({})
     end,

@@ -146,14 +146,14 @@ function entries_table:delete_entry(id)
 end
 
 function M.open_yank_history()
-    local pickers = require "telescope.pickers"
-    local finders = require "telescope.finders"
-    local themes = require "telescope.themes"
-    local sorters = require "telescope.config"
-    local actions = require "telescope.actions"
-    local action_state = require "telescope.actions.state"
+    local pickers = require("telescope.pickers")
+    local finders = require("telescope.finders")
+    local themes = require("telescope.themes")
+    local sorters = require("telescope.config")
+    local actions = require("telescope.actions")
+    local action_state = require("telescope.actions.state")
 
-    local opts = require "utils".default_picker_config
+    local opts = require("utils").default_picker_config
 
     local origin_buf = vim.api.nvim_get_current_buf()
     local origin_win = vim.api.nvim_get_current_win()
@@ -188,8 +188,8 @@ function M.open_yank_history()
 
         local time_str = os.date("%H:%M", entry.created_at)
         local usage_info = entry.usage_count
-            and entry.usage_count > 0
-            and string.format(" (used %dx)", entry.usage_count)
+                and entry.usage_count > 0
+                and string.format(" (used %dx)", entry.usage_count)
             or ""
         local display = string.format("[%s]%s %s", time_str, usage_info, display_content)
 
@@ -216,9 +216,8 @@ function M.open_yank_history()
     })
     local sorter = sorters.values.generic_sorter({})
 
-    pickers.new(
-        themes.get_dropdown(opts),
-        {
+    pickers
+        .new(themes.get_dropdown(opts), {
             finder = finder,
             sorter = sorter,
             attach_mappings = function(prompt_bufnr, map)
@@ -335,8 +334,8 @@ function M.open_yank_history()
 
                 return true
             end,
-        }
-    ):find()
+        })
+        :find()
 end
 
 return M
