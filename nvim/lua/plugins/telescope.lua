@@ -94,7 +94,7 @@ return {
         {
             "<leader>fn",
             function()
-                require("telescope.builtin").find_files({ path = vim.fn.stdpath("config") })
+                require("telescope.builtin").find_files({ cwd = vim.fn.stdpath("config") })
             end,
             desc = "Browse .config/nvim",
         },

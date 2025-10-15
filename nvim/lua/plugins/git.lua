@@ -99,7 +99,14 @@ return {
         cmd = { "DiffviewOpen", "DiffviewFileHistory" },
         keys = {
             { "<leader>gD", ":DiffviewOpen ", desc = "Git DiffView" },
-            { "<leader>gh", "<cmd>DiffviewFileHistory<cr>", desc = "Git file history" },
+            {
+                "<leader>gh",
+                function()
+                    vim.cmd("DiffviewFileHistory " .. vim.fn.expand("%"))
+                end,
+                desc = "Git file history (Current)",
+            },
+            { "<leader>gH", "<cmd>DiffviewFileHistory<cr>", desc = "Git file history (All)" },
         },
         config = function()
             require("diffview").setup({
