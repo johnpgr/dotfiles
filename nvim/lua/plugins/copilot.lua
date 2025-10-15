@@ -19,15 +19,13 @@ local function parse_history_path(file)
     return vim.fn.fnamemodify(file, ":t:r")
 end
 
+-- TODO: Add previewer to show the chat content
 local function find_chat_history()
     require("telescope.builtin").find_files({
         prompt_title = "",
         cwd = require("CopilotChat").config.history_path,
         hidden = true,
         follow = true,
-        layout_config = {
-            height = 0.3,
-        },
         find_command = { "rg", "--files", "--sortr=modified" },
         entry_maker = function(entry)
             local full_path = require("CopilotChat").config.history_path .. "/" .. entry
