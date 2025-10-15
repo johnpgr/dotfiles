@@ -124,6 +124,20 @@ vim.keymap.set("n", "<leader>iF", function()
     vim.api.nvim_win_set_cursor(0, { pos[1], pos[2] + #filepath })
 end, { desc = "File path" })
 
+vim.keymap.set("n", "<leader>ie", function()
+    local editor_config = require("utils").editorconfig
+    local buf = vim.api.nvim_get_current_buf()
+    local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+    row = row - 1  -- 0-indexed
+    local lines = vim.split(editor_config, '\n', { plain = true })
+    vim.api.nvim_buf_set_text(buf, row, col, row, col, lines)
+    if #lines == 1 then
+        vim.api.nvim_win_set_cursor(0, { row + 1, col + #lines[1] })
+    else
+        vim.api.nvim_win_set_cursor(0, { row + #lines, #lines[#lines] })
+    end
+end, { desc = "Editorconfig" })
+
 -- LSP keymaps
 vim.keymap.set("n", "gd", function()
     if require("utils").jump_to_error_loc() then
