@@ -222,15 +222,9 @@ return {
             "nvim-telescope/telescope-fzf-native.nvim",
             build = "make",
         },
-        {
-            "nvim-telescope/telescope-ui-select.nvim",
-        },
-        {
-            "nvim-telescope/telescope-symbols.nvim",
-        },
-        {
-            "nvim-telescope/telescope-github.nvim",
-        },
+        { "nvim-telescope/telescope-ui-select.nvim" },
+        { "nvim-telescope/telescope-symbols.nvim" },
+        { "nvim-telescope/telescope-github.nvim" },
         { "LinArcX/telescope-env.nvim" },
     },
     config = function()
@@ -244,7 +238,9 @@ return {
                     height = 100,
                     prompt_position = "top",
                     preview_cutoff = 40,
-                    flip_columns = 120,
+                    flex = {
+                        flip_columns = 120,
+                    },
                 },
                 mappings = {
                     i = {

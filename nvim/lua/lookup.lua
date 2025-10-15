@@ -196,10 +196,6 @@ local function get_provider(query)
         end,
     })
 
-    if picker.layout_config.flip_columns then
-        picker.layout_config.flip_columns = nil
-    end
-
     picker:find()
 
     if co then
