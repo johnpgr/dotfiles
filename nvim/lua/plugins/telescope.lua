@@ -215,6 +215,7 @@ return {
             end,
             desc = "LSP References",
         },
+        { "<leader>cp" },
     },
     dependencies = {
         {
@@ -236,13 +237,14 @@ return {
         require("telescope").setup({
             defaults = {
                 sorting_strategy = "ascending",
-                layout_strategy = "horizontal",
+                layout_strategy = "flex",
                 borderchars = { "", "", "", "", "", "", "", "" },
                 layout_config = {
                     width = 400,
                     height = 100,
                     prompt_position = "top",
                     preview_cutoff = 40,
+                    flip_columns = 120,
                 },
                 mappings = {
                     i = {

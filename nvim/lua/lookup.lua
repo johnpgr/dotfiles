@@ -161,44 +161,46 @@ local function get_provider(query)
 
     -- Get providers sorted by usage frequency
     local sorted_providers = sort_providers_by_usage()
+    local theme = themes.get_ivy({
+        previewer = false,
+        borderchars = { " ", " ", " ", " ", " ", " ", " ", " " },
+        layout_config = {
+            height = 12,
+        },
+        results_title = false,
+    })
 
-    pickers
-        .new(
-            themes.get_ivy({
-                previewer = false,
-                borderchars = { " ", " ", " ", " ", " ", " ", " ", " " },
-                layout_config = {
-                    height = 12,
-                },
-                results_title = false,
-            }),
-            {
-                prompt_title = string.format("Search '%s' on:", query),
-                finder = finders.new_table({
-                    results = sorted_providers,
-                    entry_maker = function(entry)
-                        local display_text = entry.name
-                        return {
-                            value = entry,
-                            display = display_text,
-                            ordinal = entry.name,
-                        }
-                    end,
-                }),
-                sorter = conf.generic_sorter({}),
-                attach_mappings = function(prompt_bufnr, map)
-                    actions.select_default:replace(function()
-                        selected_provider = action_state.get_selected_entry().value
-                        actions.close(prompt_bufnr)
-                        if co then
-                            coroutine.resume(co)
-                        end
-                    end)
-                    return true
-                end,
-            }
-        )
-        :find()
+    local picker = pickers.new(theme, {
+        prompt_title = string.format("Search '%s' on:", query),
+        finder = finders.new_table({
+            results = sorted_providers,
+            entry_maker = function(entry)
+                local display_text = entry.name
+                return {
+                    value = entry,
+                    display = display_text,
+                    ordinal = entry.name,
+                }
+            end,
+        }),
+        sorter = conf.generic_sorter({}),
+        attach_mappings = function(prompt_bufnr, map)
+            actions.select_default:replace(function()
+                selected_provider = action_state.get_selected_entry().value
+                actions.close(prompt_bufnr)
+                if co then
+                    coroutine.resume(co)
+                end
+            end)
+            return true
+        end,
+    })
+
+    if picker.layout_config.flip_columns then
+        picker.layout_config.flip_columns = nil
+    end
+
+    picker:find()
 
     if co then
         coroutine.yield()
