@@ -44,7 +44,7 @@ function M.load_persisted_colorscheme()
         hi! link PmenuExtra Pmenu
         hi Operator guibg=none
         hi MatchParen guifg=bg
-        hi WinBar guibg=none
+        hi WinBar ctermbg=none guibg=none
         hi WinBarNC guibg=none
         hi NormalFloat guibg=none
         hi FloatBorder guibg=none
