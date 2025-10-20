@@ -39,6 +39,12 @@ return {
             -- vim.g.sonokai_style = "espresso"
         end,
     },
+    {
+        "RRethy/base16-nvim",
+    },
+    {
+        "xiyaowong/transparent.nvim",
+    },
     -- {
     --     "morhetz/gruvbox",
     --     lazy = false,

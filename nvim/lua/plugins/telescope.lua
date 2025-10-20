@@ -277,7 +277,6 @@ return {
                     preview = true,
                 },
                 colorscheme = {
-                    previewer = false,
                     enable_preview = true,
                     mappings = {
                         n = {
@@ -313,5 +312,7 @@ return {
         require("telescope").load_extension("fzf")
         require("telescope").load_extension("gh")
         require("telescope").load_extension("env")
+
+        vim.cmd("hi! link TelescopeBorder TelescopeNormal")
     end,
 }

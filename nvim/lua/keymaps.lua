@@ -24,18 +24,7 @@ vim.keymap.set("v", "<", "<gv", { desc = "Decrease indent" })
 vim.keymap.set("v", ">", ">gv", { desc = "Increase indent" })
 vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv", { desc = "Move line down" })
 vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv", { desc = "Move line up" })
-vim.keymap.set("n", "K", function()
-    local params = vim.lsp.util.make_position_params(0, "utf-8")
-    vim.lsp.buf_request(0, "textDocument/hover", params, function(err, result, ctx, config)
-        if result and result.contents then
-            -- Show the hover window with LSP documentation
-            vim.lsp.handlers.hover(err, result, ctx, config)
-        else
-            -- No hover info available, notify and try online search
-            require("lookup").search_online_select()
-        end
-    end)
-end, { desc = "Hover" })
+vim.keymap.set("n", "K", vim.lsp.buf.hover, { desc = "Hover" })
 vim.keymap.set("n", "<C-S-k>", function()
     require("lookup").search_online_select()
 end, { desc = "Search online (select provider)" })
