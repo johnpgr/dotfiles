@@ -13,6 +13,13 @@ return {
             desc = "Search colorscheme",
         },
         {
+            "<leader>ls",
+            function()
+                require("telescope.builtin").lsp_document_symbols()
+            end,
+            desc = "List LSP symbols",
+        },
+        {
             "<leader>se",
             function()
                 require("telescope").extensions.env.env()
@@ -102,7 +109,7 @@ return {
             "<leader>fp",
             function()
                 require("telescope.builtin").find_files({
-                    path = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy"),
+                    cwd = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy"),
                 })
             end,
             desc = "Find file in plugins",

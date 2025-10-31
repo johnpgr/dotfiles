@@ -1,4 +1,23 @@
 -- General plugins
+
+local function should_enable_ibl()
+    local tabstop = vim.bo.tabstop
+    local shiftwidth = vim.bo.shiftwidth
+    local expandtab = vim.bo.expandtab
+
+    -- Case 1: Using spaces with 2-space indentation
+    if expandtab and shiftwidth == 2 then
+        return true
+    end
+
+    -- Case 2: Using tabs displayed as 2 spaces
+    if not expandtab and tabstop == 2 then
+        return true
+    end
+
+    return false
+end
+
 return {
     -- Dependency plugins (loaded by other plugins)
     {
@@ -39,12 +58,13 @@ return {
             -- vim.g.sonokai_style = "espresso"
         end,
     },
-    {
-        "RRethy/base16-nvim",
-    },
+    -- {
+    --     "RRethy/base16-nvim",
+    -- },
     {
         "xiyaowong/transparent.nvim",
     },
+    { "sainnhe/gruvbox-material" },
     -- {
     --     "morhetz/gruvbox",
     --     lazy = false,
@@ -106,16 +126,6 @@ return {
             { "<leader>tu", "<cmd>UndotreeToggle<cr>", desc = "Undotree" },
         },
     },
-
-    {
-        "hedyhli/outline.nvim",
-        lazy = true,
-        cmd = { "Outline", "OutlineOpen" },
-        keys = {
-            { "<leader>to", "<cmd>Outline<CR>", desc = "Toggle outline" },
-        },
-        opts = {},
-    },
     {
         "mg979/vim-visual-multi",
         event = "BufReadPost",
@@ -145,6 +155,7 @@ return {
     -- Indent guides
     {
         "lukas-reineke/indent-blankline.nvim",
+        event = "BufReadPost",
         cmd = "IBLToggle",
         keys = { { "<leader>ti", "<cmd>IBLToggle<cr>", desc = "Indent guides" } },
         config = function()
@@ -152,6 +163,15 @@ return {
                 indent = { char = "│" },
                 enabled = false,
                 scope = { enabled = false },
+            })
+
+            vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
+                callback = function()
+                    local enable = should_enable_ibl()
+                    if enable then
+                        vim.cmd("IBLEnable")
+                    end
+                end,
             })
         end,
     },

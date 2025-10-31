@@ -73,3 +73,8 @@ vim.api.nvim_create_autocmd("TextYankPost", {
     end,
     pattern = "*",
 })
+
+vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+  pattern = { "*.podspec", "Podfile" },
+  command = "set filetype=ruby",
+})

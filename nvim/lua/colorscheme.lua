@@ -51,6 +51,8 @@ function M.load_persisted_colorscheme()
         hi TelescopeBorder guibg=none
         hi WhichKeyBorder guibg=none
         hi FoldColumn ctermbg=none guibg=none
+        hi StatusLine ctermbg=none guibg=none
+        hi StatusLineNC ctermbg=none guibg=none
     ]])
 end
 
