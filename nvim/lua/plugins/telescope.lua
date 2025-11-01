@@ -239,7 +239,12 @@ return {
             defaults = {
                 sorting_strategy = "ascending",
                 layout_strategy = "flex",
-                borderchars = { "", "", "", "", "", "", "", "" },
+                borderchars = {
+                    { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
+                    prompt = { "─", "│", " ", "│", "┌", "┐", "│", "│" },
+                    results = { "─", "│", "─", "│", "├", "┤", "┘", "└" },
+                    preview = { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
+                },
                 layout_config = {
                     width = 400,
                     height = 100,
@@ -264,7 +269,12 @@ return {
                 ["ui-select"] = {
                     require("telescope.themes").get_ivy({
                         previewer = false,
-                        borderchars = { " ", " ", " ", " ", " ", " ", " ", " " },
+                        borderchars = {
+                            { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
+                            prompt = { "─", "│", " ", "│", "┌", "┐", "│", "│" },
+                            results = { "─", "│", "─", "│", "├", "┤", "┘", "└" },
+                            preview = { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
+                        },
                         layout_config = {
                             height = 12,
                         },

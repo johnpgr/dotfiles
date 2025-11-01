@@ -18,7 +18,7 @@ vim.opt.rtp:prepend(lazypath)
 -- Load lazy.nvim with plugins
 require("lazy").setup("plugins", {
     ui = {
-        border = "solid",
+        border = "single",
     },
     performance = {
         rtp = {

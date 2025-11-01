@@ -163,7 +163,12 @@ local function get_provider(query)
     local sorted_providers = sort_providers_by_usage()
     local theme = themes.get_ivy({
         previewer = false,
-        borderchars = { " ", " ", " ", " ", " ", " ", " ", " " },
+        borderchars = {
+            { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
+            prompt = { "─", "│", " ", "│", "┌", "┐", "│", "│" },
+            results = { "─", "│", "─", "│", "├", "┤", "┘", "└" },
+            preview = { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
+        },
         layout_config = {
             height = 12,
         },

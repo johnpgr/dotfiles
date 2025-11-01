@@ -35,7 +35,12 @@ function M.fuzzy_find_current_buffer()
 
     local opts = themes.get_ivy({
         previewer = false,
-        borderchars = { " ", " ", " ", " ", " ", " ", " ", " " },
+        borderchars = {
+            { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
+            prompt = { "─", "│", " ", "│", "┌", "┐", "│", "│" },
+            results = { "─", "│", "─", "│", "├", "┤", "┘", "└" },
+            preview = { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
+        },
         layout_config = {
             height = 12,
         },
@@ -247,6 +252,5 @@ indent_size = 2
 indent_style = space
 indent_size = 2
 ]]
-
 
 return M

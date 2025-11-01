@@ -4,7 +4,7 @@ local lsp_floating_preview_original = vim.lsp.util.open_floating_preview
 ---@diagnostic disable-next-line: duplicate-set-field
 function vim.lsp.util.open_floating_preview(contents, syntax, opts, ...)
     opts = opts or {}
-    opts.border = "solid"
+    opts.border = "single"
     opts.max_width = opts.max_width or 100
     return lsp_floating_preview_original(contents, syntax, opts, ...)
 end
@@ -12,7 +12,7 @@ end
 -- Diagnostic config
 vim.diagnostic.config({
     severity_sort = true,
-    float = { border = "solid", source = "if_many" },
+    float = { border = "single", source = "if_many" },
     -- underline = { severity = vim.diagnostic.severity.ERROR },
     -- virtual_lines = true,
     -- virtual_text = {

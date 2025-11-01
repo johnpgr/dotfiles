@@ -7,7 +7,7 @@ return {
         wk.setup({
             icons = { mappings = false },
             win = {
-                border = "solid",
+                border = "single",
                 height = { min = 4, max = 10 },
             },
         })
