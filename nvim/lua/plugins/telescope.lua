@@ -239,12 +239,8 @@ return {
             defaults = {
                 sorting_strategy = "ascending",
                 layout_strategy = "flex",
-                borderchars = {
-                    { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
-                    prompt = { "─", "│", " ", "│", "┌", "┐", "│", "│" },
-                    results = { "─", "│", "─", "│", "├", "┤", "┘", "└" },
-                    preview = { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
-                },
+                borderchars = -- { "─", "│", "─", "│", "╭", "╮", "╯", "╰" },
+                              { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
                 layout_config = {
                     width = 400,
                     height = 100,
