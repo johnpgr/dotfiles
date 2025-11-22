@@ -49,22 +49,22 @@ return {
         },
     },
     -- Colorschemes
-    {
-        "sainnhe/sonokai",
-        config = function()
-            vim.g.sonokai_transparent_background = 1
-            vim.g.sonokai_enable_italic = 0
-            vim.g.sonokai_disable_italic_comment = 1
-            -- vim.g.sonokai_style = "espresso"
-        end,
-    },
+    -- {
+    --     "sainnhe/sonokai",
+    --     config = function()
+    --         vim.g.sonokai_transparent_background = 1
+    --         vim.g.sonokai_enable_italic = 0
+    --         vim.g.sonokai_disable_italic_comment = 1
+    --         -- vim.g.sonokai_style = "espresso"
+    --     end,
+    -- },
     -- {
     --     "RRethy/base16-nvim",
     -- },
-    {
-        "xiyaowong/transparent.nvim",
-    },
-    { "sainnhe/gruvbox-material" },
+    -- {
+    --     "xiyaowong/transparent.nvim",
+    -- },
+    -- { "sainnhe/gruvbox-material" },
     -- {
     --     "morhetz/gruvbox",
     --     lazy = false,

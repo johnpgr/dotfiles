@@ -19,6 +19,54 @@ local function parse_history_path(file)
     return vim.fn.fnamemodify(file, ":t:r")
 end
 
+local function generate_commit_message()
+    vim.notify("Generating commit message...", vim.log.levels.INFO)
+    require("CopilotChat").ask("/Commit", {
+        headless = true,
+        callback = function(res)
+            local content = vim.trim(res.content)
+            -- Extract from ```gitcommit ... ``` block
+            local message = content:match("```gitcommit%s*\n(.-)```") or content
+            local lines = vim.split(vim.trim(message), "\n")
+            local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+            vim.api.nvim_buf_set_text(0, row - 1, col, row - 1, col, lines)
+            vim.notify("Commit message generated", vim.log.levels.INFO)
+        end,
+    })
+end
+
+local function quick_chat()
+    local mode = vim.fn.mode()
+    local buffer_content = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
+    local context = "Buffer:\n```\n" .. buffer_content .. "\n```"
+
+    -- Add visual selection if in visual mode
+    if mode:match("[vV\22]") then
+        vim.cmd('normal! "vy')
+        local selection = vim.fn.getreg("v")
+        context = context .. "\n\nSelection:\n```\n" .. selection .. "\n```"
+    end
+
+    vim.ui.input({ prompt = "Quick chat: " }, function(input)
+        if not input or input == "" then
+            return
+        end
+
+        local full_prompt = input .. "\n\n" .. context
+
+        require("CopilotChat").ask(full_prompt, {
+            window = {
+                layout = "float",
+                relative = "cursor",
+                width = 0.6,
+                height = 0.6,
+                row = 1,
+                col = 0,
+            },
+        })
+    end)
+end
+
 -- TODO: Add previewer to show the chat content
 local function find_chat_history()
     require("telescope.builtin").find_files({
@@ -120,6 +168,8 @@ return {
                 desc = "Copilot chat reset",
             },
             { "<leader>ch", find_chat_history, desc = "Copilot chat history" },
+            { "<leader>cm", generate_commit_message, desc = "Copilot commit message" },
+            { "<leader>cq", quick_chat, mode = { "n", "v" }, desc = "Quick chat" },
         },
 
         config = function()
@@ -194,3 +244,4 @@ return {
         end,
     },
 }
+
