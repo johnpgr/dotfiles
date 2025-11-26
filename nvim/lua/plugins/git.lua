@@ -7,22 +7,24 @@ return {
             {
                 "]h",
                 function()
-                    if vim.wo.diff then
-                        vim.cmd.normal({ "]c", bang = true })
-                    else
+                    -- if vim.wo.diff then
+                    --     vim.cmd.normal({ "]c", bang = true })
+                    -- else
                         vim.cmd("Gitsigns next_hunk")
-                    end
+                        vim.cmd("Gitsigns preview_hunk")
+                    -- end
                 end,
                 { desc = "Next hunk" },
             },
             {
                 "[h",
                 function()
-                    if vim.wo.diff then
-                        vim.cmd.normal({ "[c", bang = true })
-                    else
+                    -- if vim.wo.diff then
+                    --     vim.cmd.normal({ "[c", bang = true })
+                    -- else
                         vim.cmd("Gitsigns prev_hunk")
-                    end
+                        vim.cmd("Gitsigns preview_hunk")
+                    -- end
                 end,
                 { desc = "Previous hunk" },
             },

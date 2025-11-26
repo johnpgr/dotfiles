@@ -38,34 +38,69 @@ end
 
 local function quick_chat()
     local mode = vim.fn.mode()
-    local buffer_content = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
-    local context = "Buffer:\n```\n" .. buffer_content .. "\n```"
+    local sticky = { "#buffer" }
 
     -- Add visual selection if in visual mode
     if mode:match("[vV\22]") then
-        vim.cmd('normal! "vy')
-        local selection = vim.fn.getreg("v")
-        context = context .. "\n\nSelection:\n```\n" .. selection .. "\n```"
+        table.insert(sticky, "#selection")
     end
 
-    vim.ui.input({ prompt = "Quick chat: " }, function(input)
-        if not input or input == "" then
-            return
-        end
+    -- Get available models from CopilotChat client
+    local async = require("plenary.async")
+    async.run(function()
+        local client = require("CopilotChat.client")
+        local models = client:models()
+        local result = vim.tbl_keys(models)
 
-        local full_prompt = input .. "\n\n" .. context
+        table.sort(result, function(a, b)
+            a = models[a]
+            b = models[b]
+            if a.provider ~= b.provider then
+                return a.provider < b.provider
+            end
+            return a.id < b.id
+        end)
 
-        require("CopilotChat").ask(full_prompt, {
-            window = {
-                layout = "float",
-                relative = "cursor",
-                width = 0.6,
-                height = 0.6,
-                row = 1,
-                col = 0,
-            },
-        })
-    end)
+        local choices = vim.tbl_map(function(id)
+            local model = models[id]
+            return {
+                id = model.id,
+                name = model.name,
+                provider = model.provider,
+            }
+        end, result)
+
+        require("plenary.async.util").scheduler()
+        vim.ui.select(choices, {
+            prompt = "Select model:",
+            format_item = function(item)
+                return item.name .. " [" .. item.provider .. "]"
+            end,
+        }, function(selected_model)
+            if not selected_model then
+                return
+            end
+
+            vim.ui.input({ prompt = "Quick chat: " }, function(input)
+                if not input or input == "" then
+                    return
+                end
+
+                require("CopilotChat").ask(input, {
+                    model = selected_model.id,
+                    sticky = sticky,
+                    window = {
+                        layout = "float",
+                        relative = "cursor",
+                        width = 0.6,
+                        height = 0.6,
+                        row = 1,
+                        col = 0,
+                    },
+                })
+            end)
+        end)
+    end, function() end)
 end
 
 -- TODO: Add previewer to show the chat content
@@ -245,4 +280,3 @@ return {
         end,
     },
 }
-
