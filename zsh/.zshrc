@@ -8,7 +8,7 @@ export ZSH="$HOME/.oh-my-zsh"
 # load a random theme each time Oh My Zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="crcandy"
+ZSH_THEME="afowler" # set by `omz`
 
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
@@ -70,7 +70,7 @@ ZSH_THEME="crcandy"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git zoxide tmux sdk)
+plugins=(git zoxide tmux sdk mise)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -130,7 +130,7 @@ export ARCHFLAGS="-arch $(uname -m)"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias ls='ls -C -t -U -A -p --color=auto'
 alias grep='grep --color=auto'
-alias vi='nvim'
+# alias vi='nvim'
 alias clang='zig cc'
 alias clang++='zig c++'
 
