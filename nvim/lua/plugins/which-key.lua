@@ -22,6 +22,7 @@ return {
             { "<leader>t", group = "toggle" },
             { "<leader>i", group = "insert" },
             { "<leader>d", group = "db" },
+            { "<leader>a", group = "ai" },
         })
     end,
 }

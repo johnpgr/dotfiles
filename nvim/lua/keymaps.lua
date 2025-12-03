@@ -176,3 +176,13 @@ vim.keymap.set("n", "[q", function()
     end
     vim.cmd("copen")
 end, { desc = "Previous quickfix item" })
+
+vim.keymap.set('n', '<leader>af', require('copilot-scripts').hole_fill, { desc = 'AI: Fill hole' })
+vim.keymap.set('n', '<leader>ac', function() require('copilot-scripts').chat('c') end, { desc = 'AI: Chat (Claude)' })
+vim.keymap.set('n', '<leader>ao', function() require('copilot-scripts').chat('o') end, { desc = 'AI: Chat (Claude Opus)' })
+vim.keymap.set('n', '<leader>ag', function() require('copilot-scripts').chat('g') end, { desc = 'AI: Chat (GPT)' })
+vim.keymap.set('n', '<leader>ag', function() require('copilot-scripts').chat('i') end, { desc = 'AI: Chat (Gemini)' })
+vim.keymap.set('n', '<leader>arc', function() require('copilot-scripts').refactor('c') end, { desc = 'Refactor (Claude)' })
+vim.keymap.set('n', '<leader>arg', function() require('copilot-scripts').refactor('g') end, { desc = 'Refactor (GPT)' })
+vim.keymap.set('n', '<leader>aro', function() require('copilot-scripts').refactor('o') end, { desc = 'Refactor (Claude Opus)' })
+vim.keymap.set('n', '<leader>ari', function() require('copilot-scripts').refactor('i') end, { desc = 'Refactor (Gemini)' })

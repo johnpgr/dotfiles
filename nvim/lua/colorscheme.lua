@@ -39,19 +39,20 @@ function M.load_persisted_colorscheme()
     end
 
     vim.cmd([[
-        hi VertSplit ctermfg=250
         hi! link MsgSeparator WinSeparator
         hi! link PmenuExtra Pmenu
         hi Operator guibg=none
         hi MatchParen guifg=bg
         hi WinBar ctermbg=none guibg=none
         hi WinBarNC guibg=none
+        " hi Normal guibg=none
+        hi StatusLine guibg=none
+        hi StatusLineNC guibg=none
         hi NormalFloat guibg=none
         hi FloatBorder guibg=none
         hi TelescopeBorder guibg=none
         hi WhichKeyBorder guibg=none
         hi FoldColumn ctermbg=none guibg=none
-        " hi Normal guibg=none
     ]])
 end
 

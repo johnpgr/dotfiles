@@ -116,6 +116,11 @@ return {
     --         })
     --     end
     -- },
+    {
+        "zenbones-theme/zenbones.nvim",
+        dependencies = "rktjmp/lush.nvim",
+        lazy = false,
+    },
     -- Session management
     { "farmergreg/vim-lastplace", event = "BufReadPre" },
     -- UI enhancements

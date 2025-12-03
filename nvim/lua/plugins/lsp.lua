@@ -33,7 +33,6 @@ return {
             vim.lsp.enable({
                 "lua_ls",
                 "vtsls",
-                "jdtls",
                 "clangd",
                 "html",
                 "cssls",
@@ -69,6 +68,10 @@ return {
                 },
             })
         end,
+    },
+    {
+        ft = { "java" },
+        "mfussenegger/nvim-jdtls",
     },
     {
         "yioneko/nvim-vtsls",

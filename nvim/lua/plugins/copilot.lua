@@ -22,7 +22,7 @@ end
 local function generate_commit_message()
     vim.notify("Generating commit message...", vim.log.levels.INFO)
     require("CopilotChat").ask("/Commit", {
-        model = "claude-haiku-4.5",
+        model = "gpt-4.1",
         headless = true,
         callback = function(res)
             local content = vim.trim(res.content)
