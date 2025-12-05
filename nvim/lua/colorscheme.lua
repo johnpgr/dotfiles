@@ -38,14 +38,29 @@ function M.load_persisted_colorscheme()
         pcall(vim.cmd.colorscheme, recent[1].name)
     end
 
+    -- Check system state file (managed by monitor_theme.py)
+    local state_file = os.getenv("HOME") .. "/.dotfiles/.theme_state"
+    local f = io.open(state_file, "r")
+    if f then
+        local mode = f:read("*all")
+        f:close()
+        if mode then
+            mode = string.gsub(mode, "\n", "")
+            mode = string.gsub(mode, "%s+", "") -- trim whitespace
+            if mode == "dark" or mode == "light" then
+                vim.o.background = mode
+            end
+        end
+    end
+
     vim.cmd([[
         hi! link MsgSeparator WinSeparator
         hi! link PmenuExtra Pmenu
         hi Operator guibg=none
-        hi MatchParen guifg=bg
+        " hi MatchParen guifg=bg
         hi WinBar ctermbg=none guibg=none
         hi WinBarNC guibg=none
-        " hi Normal guibg=none
+        hi Normal guibg=none
         hi StatusLine guibg=none
         hi StatusLineNC guibg=none
         hi NormalFloat guibg=none
@@ -56,4 +71,13 @@ function M.load_persisted_colorscheme()
     ]])
 end
 
+function M.set_theme(mode)
+    vim.schedule(function()
+        if mode == "dark" or mode == "light" then
+            vim.o.background = mode
+        end
+    end)
+end
+
 return M
+

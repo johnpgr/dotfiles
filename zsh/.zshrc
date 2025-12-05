@@ -70,7 +70,7 @@ ZSH_THEME="afowler" # set by `omz`
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git zoxide tmux sdk mise)
+plugins=(git zoxide tmux)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -130,7 +130,7 @@ export ARCHFLAGS="-arch $(uname -m)"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias ls='ls -C -t -U -A -p --color=auto'
 alias grep='grep --color=auto'
-# alias vi='nvim'
+alias vi='nvim'
 alias clang='zig cc'
 alias clang++='zig c++'
 
@@ -142,6 +142,4 @@ export MESA_D3D12_DEFAULT_ADAPTER_NAME="NVIDIA"
 export PATH=$PATH:$HOME/.local/share/bob/nvim-bin
 export PATH=$PATH:$HOME/.local/bin
 
-#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
-export SDKMAN_DIR="$HOME/.sdkman"
-[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+eval "$(mise activate bash)"
