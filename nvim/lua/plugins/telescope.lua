@@ -32,6 +32,7 @@ return {
                 require("telescope.builtin").grep_string()
             end,
             desc = "Search word under cursor",
+            mode = { "n", "v" },
         },
         {
             "<leader>sh",

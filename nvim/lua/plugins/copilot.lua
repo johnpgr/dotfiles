@@ -19,23 +19,6 @@ local function parse_history_path(file)
     return vim.fn.fnamemodify(file, ":t:r")
 end
 
-local function generate_commit_message()
-    vim.notify("Generating commit message...", vim.log.levels.INFO)
-    require("CopilotChat").ask("/Commit", {
-        model = "gpt-4.1",
-        headless = true,
-        callback = function(res)
-            local content = vim.trim(res.content)
-            -- Extract from ```gitcommit ... ``` block
-            local message = content:match("```gitcommit%s*\n(.-)```") or content
-            local lines = vim.split(vim.trim(message), "\n")
-            local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-            vim.api.nvim_buf_set_text(0, row - 1, col, row - 1, col, lines)
-            vim.notify("Commit message generated", vim.log.levels.INFO)
-        end,
-    })
-end
-
 local function quick_chat()
     local mode = vim.fn.mode()
     local sticky = { "#buffer" }
@@ -204,7 +187,7 @@ return {
                 desc = "Copilot chat reset",
             },
             { "<leader>ch", find_chat_history, desc = "Copilot chat history" },
-            { "<leader>cm", generate_commit_message, desc = "Copilot commit message" },
+            { "<leader>cm", function() require("copilot-scripts").commit_message("gpt-4.1") end, desc = "Commit message" },
             { "<leader>cq", quick_chat, mode = { "n", "v" }, desc = "Quick chat" },
         },
 

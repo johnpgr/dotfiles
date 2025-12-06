@@ -62,7 +62,9 @@ function M.load_persisted_colorscheme()
         hi WinBarNC guibg=none
         hi Normal guibg=none
         hi StatusLine guibg=none
+        hi StatusLine gui=none
         hi StatusLineNC guibg=none
+        hi StatusLineNC gui=none
         hi NormalFloat guibg=none
         hi FloatBorder guibg=none
         hi TelescopeBorder guibg=none
