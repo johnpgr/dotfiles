@@ -1,152 +1,5 @@
 -- Copilot plugins
 
-local title_prompt = [[
-Generate chat title in filepath-friendly format for:
-
-```
-%s
-```
-
-Output only the title and nothing else in your response. USE HYPHENS ONLY to separate words.
-]]
-
-local function format_display_name(filename)
-    filename = filename:gsub("%.%w+$", "")
-    return filename:gsub("%-", " "):gsub("^%w", string.upper)
-end
-
-local function parse_history_path(file)
-    return vim.fn.fnamemodify(file, ":t:r")
-end
-
-local function quick_chat()
-    local mode = vim.fn.mode()
-    local sticky = { "#buffer" }
-
-    -- Add visual selection if in visual mode
-    if mode:match("[vV\22]") then
-        table.insert(sticky, "#selection")
-    end
-
-    -- Get available models from CopilotChat client
-    local async = require("plenary.async")
-    async.run(function()
-        local client = require("CopilotChat.client")
-        local models = client:models()
-        local result = vim.tbl_keys(models)
-
-        table.sort(result, function(a, b)
-            a = models[a]
-            b = models[b]
-            if a.provider ~= b.provider then
-                return a.provider < b.provider
-            end
-            return a.id < b.id
-        end)
-
-        local choices = vim.tbl_map(function(id)
-            local model = models[id]
-            return {
-                id = model.id,
-                name = model.name,
-                provider = model.provider,
-            }
-        end, result)
-
-        require("plenary.async.util").scheduler()
-        vim.ui.select(choices, {
-            prompt = "Select model:",
-            format_item = function(item)
-                return item.name .. " [" .. item.provider .. "]"
-            end,
-        }, function(selected_model)
-            if not selected_model then
-                return
-            end
-
-            vim.ui.input({ prompt = "Quick chat: " }, function(input)
-                if not input or input == "" then
-                    return
-                end
-
-                require("CopilotChat").ask(input, {
-                    model = selected_model.id,
-                    sticky = sticky,
-                    window = {
-                        layout = "float",
-                        relative = "cursor",
-                        width = 0.6,
-                        height = 0.6,
-                        row = 1,
-                        col = 0,
-                    },
-                })
-            end)
-        end)
-    end, function() end)
-end
-
--- TODO: Add previewer to show the chat content
-local function find_chat_history()
-    require("telescope.builtin").find_files({
-        prompt_title = "",
-        cwd = require("CopilotChat").config.history_path,
-        hidden = true,
-        follow = true,
-        find_command = { "rg", "--files", "--sortr=modified" },
-        entry_maker = function(entry)
-            local full_path = require("CopilotChat").config.history_path .. "/" .. entry
-            ---@diagnostic disable-next-line: undefined-field
-            local stat = vim.loop.fs_stat(full_path)
-            local mtime = stat and stat.mtime.sec or 0
-            local display_time = stat and os.date("%d-%m-%Y %H:%M", mtime) or "Unknown"
-            local display_name = format_display_name(entry)
-            return {
-                value = entry,
-                display = string.format("%s | %s", display_time, display_name),
-                ordinal = string.format("%s %s", display_time, display_name),
-                path = entry,
-                index = -mtime,
-            }
-        end,
-        attach_mappings = function(prompt_bufnr, map)
-            require("telescope.actions").select_default:replace(function()
-                require("telescope.actions").close(prompt_bufnr)
-                local selection = require("telescope.actions.state").get_selected_entry()
-                local path = selection.value
-                local parsed = parse_history_path(path)
-                vim.g.chat_title = parsed
-                require("CopilotChat").load(parsed)
-                require("CopilotChat").open()
-            end)
-
-            local function delete_history()
-                local selection = require("telescope.actions.state").get_selected_entry()
-                if not selection then
-                    return
-                end
-
-                local full_path = require("CopilotChat").config.history_path .. "/" .. selection.value
-
-                -- Confirm deletion
-                vim.ui.select({ "Yes", "No" }, {
-                    prompt = "Delete chat history: " .. format_display_name(selection.value) .. "?",
-                    telescope = { layout_config = { width = 0.3, height = 0.3 } },
-                }, function(choice)
-                    if choice == "Yes" then
-                        vim.fn.delete(full_path)
-                        find_chat_history()
-                    end
-                end)
-            end
-
-            map("i", "<C-d>", delete_history)
-            map("n", "D", delete_history)
-            return true
-        end,
-    })
-end
-
 return {
     {
         "zbirenbaum/copilot.lua",
@@ -173,92 +26,47 @@ return {
         end,
     },
     {
-        "CopilotC-Nvim/CopilotChat.nvim",
-        cmd = { "CopilotChat", "CopilotChatToggle", "CopilotChatPrompts" },
-        keys = {
-            { "<leader>cc", "<cmd>CopilotChatToggle<cr>", desc = "Copilot chat" },
-            { "<leader>cp", "<cmd>CopilotChatPrompts<cr>", desc = "Copilot chat prompts" },
-            {
-                "<leader>cx",
-                function()
-                    vim.g.chat_title = nil
-                    require("CopilotChat").reset()
-                end,
-                desc = "Copilot chat reset",
-            },
-            { "<leader>ch", find_chat_history, desc = "Copilot chat history" },
-            { "<leader>cm", function() require("copilot-scripts").commit_message("gpt-4.1") end, desc = "Commit message" },
-            { "<leader>cq", quick_chat, mode = { "n", "v" }, desc = "Quick chat" },
+        "olimorris/codecompanion.nvim",
+        version = "v17.33.0",
+        dependencies = {
+            "nvim-lua/plenary.nvim",
+            "nvim-treesitter/nvim-treesitter",
         },
-
-        config = function()
-            require("CopilotChat").setup({
-                callback = function(res)
-                    if vim.g.chat_title then
-                        vim.defer_fn(function()
-                            require("CopilotChat").save(vim.g.chat_title)
-                        end, 100)
-                        return
-                    end
-
-                    require("CopilotChat").ask(title_prompt:format(res.content), {
-                        headless = true,
-                        model = "gpt-4.1",
-                        callback = function(res2)
-                            vim.g.chat_title = vim.trim(res2.content)
-                            require("CopilotChat").save(vim.g.chat_title)
-                        end,
-                    })
+        cmd = { "CodeCompanion", "CodeCompanionChat", "CodeCompanionActions", "CodeCompanionCmd" },
+        keys = {
+            { "<leader>cc", "<cmd>CodeCompanionChat Toggle<cr>", mode = { "n", "v" }, desc = "Toggle chat" },
+            { "<leader>ca", "<cmd>CodeCompanionActions<cr>", mode = { "n", "v" }, desc = "Actions" },
+            { "<leader>ci", "<cmd>CodeCompanion<cr>", mode = { "n", "v" }, desc = "Inline assistant" },
+            {
+                "<leader>cm",
+                function()
+                    require("copilot-scripts").commit_message("gpt-4.1")
                 end,
-                model = "gpt-4.1",
-                chat_autocomplete = true,
-                mappings = {
-                    complete = {
-                        insert = "",
+                desc = "Commit message",
+            },
+            { "ga", "<cmd>CodeCompanionChat Add<cr>", mode = "v", desc = "Add to chat" },
+        },
+        config = function()
+            require("codecompanion").setup({
+                strategies = {
+                    chat = {
+                        adapter = { name = "copilot", model = "claude-opus-4.5" },
                     },
-                    reset = {
-                        normal = "",
-                        insert = "",
+                    inline = {
+                        adapter = { name = "copilot", model = "claude-opus-4.5" },
+                    },
+                    cmd = {
+                        adapter = { name = "copilot", model = "claude-opus-4.5" },
                     },
                 },
-            })
-
-            local function get_working_directory_files()
-                local files = {}
-                local handle = io.popen("rg --files")
-                if handle then
-                    for file in handle:lines() do
-                        local trigger = vim.fn.fnamemodify(file, ":t:r")
-                        files[#files + 1] = {
-                            trigger = trigger,
-                            path = "> #file:" .. file,
-                        }
-                    end
-                    handle:close()
-                end
-                return files
-            end
-
-            vim.api.nvim_create_autocmd("WinEnter", {
-                pattern = "copilot-chat",
-                callback = function()
-                    vim.opt_local.foldcolumn = "0"
-                    vim.opt_local.number = false
-                    vim.opt_local.relativenumber = false
-                    vim.opt_local.cursorline = false
-
-                    local snippets = {}
-                    for _, file_info in ipairs(get_working_directory_files()) do
-                        snippets[#snippets + 1] = require("luasnip").snippet(
-                            file_info.trigger,
-                            { require("luasnip").text_node(file_info.path) }
-                        )
-                    end
-
-                    require("luasnip.session.snippet_collection").clear_snippets("copilot-chat")
-                    require("luasnip").add_snippets("copilot-chat", snippets)
-                    vim.treesitter.start()
-                end,
+                display = {
+                    chat = {
+                        window = {
+                            layout = "vertical",
+                            width = 0.4,
+                        },
+                    },
+                },
             })
         end,
     },
