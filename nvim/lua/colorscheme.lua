@@ -47,6 +47,7 @@ function M.load_persisted_colorscheme()
         if mode then
             mode = string.gsub(mode, "\n", "")
             mode = string.gsub(mode, "%s+", "") -- trim whitespace
+        
             if mode == "dark" or mode == "light" then
                 vim.o.background = mode
             end
@@ -54,22 +55,29 @@ function M.load_persisted_colorscheme()
     end
 
     vim.cmd([[
-        hi! link MsgSeparator WinSeparator
-        hi! link PmenuExtra Pmenu
-        hi Operator guibg=none
-        " hi MatchParen guifg=bg
-        hi WinBar ctermbg=none guibg=none
-        hi WinBarNC guibg=none
-        hi Normal guibg=none
-        hi StatusLine guibg=none
-        hi StatusLine gui=none
-        hi StatusLineNC guibg=none
-        hi StatusLineNC gui=none
-        hi NormalFloat guibg=none
-        hi FloatBorder guibg=none
-        hi TelescopeBorder guibg=none
-        hi WhichKeyBorder guibg=none
-        hi FoldColumn ctermbg=none guibg=none
+        hi! link                     MsgSeparator  WinSeparator
+        hi! link                     PmenuExtra    Pmenu
+        hi  Operator                 guibg=none
+        hi  Underlined               gui=undercurl cterm=undercurl
+        hi  @markup.underline        gui=undercurl cterm=undercurl
+        hi  @ibl.scope.underline.1   gui=undercurl cterm=undercurl
+        hi  DiagnosticUnderlineOk    gui=undercurl cterm=undercurl
+        hi  DiagnosticUnderlineHint  gui=undercurl cterm=undercurl
+        hi  DiagnosticUnderlineInfo  gui=undercurl cterm=undercurl
+        hi  DiagnosticUnderlineWarn  gui=undercurl cterm=undercurl
+        hi  DiagnosticUnderlineError gui=undercurl cterm=undercurl
+        hi  WinBar                   ctermbg=none  guibg=none
+        hi  WinBarNC                 guibg=none
+        hi  Normal                   guibg=none
+        hi  NonText                  guibg=none
+        hi  StatusLine               gui=none      guibg=none
+        hi  StatusLineNC             guibg=none    gui=none
+        hi  NormalFloat              guibg=none
+        hi  FloatBorder              guibg=none
+        hi  TelescopeBorder          guibg=none
+        hi  WhichKeyBorder           guibg=none
+        hi  FoldColumn               ctermbg=none  guibg=none
+        hi! link EndofBuffer NonText
     ]])
 end
 

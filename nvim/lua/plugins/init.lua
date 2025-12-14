@@ -58,68 +58,16 @@ return {
     --         -- vim.g.sonokai_style = "espresso"
     --     end,
     -- },
-    -- {
-    --     "RRethy/base16-nvim",
-    -- },
-    -- {
-    --     "xiyaowong/transparent.nvim",
-    -- },
-    -- { "sainnhe/gruvbox-material" },
-    -- {
-    --     "morhetz/gruvbox",
-    --     lazy = false,
-    --     priority = 1000,
-    -- },
-    -- {
-    --     "rose-pine/neovim",
-    --     name = "rosepine",
-    --     lazy = false,
-    --     priority = 1000,
-    --     config = function()
-    --         require("rose-pine").setup({
-    --             styles = {
-    --                 bold = false,
-    --                 italic = false,
-    --                 transparency = true,
-    --             },
-    --         })
-    --     end,
-    -- },
-    -- {
-    --     "navarasu/onedark.nvim",
-    --     config = function()
-    --         require('onedark').setup {
-    --             style = 'warm', -- Default theme style. Choose between 'dark', 'darker', 'cool', 'deep', 'warm', 'warmer' and 'light'
-    --             code_style = {
-    --                 comments = 'none',
-    --                 keywords = 'none',
-    --                 functions = 'none',
-    --                 strings = 'none',
-    --                 variables = 'none'
-    --             },
-    --         }
-    --     end
-    -- },
-    -- { 'datsfilipe/vesper.nvim',
-    --     config = function ()
-    --         require('vesper').setup({
-    --             transparent = false, -- Boolean: Sets the background to transparent
-    --             italics = {
-    --                 comments = false, -- Boolean: Italicizes comments
-    --                 keywords = false, -- Boolean: Italicizes keywords
-    --                 functions = false, -- Boolean: Italicizes functions
-    --                 strings = false, -- Boolean: Italicizes strings
-    --                 variables = false, -- Boolean: Italicizes variables
-    --             },
-    --             overrides = {}, -- A dictionary of group names, can be a function returning a dictionary or a table.
-    --             palette_overrides = {}
-    --         })
-    --     end
-    -- },
     {
-        "zenbones-theme/zenbones.nvim",
-        dependencies = "rktjmp/lush.nvim",
-        lazy = false,
+        "slugbyte/lackluster.nvim",
+        config = function ()
+            require("lackluster").setup({
+                tweak_syntax = {
+                    comment = "#856490"
+                },
+            })
+            
+        end
     },
     -- Session management
     { "farmergreg/vim-lastplace", event = "BufReadPre" },

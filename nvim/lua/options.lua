@@ -8,7 +8,7 @@ vim.g.gruvbox_invert_selection = 0
 vim.g.gruvbox_material_transparent_background = 1
 vim.g.mapleader = " "
 vim.o.cursorline = false
-vim.o.number = true
+vim.o.number = false
 vim.o.relativenumber = false
 vim.o.confirm = true
 vim.o.wrap = false
@@ -35,4 +35,4 @@ vim.o.scrolloff = 5
 vim.o.updatetime = 250
 vim.o.timeoutlen = 500
 vim.opt.diffopt:append("linematch:60")
--- vim.o.background = "light"
+vim.o.cmdheight = 0
