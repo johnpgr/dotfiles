@@ -59,15 +59,18 @@ return {
     --     end,
     -- },
     {
-        "slugbyte/lackluster.nvim",
-        config = function ()
-            require("lackluster").setup({
-                tweak_syntax = {
-                    comment = "#856490"
-                },
+        "https://github.com/RRethy/base16-nvim",
+        config = function()
+            require("base16-colorscheme").with_config({
+                telescope = false,
+                indentblankline = true,
+                notify = true,
+                ts_rainbow = true,
+                cmp = true,
+                illuminate = true,
+                dapui = true,
             })
-            
-        end
+        end,
     },
     -- Session management
     { "farmergreg/vim-lastplace", event = "BufReadPre" },
