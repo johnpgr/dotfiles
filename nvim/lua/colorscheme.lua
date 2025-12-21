@@ -47,25 +47,27 @@ function M.load_persisted_colorscheme()
         if mode then
             mode = string.gsub(mode, "\n", "")
             mode = string.gsub(mode, "%s+", "") -- trim whitespace
-        
+
             if mode == "dark" or mode == "light" then
                 vim.o.background = mode
             end
         end
     end
 
-    vim.cmd([[
-        hi  Underlined               gui=undercurl cterm=undercurl
-        hi  @markup.underline        gui=undercurl cterm=undercurl
-        hi  @ibl.scope.underline.1   gui=undercurl cterm=undercurl
-        hi  DiagnosticUnderlineOk    gui=undercurl cterm=undercurl
-        hi  DiagnosticUnderlineHint  gui=undercurl cterm=undercurl
-        hi  DiagnosticUnderlineInfo  gui=undercurl cterm=undercurl
-        hi  DiagnosticUnderlineWarn  gui=undercurl cterm=undercurl
-        hi  DiagnosticUnderlineError gui=undercurl cterm=undercurl
-        hi  StatusLine               gui=none      guibg=none
-        hi  StatusLineNC             guibg=none    gui=none
-    ]])
+    vim.defer_fn(function()
+        vim.cmd([[
+            hi Underlined               gui=undercurl cterm=undercurl
+            hi @markup.underline        gui=undercurl cterm=undercurl
+            hi @ibl.scope.underline.1   gui=undercurl cterm=undercurl
+            hi DiagnosticUnderlineOk    gui=undercurl cterm=undercurl
+            hi DiagnosticUnderlineHint  gui=undercurl cterm=undercurl
+            hi DiagnosticUnderlineInfo  gui=undercurl cterm=undercurl
+            hi DiagnosticUnderlineWarn  gui=undercurl cterm=undercurl
+            hi DiagnosticUnderlineError gui=undercurl cterm=undercurl
+            hi StatusLine               guibg=none
+            hi StatusLineNC             guibg=none
+        ]])
+    end, 1)
 end
 
 function M.set_theme(mode)
@@ -77,4 +79,3 @@ function M.set_theme(mode)
 end
 
 return M
-

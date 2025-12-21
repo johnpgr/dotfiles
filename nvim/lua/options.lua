@@ -35,4 +35,5 @@ vim.o.scrolloff = 5
 vim.o.updatetime = 250
 vim.o.timeoutlen = 500
 vim.opt.diffopt:append("linematch:60")
-vim.o.cmdheight = 0
+vim.o.cmdheight = 1
+vim.o.showcmd = false

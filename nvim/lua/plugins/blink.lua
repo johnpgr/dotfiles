@@ -26,26 +26,35 @@ return {
             end
         end
 
+        -- Custom insert_next without can_select check
+        local function custom_insert_next(cmp)
+            if not cmp.is_active() then
+                return cmp.show_and_insert()
+            end
+            -- if not require('blink.cmp.completion.list').can_select({ auto_insert = true }) then return end
+            vim.schedule(function()
+                require("blink.cmp.completion.list").select_next({ auto_insert = true })
+            end)
+            return true
+        end
+
+        -- Custom insert_prev without can_select check
+        local function custom_insert_prev(cmp)
+            if not cmp.is_active() then
+                return cmp.show_and_insert()
+            end
+            -- if not require('blink.cmp.completion.list').can_select({ auto_insert = true }) then return end
+            vim.schedule(function()
+                require("blink.cmp.completion.list").select_prev({ auto_insert = true })
+            end)
+            return true
+        end
 
         local function emacs_tab(cmp)
             if require("blink.cmp").is_visible() then
                 return cmp.select_and_accept()
             elseif has_words_before() then
-                return cmp.insert_next()
-            end
-        end
-
-        local function smart_tab(cmp)
-            -- If blink menu is visible, handle completion
-            if require("blink.cmp").is_visible() then
-                return cmp.accept() or cmp.snippet_forward()
-            end
-
-            -- Check if copilot has a suggestion
-            local copilot_suggestion = require("copilot.suggestion")
-            if copilot_suggestion.is_visible() then
-                copilot_suggestion.accept()
-                return true
+                return custom_insert_next(cmp)
             end
         end
 
@@ -88,15 +97,21 @@ return {
                 },
             },
             keymap = {
-                preset = "default",
+                preset = "none",
                 ["<C-space>"] = { toggle_menu },
                 ["<CR>"] = {
                     "accept",
                     "snippet_forward",
                     "fallback",
                 },
-                ["<Tab>"] = { smart_tab, "fallback" },
-                ["<S-Tab>"] = { "insert_prev", "snippet_backward", "fallback" },
+                ["<Tab>"] = {
+                    emacs_tab,
+                    "snippet_forward",
+                    "fallback",
+                },
+                ["<S-Tab>"] = { custom_insert_prev },
+                ["<C-n>"] = { "select_next", "fallback" },
+                ["<C-p>"] = { "select_prev", "fallback" },
             },
             snippets = {
                 preset = "luasnip",
@@ -118,9 +133,14 @@ return {
                 },
             },
             completion = {
-                list = { selection = { preselect = true, auto_insert = false } },
+                list = {
+                    selection = {
+                        preselect = false,
+                    },
+                    cycle = { from_top = false },
+                },
                 menu = {
-                    auto_show = true,
+                    auto_show = false,
                     max_height = 20,
                     draw = {
                         columns = columns,
