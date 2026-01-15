@@ -223,7 +223,6 @@ return {
             end,
             desc = "LSP References",
         },
-        { "<leader>cp" },
     },
     dependencies = {
         {

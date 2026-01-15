@@ -1,4 +1,8 @@
 -- Clipboard setup
+-- Configures the system clipboard once after opening a buffer.
+-- Detects the platform and wires up the fastest available clipboard tool
+-- (win32yank on Windows/WSL, xclip/xsel on Unix) and then enables
+-- `unnamedplus` so yank/put uses the system clipboard by default.
 vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
     once = true,
     callback = function()
@@ -74,6 +78,7 @@ vim.api.nvim_create_autocmd("TextYankPost", {
     pattern = "*",
 })
 
+-- Treat CocoaPods specs/files as Ruby for proper syntax highlighting.
 vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
   pattern = { "*.podspec", "Podfile" },
   command = "set filetype=ruby",
