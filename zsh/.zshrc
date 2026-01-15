@@ -1,6 +1,8 @@
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
 
+DISABLE_AUTO_TITLE="true"
+
 # Path to your Oh My Zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
 
@@ -143,3 +145,7 @@ export PATH=$PATH:$HOME/.local/share/bob/nvim-bin
 export PATH=$PATH:$HOME/.local/bin
 
 eval "$(mise activate bash)"
+
+precmd() {
+  print -Pn "\e]2;%~\e\\"
+}

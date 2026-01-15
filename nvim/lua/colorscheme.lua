@@ -56,16 +56,21 @@ function M.load_persisted_colorscheme()
 
     vim.defer_fn(function()
         vim.cmd([[
-            hi Underlined               gui=undercurl cterm=undercurl
-            hi @markup.underline        gui=undercurl cterm=undercurl
-            hi @ibl.scope.underline.1   gui=undercurl cterm=undercurl
-            hi DiagnosticUnderlineOk    gui=undercurl cterm=undercurl
-            hi DiagnosticUnderlineHint  gui=undercurl cterm=undercurl
-            hi DiagnosticUnderlineInfo  gui=undercurl cterm=undercurl
-            hi DiagnosticUnderlineWarn  gui=undercurl cterm=undercurl
-            hi DiagnosticUnderlineError gui=undercurl cterm=undercurl
-            hi StatusLine               guibg=none
-            hi StatusLineNC             guibg=none
+            hi  Underlined               gui=undercurl cterm=undercurl
+            hi  @markup.underline        gui=undercurl cterm=undercurl
+            hi  @ibl.scope.underline.1   gui=undercurl cterm=undercurl
+            hi  DiagnosticUnderlineOk    gui=undercurl cterm=undercurl
+            hi  DiagnosticUnderlineHint  gui=undercurl cterm=undercurl
+            hi  DiagnosticUnderlineInfo  gui=undercurl cterm=undercurl
+            hi  DiagnosticUnderlineWarn  gui=undercurl cterm=undercurl
+            hi  DiagnosticUnderlineError gui=undercurl cterm=undercurl
+            hi  Normal                   guibg=none    ctermbg=none
+            hi  NormalFloat              guibg=none    ctermbg=none
+            hi  FloatBorder              guibg=none    ctermbg=none
+            hi  NormalNC                 guibg=none    ctermbg=none
+            hi! link                     StatusLine    Normal
+            hi! link                     StatusLineNC  Normal
+            hi! link                     LineNr        NonText
         ]])
     end, 1)
 end

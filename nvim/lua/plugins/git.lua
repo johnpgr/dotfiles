@@ -10,8 +10,8 @@ return {
                     -- if vim.wo.diff then
                     --     vim.cmd.normal({ "]c", bang = true })
                     -- else
-                        vim.cmd("Gitsigns next_hunk")
-                        vim.cmd("Gitsigns preview_hunk")
+                    vim.cmd("Gitsigns next_hunk")
+                    vim.cmd("Gitsigns preview_hunk")
                     -- end
                 end,
                 { desc = "Next hunk" },
@@ -22,8 +22,8 @@ return {
                     -- if vim.wo.diff then
                     --     vim.cmd.normal({ "[c", bang = true })
                     -- else
-                        vim.cmd("Gitsigns prev_hunk")
-                        vim.cmd("Gitsigns preview_hunk")
+                    vim.cmd("Gitsigns prev_hunk")
+                    vim.cmd("Gitsigns preview_hunk")
                     -- end
                 end,
                 { desc = "Previous hunk" },

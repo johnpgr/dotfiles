@@ -58,6 +58,7 @@ return {
     --         -- vim.g.sonokai_style = "espresso"
     --     end,
     -- },
+    {"morhetz/gruvbox"},
     {
         "https://github.com/RRethy/base16-nvim",
         config = function()
@@ -121,14 +122,14 @@ return {
                 scope = { enabled = false },
             })
 
-            vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
-                callback = function()
-                    local enable = should_enable_ibl()
-                    if enable then
-                        vim.cmd("IBLEnable")
-                    end
-                end,
-            })
+            -- vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
+            --     callback = function()
+            --         local enable = should_enable_ibl()
+            --         if enable then
+            --             vim.cmd("IBLEnable")
+            --         end
+            --     end,
+            -- })
         end,
     },
     {
