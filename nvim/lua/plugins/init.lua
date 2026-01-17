@@ -19,7 +19,6 @@ local function should_enable_ibl()
 end
 
 return {
-    -- Dependency plugins (loaded by other plugins)
     {
         "kkharji/sqlite.lua",
         lazy = false,
@@ -58,7 +57,7 @@ return {
     --         -- vim.g.sonokai_style = "espresso"
     --     end,
     -- },
-    {"morhetz/gruvbox"},
+    { "morhetz/gruvbox" },
     {
         "https://github.com/RRethy/base16-nvim",
         config = function()
@@ -109,6 +108,9 @@ return {
         event = { "BufReadPost", "BufNewFile" },
         "tpope/vim-abolish",
     },
+    {
+        "tpope/vim-dispatch",
+    },
     -- Indent guides
     {
         "lukas-reineke/indent-blankline.nvim",
@@ -131,14 +133,5 @@ return {
             --     end,
             -- })
         end,
-    },
-    {
-        "iamcco/markdown-preview.nvim",
-        cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
-        build = "cd app && npm install",
-        init = function()
-            vim.g.mkdp_filetypes = { "markdown" }
-        end,
-        ft = { "markdown" },
     },
 }

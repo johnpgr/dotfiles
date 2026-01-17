@@ -1,7 +1,6 @@
 vim.keymap.set("n", "<leader>w", "<cmd>update<cr>", { desc = "Write" })
 vim.keymap.set("n", "]t", "<cmd>tabnext<cr>", { desc = "Tab next" })
 vim.keymap.set("n", "[t", "<cmd>tabprev<cr>", { desc = "Tab prev" })
-vim.keymap.set("n", "<C-q>", "<cmd>quit<cr>", { desc = "Quit" })
 vim.keymap.set("n", "<leader>R", "<cmd>restart<cr>", { desc = "Restart" })
 vim.keymap.set("n", "<Esc>", "<cmd>noh<cr>", { desc = "Clear highlights" })
 vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
@@ -117,8 +116,8 @@ vim.keymap.set("n", "<leader>ie", function()
     local editor_config = require("utils").editorconfig
     local buf = vim.api.nvim_get_current_buf()
     local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-    row = row - 1  -- 0-indexed
-    local lines = vim.split(editor_config, '\n', { plain = true })
+    row = row - 1 -- 0-indexed
+    local lines = vim.split(editor_config, "\n", { plain = true })
     vim.api.nvim_buf_set_text(buf, row, col, row, col, lines)
     if #lines == 1 then
         vim.api.nvim_win_set_cursor(0, { row + 1, col + #lines[1] })
@@ -128,17 +127,10 @@ vim.keymap.set("n", "<leader>ie", function()
 end, { desc = "Editorconfig" })
 
 -- LSP keymaps
-vim.keymap.set("n", "gd", function()
-    if require("utils").jump_to_error_loc() then
-        return
-    else
-        vim.lsp.buf.definition()
-    end
-end, { desc = "Goto definition" })
-
+vim.keymap.set("n", "gd", vim.lsp.buf.definition, { desc = "Goto definition" })
 vim.keymap.set("n", "<leader>lr", vim.lsp.buf.rename, { desc = "Rename symbol" })
 vim.keymap.set("n", "<leader>lf", function()
-    require("conform").format({async = true})
+    require("conform").format({ async = true })
 end, { desc = "Format buffer" })
 vim.keymap.set("n", "<leader>la", vim.lsp.buf.code_action, { desc = "Code action" })
 vim.keymap.set("i", "<C-s>", vim.lsp.buf.signature_help, { desc = "Signature help" })
@@ -176,3 +168,45 @@ vim.keymap.set("n", "[q", function()
     end
     vim.cmd("copen")
 end, { desc = "Previous quickfix item" })
+
+vim.keymap.set("n", "]e", function()
+    if _G.compile and _G.compile.jump_next_error then
+        if _G.compile.jump_next_error() then
+            return
+        end
+    end
+
+    local qf_list = vim.fn.getqflist()
+    local qf_length = #qf_list
+    if qf_length == 0 then
+        return
+    end
+
+    local current_idx = vim.fn.getqflist({ idx = 0 }).idx
+    if current_idx >= qf_length then
+        vim.cmd("cfirst")
+    else
+        vim.cmd("cnext")
+    end
+end, { desc = "Next error" })
+
+vim.keymap.set("n", "[e", function()
+    if _G.compile and _G.compile.jump_prev_error then
+        if _G.compile.jump_prev_error() then
+            return
+        end
+    end
+
+    local qf_list = vim.fn.getqflist()
+    local qf_length = #qf_list
+    if qf_length == 0 then
+        return
+    end
+
+    local current_idx = vim.fn.getqflist({ idx = 0 }).idx
+    if current_idx <= 1 then
+        vim.cmd("clast")
+    else
+        vim.cmd("cprevious")
+    end
+end, { desc = "Previous error" })

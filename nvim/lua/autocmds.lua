@@ -56,6 +56,27 @@ vim.api.nvim_create_autocmd("LspAttach", {
     end,
 })
 
+vim.api.nvim_create_autocmd("ColorScheme", {
+    callback = function()
+        vim.print("HELLO")
+        vim.cmd([[
+                hi  Underlined               gui=undercurl cterm=undercurl
+                hi  @markup.underline        gui=undercurl cterm=undercurl
+                hi  @ibl.scope.underline.1   gui=undercurl cterm=undercurl
+                hi  DiagnosticUnderlineOk    gui=undercurl cterm=undercurl
+                hi  DiagnosticUnderlineHint  gui=undercurl cterm=undercurl
+                hi  DiagnosticUnderlineInfo  gui=undercurl cterm=undercurl
+                hi  DiagnosticUnderlineWarn  gui=undercurl cterm=undercurl
+                hi  DiagnosticUnderlineError gui=undercurl cterm=undercurl
+                hi  Normal                   guibg=none    ctermbg=none
+                hi  NormalFloat              guibg=none    ctermbg=none
+                hi  FloatBorder              guibg=none    ctermbg=none
+                hi  NormalNC                 guibg=none    ctermbg=none
+                hi! link                     LineNr        NonText
+            ]])
+    end,
+})
+
 vim.api.nvim_create_autocmd("VimEnter", {
     callback = require("colorscheme").load_persisted_colorscheme,
     once = true,
@@ -80,6 +101,6 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 
 -- Treat CocoaPods specs/files as Ruby for proper syntax highlighting.
 vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
-  pattern = { "*.podspec", "Podfile" },
-  command = "set filetype=ruby",
+    pattern = { "*.podspec", "Podfile" },
+    command = "set filetype=ruby",
 })

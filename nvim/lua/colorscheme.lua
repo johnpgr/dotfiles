@@ -35,7 +35,11 @@ function M.load_persisted_colorscheme()
         limit = 1,
     })
     if #recent > 0 then
-        pcall(vim.cmd.colorscheme, recent[1].name)
+        local ok = pcall(vim.cmd.colorscheme, recent[1].name)
+        if ok then
+            -- Manually trigger ColorScheme event since it may not fire during startup
+            vim.api.nvim_exec_autocmds("ColorScheme", { pattern = recent[1].name })
+        end
     end
 
     -- Check system state file (managed by monitor_theme.py)
@@ -54,25 +58,6 @@ function M.load_persisted_colorscheme()
         end
     end
 
-    vim.defer_fn(function()
-        vim.cmd([[
-            hi  Underlined               gui=undercurl cterm=undercurl
-            hi  @markup.underline        gui=undercurl cterm=undercurl
-            hi  @ibl.scope.underline.1   gui=undercurl cterm=undercurl
-            hi  DiagnosticUnderlineOk    gui=undercurl cterm=undercurl
-            hi  DiagnosticUnderlineHint  gui=undercurl cterm=undercurl
-            hi  DiagnosticUnderlineInfo  gui=undercurl cterm=undercurl
-            hi  DiagnosticUnderlineWarn  gui=undercurl cterm=undercurl
-            hi  DiagnosticUnderlineError gui=undercurl cterm=undercurl
-            hi  Normal                   guibg=none    ctermbg=none
-            hi  NormalFloat              guibg=none    ctermbg=none
-            hi  FloatBorder              guibg=none    ctermbg=none
-            hi  NormalNC                 guibg=none    ctermbg=none
-            hi! link                     StatusLine    Normal
-            hi! link                     StatusLineNC  Normal
-            hi! link                     LineNr        NonText
-        ]])
-    end, 1)
 end
 
 function M.set_theme(mode)

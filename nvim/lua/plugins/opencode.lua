@@ -15,8 +15,16 @@ return {
                     submit = true,
                 },
                 refactor = {
-                    prompt = "@this Refactor: ",
-                    ask = true,
+                    prompt = [[Refactor @buffer
+
+The refactoring instructions are in the comments at the end of the file.
+
+Before making changes:
+1. Read the full file to find and understand the instruction comments at the bottom
+2. Identify and read any imported modules, types, or dependencies
+3. Check for other usages in the codebase if refactoring a function/class
+4. Apply the refactoring as instructed
+5. Remove the instruction comments after applying the refactoring]],
                     submit = true,
                 },
             },
@@ -106,13 +114,24 @@ Here are the staged changes:
         -- Required for `opts.events.reload`.
         vim.o.autoread = true
 
+        vim.keymap.set({ "n", "x" }, "<leader>cm", generate_commit_message, { desc = "Commit message" })
+
         vim.keymap.set({ "n", "x" }, "<leader>ca", function()
             require("opencode").ask("@this: ", { submit = true })
         end, { desc = "Ask opencode" })
+        vim.keymap.set({ "n", "x" }, "<M-X>", function()
+            require("opencode").select()
+        end, { desc = "Execute opencode action…" })
+
         vim.keymap.set({ "n", "x" }, "<leader>cx", function()
             require("opencode").select()
         end, { desc = "Execute opencode action…" })
+
         vim.keymap.set({ "n", "t" }, "<C-A-b>", function()
+            require("opencode").toggle()
+        end, { desc = "Toggle opencode" })
+
+        vim.keymap.set({ "n", "t" }, "<leader>cc", function()
             require("opencode").toggle()
         end, { desc = "Toggle opencode" })
 
@@ -129,16 +148,5 @@ Here are the staged changes:
         vim.keymap.set("n", "<C-PageDown>", function()
             require("opencode").command("session.half.page.down")
         end, { desc = "opencode half page down" })
-
-        -- AI integration keymaps (migrated from copilot-scripts)
-        vim.keymap.set({ "n", "x" }, "<leader>af", function()
-            require("opencode").prompt("holefill")
-        end, { desc = "AI: Fill TODO placeholder" })
-
-        vim.keymap.set({ "n", "x" }, "<leader>ar", function()
-            require("opencode").ask("@this Refactor: ", { submit = true })
-        end, { desc = "AI: Refactor" })
-
-        vim.keymap.set("n", "<leader>am", generate_commit_message, { desc = "AI: Commit message" })
     end,
 }

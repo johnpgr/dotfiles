@@ -7,7 +7,7 @@ vim.g.gruvbox_italicize_comments = 0
 vim.g.gruvbox_invert_selection = 1
 vim.g.gruvbox_material_transparent_background = 1
 vim.g.mapleader = " "
-vim.o.cursorline = false
+vim.o.cursorline = true
 vim.o.number = true
 vim.o.relativenumber = false
 vim.o.confirm = true
@@ -37,3 +37,5 @@ vim.o.timeoutlen = 500
 vim.opt.diffopt:append("linematch:60")
 vim.o.cmdheight = 1
 vim.o.showcmd = false
+vim.o.exrc = true
+vim.o.secure = true

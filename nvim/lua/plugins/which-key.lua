@@ -17,12 +17,11 @@ return {
             { "<leader>g", group = "git" },
             { "<leader>gl", group = "list" },
             { "<leader>h", group = "hunk" },
-            { "<leader>c", group = "copilot" },
             { "<leader>l", group = "lsp" },
             { "<leader>t", group = "toggle" },
             { "<leader>i", group = "insert" },
             { "<leader>d", group = "db" },
-            { "<leader>a", group = "ai" },
+            { "<leader>c", group = "opencode" },
         })
     end,
 }
