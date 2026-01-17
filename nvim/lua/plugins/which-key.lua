@@ -20,7 +20,7 @@ return {
             { "<leader>l", group = "lsp" },
             { "<leader>t", group = "toggle" },
             { "<leader>i", group = "insert" },
-            { "<leader>d", group = "db" },
+            { "<leader>d", group = "debug" },
             { "<leader>c", group = "opencode" },
         })
     end,

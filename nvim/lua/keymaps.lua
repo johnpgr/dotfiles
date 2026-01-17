@@ -170,43 +170,16 @@ vim.keymap.set("n", "[q", function()
 end, { desc = "Previous quickfix item" })
 
 vim.keymap.set("n", "]e", function()
-    if _G.compile and _G.compile.jump_next_error then
-        if _G.compile.jump_next_error() then
-            return
-        end
-    end
-
-    local qf_list = vim.fn.getqflist()
-    local qf_length = #qf_list
-    if qf_length == 0 then
-        return
-    end
-
-    local current_idx = vim.fn.getqflist({ idx = 0 }).idx
-    if current_idx >= qf_length then
-        vim.cmd("cfirst")
-    else
-        vim.cmd("cnext")
-    end
+    require("compile-mode").next_error()
 end, { desc = "Next error" })
 
 vim.keymap.set("n", "[e", function()
-    if _G.compile and _G.compile.jump_prev_error then
-        if _G.compile.jump_prev_error() then
-            return
-        end
-    end
-
-    local qf_list = vim.fn.getqflist()
-    local qf_length = #qf_list
-    if qf_length == 0 then
-        return
-    end
-
-    local current_idx = vim.fn.getqflist({ idx = 0 }).idx
-    if current_idx <= 1 then
-        vim.cmd("clast")
-    else
-        vim.cmd("cprevious")
-    end
+    require("compile-mode").prev_error()
 end, { desc = "Previous error" })
+
+vim.keymap.set("n", "<leader>m", function()
+    if vim.bo.filetype == "oil" then
+        vim.g.compilation_directory = require("oil").get_current_dir()
+    end
+    require("compile-mode").compile()
+end, { desc = "Compile" })

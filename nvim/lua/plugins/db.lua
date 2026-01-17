@@ -40,8 +40,8 @@ return {
     {
         "kristijanhusak/vim-dadbod-ui",
         keys = {
-            { "<leader>db", toggle_dbui_tab, desc = "DBUI" },
-            { "<leader>da", "<cmd>DBUIAddConnection<cr>", desc = "Add new connection" },
+            { "<leader>ub", toggle_dbui_tab, desc = "DBUI" },
+            { "<leader>ua", "<cmd>DBUIAddConnection<cr>", desc = "Add new connection" },
         },
         lazy = true,
     },

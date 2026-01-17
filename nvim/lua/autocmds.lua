@@ -58,7 +58,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
 
 vim.api.nvim_create_autocmd("ColorScheme", {
     callback = function()
-        vim.print("HELLO")
         vim.cmd([[
                 hi  Underlined               gui=undercurl cterm=undercurl
                 hi  @markup.underline        gui=undercurl cterm=undercurl
@@ -72,6 +71,8 @@ vim.api.nvim_create_autocmd("ColorScheme", {
                 hi  NormalFloat              guibg=none    ctermbg=none
                 hi  FloatBorder              guibg=none    ctermbg=none
                 hi  NormalNC                 guibg=none    ctermbg=none
+                hi! link                     StatusLine    Normal
+                hi! link                     StatusLineNC  Normal
                 hi! link                     LineNr        NonText
             ]])
     end,
