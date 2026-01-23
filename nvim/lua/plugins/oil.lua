@@ -22,6 +22,7 @@ end
 -- Oil.nvim
 return {
     "stevearc/oil.nvim",
+    enabled = false,
     lazy = false,
     keys = {
         { "<leader>e", "<cmd>Oil<cr>", desc = "Explore" },

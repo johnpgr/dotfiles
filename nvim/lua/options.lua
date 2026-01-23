@@ -1,5 +1,5 @@
 vim.g.treesitter_enabled = true
-vim.g.icons_enabled = true
+vim.g.icons_enabled = false
 vim.g.c_syntax_for_h = false
 vim.g.gruvbox_contrast_dark = "hard"
 vim.g.gruvbox_sign_column = "bg0"
@@ -22,7 +22,7 @@ vim.o.smartcase = true
 vim.o.list = false
 vim.o.splitbelow = true
 vim.o.splitright = true
-vim.o.signcolumn = "yes"
+vim.o.signcolumn = "no"
 vim.o.foldcolumn = "0"
 vim.o.mouse = "nv"
 vim.o.breakindent = true
