@@ -20,6 +20,17 @@ end
 
 return {
     {
+        "sainnhe/gruvbox-material",
+        config = function()
+            vim.g.gruvbox_material_disable_italic_comment = 1
+            vim.g.gruvbox_material_enable_italic = 0
+            vim.g.gruvbox_material_enable_bold = 0
+            vim.g.gruvbox_material_transparent_background = 1
+            vim.g.gruvbox_material_better_performance = 1
+            vim.g.gruvbox_material_foreground = "mix"
+        end,
+    },
+    {
         "kkharji/sqlite.lua",
         lazy = false,
     },
@@ -46,31 +57,6 @@ return {
                 desc = "Buffer delete",
             },
         },
-    },
-    -- Colorschemes
-    -- {
-    --     "sainnhe/sonokai",
-    --     config = function()
-    --         vim.g.sonokai_transparent_background = 1
-    --         vim.g.sonokai_enable_italic = 0
-    --         vim.g.sonokai_disable_italic_comment = 1
-    --         -- vim.g.sonokai_style = "espresso"
-    --     end,
-    -- },
-    { "morhetz/gruvbox" },
-    {
-        "https://github.com/RRethy/base16-nvim",
-        config = function()
-            require("base16-colorscheme").with_config({
-                telescope = false,
-                indentblankline = true,
-                notify = true,
-                ts_rainbow = true,
-                cmp = true,
-                illuminate = true,
-                dapui = true,
-            })
-        end,
     },
     -- Session management
     { "farmergreg/vim-lastplace", event = "BufReadPre" },

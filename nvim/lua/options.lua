@@ -1,11 +1,6 @@
 vim.g.treesitter_enabled = true
-vim.g.icons_enabled = false
+vim.g.icons_enabled = true
 vim.g.c_syntax_for_h = false
-vim.g.gruvbox_contrast_dark = "hard"
-vim.g.gruvbox_sign_column = "bg0"
-vim.g.gruvbox_italicize_comments = 0
-vim.g.gruvbox_invert_selection = 1
-vim.g.gruvbox_material_transparent_background = 1
 vim.g.mapleader = " "
 vim.o.cursorline = true
 vim.o.number = true
