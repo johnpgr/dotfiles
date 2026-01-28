@@ -135,6 +135,7 @@ alias grep='grep --color=auto'
 alias vi='nvim'
 alias clang='zig cc'
 alias clang++='zig c++'
+alias commit='git commit -F - < <(commitmsg --gpt-4.1)'
 
 export GALLIUM_DRIVER=d3d12
 export LIBVA_DRIVER_NAME=d3d12
