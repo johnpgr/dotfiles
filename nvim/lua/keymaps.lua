@@ -1,7 +1,6 @@
 vim.keymap.set("n", "<leader>w", "<cmd>update<cr>", { desc = "Write" })
 vim.keymap.set("n", "]t", "<cmd>tabnext<cr>", { desc = "Tab next" })
 vim.keymap.set("n", "[t", "<cmd>tabprev<cr>", { desc = "Tab prev" })
-vim.keymap.set("n", "<leader>R", "<cmd>restart<cr>", { desc = "Restart" })
 vim.keymap.set("n", "<Esc>", "<cmd>noh<cr>", { desc = "Clear highlights" })
 vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 vim.keymap.set("n", "<leader>I", "<cmd>Inspect<cr>", { desc = "Inspect" })
@@ -183,3 +182,12 @@ vim.keymap.set("n", "<leader>m", function()
     end
     require("compile-mode").compile()
 end, { desc = "Compile" })
+
+vim.keymap.set("n", "<leader>r", function()
+    require("compile-mode").recompile()
+end, { desc = "Recompile" })
+
+vim.keymap.set("n", "<leader>?", function()
+    require("utils").find_symbol_by_lang()
+end, { desc = "Search symbols" })
+

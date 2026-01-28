@@ -167,6 +167,129 @@ function M.jump_to_error_loc()
     return true
 end
 
+function M.find_symbol_by_lang()
+    local pickers = require("telescope.pickers")
+    local finders = require("telescope.finders")
+    local actions = require("telescope.actions")
+    local action_state = require("telescope.actions.state")
+    local conf = require("telescope.config").values
+
+    local languages = {
+        "Javascript/Typescript",
+        "Rust",
+        "Python",
+        "Lua",
+        "C++",
+    }
+
+    local symbol_kinds = {
+        "functions",
+        "interfaces",
+        "classes",
+        "variables",
+        "any",
+    }
+
+    local lang_configs = {
+        ["Javascript/Typescript"] = {
+            glob = "*.{js,ts,jsx,tsx}",
+            symbols = {
+                functions = "(function\\s+|const\\s+\\w+\\s*=\\s*.*=>)",
+                interfaces = "interface\\s+\\w+",
+                classes = "class\\s+\\w+",
+                variables = "(const|let|var)\\s+\\w+",
+                any = "",
+            },
+        },
+        ["Rust"] = {
+            glob = "*.rs",
+            symbols = {
+                functions = "fn\\s+\\w+",
+                interfaces = "trait\\s+\\w+",
+                classes = "(struct|enum|union)\\s+\\w+",
+                variables = "let\\s+(mut\\s+)?\\w+",
+                any = "",
+            },
+        },
+        ["Python"] = {
+            glob = "*.py",
+            symbols = {
+                functions = "def\\s+\\w+",
+                interfaces = "class\\s+\\w+",
+                classes = "class\\s+\\w+",
+                variables = "\\w+\\s*=\\s*",
+                any = "",
+            },
+        },
+        ["Lua"] = {
+            glob = "*.lua",
+            symbols = {
+                functions = "function\\s+\\w+",
+                interfaces = "---@class\\s+\\w+",
+                classes = "---@class\\s+\\w+",
+                variables = "local\\s+\\w+",
+                any = "",
+            },
+        },
+        ["C++"] = {
+            glob = "*.{cpp,h,hpp,cc,c}",
+            symbols = {
+                functions = "\\w+\\s+\\w+\\(",
+                interfaces = "class\\s+\\w+",
+                classes = "class\\s+\\w+",
+                variables = "(int|float|double|char|auto|bool)\\s+\\w+",
+                any = "",
+            },
+        },
+    }
+
+    pickers
+        .new({}, {
+            prompt_title = "Select Symbol Kind",
+            finder = finders.new_table({
+                results = symbol_kinds,
+            }),
+            sorter = conf.generic_sorter({}),
+            attach_mappings = function(prompt_bufnr, map)
+                actions.select_default:replace(function()
+                    actions.close(prompt_bufnr)
+                    local selection = action_state.get_selected_entry()
+                    local selected_symbol = selection[1]
+
+                    pickers
+                        .new({}, {
+                            prompt_title = "Select Language",
+                            finder = finders.new_table({
+                                results = languages,
+                            }),
+                            sorter = conf.generic_sorter({}),
+                            attach_mappings = function(prompt_bufnr_lang, map_lang)
+                                actions.select_default:replace(function()
+                                    actions.close(prompt_bufnr_lang)
+                                    local lang_selection = action_state.get_selected_entry()
+                                    local selected_lang = lang_selection[1]
+
+                                    local config = lang_configs[selected_lang]
+                                    local pattern = config.symbols[selected_symbol] or ""
+                                    local glob = config.glob
+
+                                    M.live_multi_grep({
+                                        symbol_pattern = pattern,
+                                        file_pattern = glob,
+                                        prompt_title = "Searching " .. selected_lang .. " " .. selected_symbol,
+                                    })
+                                end)
+                                return true
+                            end,
+                        })
+                        :find()
+                end)
+                return true
+            end,
+        })
+        :find()
+end
+
 function M.live_multi_grep(opts)
     opts = opts or {}
     opts.cwd = opts.cwd or vim.uv.cwd()
@@ -179,21 +302,40 @@ function M.live_multi_grep(opts)
 
     local finder = finders.new_async_job({
         command_generator = function(prompt)
-            if not prompt or prompt == "" then
-                return nil
-            end
-
-            local pieces = vim.split(prompt, "  ")
             local args = { "rg" }
 
-            if pieces[1] then
-                table.insert(args, "-e")
-                table.insert(args, pieces[1])
-            end
+            if opts.symbol_pattern then
+                -- Use PCRE2 for lookarounds to simulate AND logic (Symbol Definition AND User Query)
+                table.insert(args, "-P")
 
-            if pieces[2] then
-                table.insert(args, "-g")
-                table.insert(args, pieces[2])
+                local pattern = "^(?=.*" .. opts.symbol_pattern .. ")"
+                if prompt and prompt ~= "" then
+                    pattern = pattern .. "(?=.*" .. prompt .. ")"
+                end
+
+                table.insert(args, "-e")
+                table.insert(args, pattern)
+
+                if opts.file_pattern then
+                    table.insert(args, "-g")
+                    table.insert(args, opts.file_pattern)
+                end
+            else
+                if not prompt or prompt == "" then
+                    return nil
+                end
+
+                local pieces = vim.split(prompt, "  ")
+
+                if pieces[1] then
+                    table.insert(args, "-e")
+                    table.insert(args, pieces[1])
+                end
+
+                if pieces[2] then
+                    table.insert(args, "-g")
+                    table.insert(args, pieces[2])
+                end
             end
 
             ---@diagnostic disable-next-line: deprecated
@@ -211,7 +353,7 @@ function M.live_multi_grep(opts)
             previewer = config.grep_previewer(opts),
             debounce = 100,
             finder = finder,
-            prompt_title = "Live grep",
+            prompt_title = opts.prompt_title or "Live grep",
             sorter = sorters.empty(),
         })
         :find()
