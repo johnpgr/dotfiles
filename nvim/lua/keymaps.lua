@@ -23,9 +23,9 @@ vim.keymap.set("v", ">", ">gv", { desc = "Increase indent" })
 vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv", { desc = "Move line down" })
 vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv", { desc = "Move line up" })
 vim.keymap.set("n", "K", vim.lsp.buf.hover, { desc = "Hover" })
-vim.keymap.set("n", "<C-S-k>", function()
+vim.keymap.set("n", "<leader>sl", function()
     require("lookup").search_online_select()
-end, { desc = "Search online (select provider)" })
+end, { desc = "Search lookup (online search)" })
 
 -- Toggle keybinds
 vim.keymap.set("n", "<leader>tl", function()

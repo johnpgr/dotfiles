@@ -68,7 +68,7 @@ vim.api.nvim_create_autocmd("ColorScheme", {
                 hi DiagnosticUnderlineInfo  gui=undercurl cterm=undercurl
                 hi DiagnosticUnderlineWarn  gui=undercurl cterm=undercurl
                 hi DiagnosticUnderlineError gui=undercurl cterm=undercurl
-                hi Normal                   guibg=none    ctermbg=none
+                " hi Normal                   guibg=none    ctermbg=none
                 hi NormalFloat              guibg=none    ctermbg=none
                 hi FloatBorder              guibg=none    ctermbg=none
                 hi NormalNC                 guibg=none    ctermbg=none

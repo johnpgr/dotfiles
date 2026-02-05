@@ -126,10 +126,15 @@ return {
                         -- make lazydev completions top priority (see `:h blink.cmp`)
                         score_offset = 100,
                     },
+                    opencode_contexts = {
+                        name = "OpencodeContexts",
+                        module = "plugins.blink.opencode_contexts",
+                    },
                 },
                 per_filetype = {
                     sql = { "snippets", "dadbod", "buffer" },
                     ["copilot-chat"] = { "snippets" },
+                    DressingInput = { "opencode_contexts", "buffer", "path" },
                 },
             },
             completion = {
@@ -140,7 +145,13 @@ return {
                     cycle = { from_top = false },
                 },
                 menu = {
-                    auto_show = false,
+                    auto_show = function(ctx)
+                        -- Always show for DressingInput (opencode prompts)
+                        if ctx.mode == "DressingInput" then
+                            return true
+                        end
+                        return false
+                    end,
                     max_height = 20,
                     draw = {
                         columns = columns,

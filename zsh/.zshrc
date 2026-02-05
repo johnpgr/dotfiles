@@ -12,6 +12,13 @@ export ZSH="$HOME/.oh-my-zsh"
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
 ZSH_THEME="afowler" # set by `omz`
 
+setopt EXTENDED_HISTORY        # stores timestamps
+setopt INC_APPEND_HISTORY      # write commands immediately
+setopt SHARE_HISTORY           # share history across terminals
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_SAVE_NO_DUPS
+
+
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
 # a theme from this variable instead of looking in $ZSH/themes/
@@ -137,6 +144,56 @@ alias clang='zig cc'
 alias clang++='zig c++'
 alias commit='git commit -F - < <(commitmsg --gpt-4.1)'
 
+easandroidlocal() {
+    mkdir -p "$HOME/tmp/eas" "$HOME/tmp/gradle" "$HOME/tmp/eas-build-local"
+    local workdir
+    workdir="$(mktemp -d "$HOME/tmp/eas-build-local.XXXXXX")"
+
+    EAS_LOCAL_BUILD_WORKINGDIR="$workdir" \
+    TMPDIR="$HOME/tmp/eas" TMP="$HOME/tmp/eas" TEMP="$HOME/tmp/eas" \
+    GRADLE_USER_HOME="$HOME/tmp/gradle" \
+    ORG_GRADLE_PROJECT_org_gradle_jvmargs="-Xmx6g -XX:MaxMetaspaceSize=1g
+    -Dkotlin.daemon.jvm.options=-Xmx2g -Dfile.encoding=UTF-8" \
+    ORG_GRADLE_PROJECT_org_gradle_workers_max=2 \
+    eas build --local --platform android --profile apk
+}
+
+fzf-history-widget() {
+  local selected cmd
+
+  selected=$(
+    fc -l -i -r 1 |
+    awk '
+      {
+        # Expected fc -l -i output shape is roughly:
+        # <num>  <date> <time>  <command...>
+        sub(/^[[:space:]]*[0-9]+[[:space:]]+/, "", $0)
+
+        # Grab date+time
+        ts = $1 " " $2
+        $1 = ""; $2 = ""
+        sub(/^[[:space:]]+/, "", $0)
+        cmd = $0
+
+        # Dedup: keep first occurrence (newest)
+        if (!seen[cmd]++) {
+          printf "%s │ %s\n", ts, cmd
+        }
+      }
+    ' |
+    fzf-tmux -p 55%,60% --prompt='history> '
+  ) || return
+
+  # Strip the timestamp prefix; keep only the command
+  cmd="${selected#* │ }"
+  LBUFFER="$cmd"
+  RBUFFER=""
+  zle redisplay
+}
+
+zle -N fzf-history-widget
+bindkey '^R' fzf-history-widget
+
 export GALLIUM_DRIVER=d3d12
 export LIBVA_DRIVER_NAME=d3d12
 export MESA_LOADER_DRIVER_OVERRIDE=d3d12
@@ -145,6 +202,10 @@ export MESA_GL_VERSION_OVERRIDE=4.6
 export MESA_D3D12_DEFAULT_ADAPTER_NAME="NVIDIA"
 export PATH=$PATH:$HOME/.local/share/bob/nvim-bin
 export PATH=$PATH:$HOME/.local/bin
+
+export ANDROID_HOME="$HOME/Android/Sdk"
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
+export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
 
 eval "$(mise activate bash)"
 

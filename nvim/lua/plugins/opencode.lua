@@ -114,10 +114,8 @@ Here are the staged changes:
         -- Required for `opts.events.reload`.
         vim.o.autoread = true
 
-        vim.keymap.set({ "n", "x" }, "<leader>cm", generate_commit_message, { desc = "Commit message" })
-
         vim.keymap.set({ "n", "x" }, "<leader>ca", function()
-            require("opencode").ask("@this: ", { submit = true })
+            require("opencode").ask("", { submit = true })
         end, { desc = "Ask opencode" })
         vim.keymap.set({ "n", "x" }, "<M-X>", function()
             require("opencode").select()

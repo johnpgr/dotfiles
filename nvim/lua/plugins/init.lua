@@ -31,6 +31,10 @@ return {
         end,
     },
     {
+        "rose-pine/neovim",
+        name = "rose-pine",
+    },
+    {
         "kkharji/sqlite.lua",
         lazy = false,
     },
@@ -119,5 +123,24 @@ return {
             --     end,
             -- })
         end,
+    },
+    {
+        "stevearc/dressing.nvim",
+        opts = {
+            input = {
+                -- Enable completion for DressingInput buffers
+                buf_options = {
+                    -- Enable omnifunc for blink.cmp compatibility
+                    omnifunc = "v:lua.vim.lsp.omnifunc",
+                    filetype = "DressingInput",
+                },
+                -- Enable filetype for buffer-specific completion config
+                win_options = {
+                    winhighlight = "NormalFloat:Normal,FloatBorder:FloatBorder",
+                },
+                -- Ensure we start in insert mode for immediate completion
+                start_mode = "insert",
+            },
+        },
     },
 }
