@@ -45,6 +45,7 @@ return {
                 "kotlin_language_server",
                 "astro",
                 "rust_analyzer",
+                "sqlls",
                 -- "eslint",
             })
         end,

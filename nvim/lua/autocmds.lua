@@ -56,6 +56,56 @@ vim.api.nvim_create_autocmd("LspAttach", {
     end,
 })
 
+local function set_neogit_cterm_highlights()
+    if vim.o.termguicolors then
+        return
+    end
+
+    vim.cmd([[
+        hi NeogitSubtleText          ctermfg=244
+        hi NeogitPopupActionKey      ctermfg=175
+        hi NeogitPopupSwitchKey      ctermfg=175
+        hi NeogitPopupOptionKey      ctermfg=175
+        hi NeogitPopupConfigKey      ctermfg=175
+        hi NeogitSectionHeader       ctermfg=175 cterm=bold
+        hi NeogitSectionHeaderCount  ctermfg=179 cterm=bold
+        hi NeogitBranch              ctermfg=108 cterm=bold
+        hi NeogitBranchHead          ctermfg=108 cterm=bold,underline
+        hi NeogitRemote              ctermfg=179 cterm=bold
+        hi NeogitObjectId            ctermfg=245
+        hi NeogitTagName             ctermfg=179
+        hi NeogitTagDistance         ctermfg=110
+
+        hi NeogitDiffContext         ctermbg=NONE
+        hi NeogitDiffContextHighlight ctermbg=236
+        hi NeogitDiffContextCursor   ctermbg=236
+        hi NeogitDiffHeader          ctermfg=110 ctermbg=236 cterm=bold
+        hi NeogitDiffHeaderHighlight ctermfg=179 ctermbg=236 cterm=bold
+        hi NeogitHunkHeader          ctermfg=252 ctermbg=239 cterm=bold
+        hi NeogitHunkHeaderHighlight ctermfg=252 ctermbg=60 cterm=bold
+        hi NeogitHunkHeaderCursor    ctermfg=252 ctermbg=60 cterm=bold
+        hi NeogitDiffAdd             ctermfg=107 ctermbg=22
+        hi NeogitDiffAddHighlight    ctermfg=114 ctermbg=22 cterm=bold
+        hi NeogitDiffAddCursor       ctermfg=114 ctermbg=22 cterm=bold
+        hi NeogitDiffDelete          ctermfg=203 ctermbg=52
+        hi NeogitDiffDeleteHighlight ctermfg=203 ctermbg=52 cterm=bold
+        hi NeogitDiffDeleteCursor    ctermfg=203 ctermbg=52 cterm=bold
+        hi NeogitDiffAdditions       ctermfg=107 cterm=bold
+        hi NeogitDiffDeletions       ctermfg=203 cterm=bold
+        hi NeogitFilePath            ctermfg=110 cterm=bold
+        hi NeogitActiveItem          ctermfg=234 ctermbg=179 cterm=bold
+
+        hi NeogitChangeAdded         ctermfg=107 cterm=bold
+        hi NeogitChangeDeleted       ctermfg=203 cterm=bold
+        hi NeogitChangeModified      ctermfg=110 cterm=bold
+        hi NeogitChangeRenamed       ctermfg=179 cterm=bold
+        hi NeogitChangeUpdated       ctermfg=214 cterm=bold
+        hi NeogitChangeCopied        ctermfg=117 cterm=bold
+        hi NeogitChangeUnmerged      ctermfg=221 cterm=bold
+        hi NeogitChangeNewFile       ctermfg=107 cterm=bold
+    ]])
+end
+
 vim.api.nvim_create_autocmd("ColorScheme", {
     callback = function()
         vim.defer_fn(function()
@@ -75,6 +125,8 @@ vim.api.nvim_create_autocmd("ColorScheme", {
                 hi WinSeparator             guibg=none    ctermbg=none
                 hi WinBar                   guibg=none    ctermbg=none
             ]])
+
+            set_neogit_cterm_highlights()
         end, 1)
     end,
 })

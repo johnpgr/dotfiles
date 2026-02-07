@@ -19,6 +19,7 @@ local function should_enable_ibl()
 end
 
 return {
+    { "https://github.com/sainnhe/sonokai" },
     {
         "sainnhe/gruvbox-material",
         config = function()
