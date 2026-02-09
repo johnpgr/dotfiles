@@ -2,7 +2,7 @@ local M = {}
 
 M.config_db_uri = vim.fn.stdpath("data") .. "/nvim_config.db"
 M.is_neovide = vim.g.neovide ~= nil
-M.is_kitty = os.getenv("TERM") == "xterm-kitty"
+M.is_kitty = os.getenv("TERM") == "xterm-kitty" or os.getenv("TERM") == "xterm-ghostty"
 
 -- Fuzzy find within the current buffer with live preview navigation
 --
