@@ -118,12 +118,14 @@ vim.api.nvim_create_autocmd("ColorScheme", {
                 hi DiagnosticUnderlineInfo  gui=undercurl cterm=undercurl
                 hi DiagnosticUnderlineWarn  gui=undercurl cterm=undercurl
                 hi DiagnosticUnderlineError gui=undercurl cterm=undercurl
-                " hi Normal                   guibg=none    ctermbg=none
+                hi Normal                   guibg=none    ctermbg=none
                 hi NormalFloat              guibg=none    ctermbg=none
                 hi FloatBorder              guibg=none    ctermbg=none
                 hi NormalNC                 guibg=none    ctermbg=none
                 hi WinSeparator             guibg=none    ctermbg=none
                 hi WinBar                   guibg=none    ctermbg=none
+                hi StatusLine               guibg=none    cterm=none ctermbg=none ctermfg=white
+                hi StatusLineNC             guibg=none    cterm=none ctermbg=none ctermfg=white
             ]])
 
             set_neogit_cterm_highlights()

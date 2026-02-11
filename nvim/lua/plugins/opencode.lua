@@ -9,6 +9,9 @@ return {
     config = function()
         ---@type opencode.Opts
         vim.g.opencode_opts = {
+            provider = {
+                enabled = "tmux",
+            },
             prompts = {
                 holefill = {
                     prompt = "Complete the TODO placeholder in @this - replace the TODO comment with the actual implementation. Respond with code only.",

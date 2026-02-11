@@ -19,6 +19,15 @@ local function should_enable_ibl()
 end
 
 return {
+    {
+        "morhetz/gruvbox",
+        config = function()
+            vim.g.gruvbox_contrast_dark = "hard"
+            vim.g.gruvbox_sign_column = "bg0"
+            vim.g.gruvbox_italicize_comments = 0
+            vim.g.gruvbox_invert_selection = 1
+        end,
+    },
     { "https://github.com/sainnhe/sonokai" },
     {
         "sainnhe/gruvbox-material",

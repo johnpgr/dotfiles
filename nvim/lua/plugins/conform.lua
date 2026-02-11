@@ -18,6 +18,7 @@ return {
                 typescriptreact = { "prettierd", "prettier", stop_after_first = true, lsp_format = "fallback" },
                 astro = { "prettierd", "prettier", stop_after_first = true, lsp_format = "fallback" },
                 cpp = { "clang-format", stop_after_first = true, lsp_format = "fallback" },
+                odin = { lsp_format = "fallback" },
             },
         })
     end,

@@ -58,6 +58,30 @@ return {
             end
         end
 
+        local function accept_copilot_suggestion()
+            local ok, copilot_suggestion = pcall(require, "copilot.suggestion")
+            if not ok or not copilot_suggestion.is_visible() then
+                return false
+            end
+
+            copilot_suggestion.accept()
+            return true
+        end
+
+        local function tab_action(cmp)
+            if vim.g.emacs_tab == true then
+                return emacs_tab(cmp)
+            end
+
+            if accept_copilot_suggestion() then
+                return true
+            end
+
+            if require("blink.cmp").is_visible() then
+                return cmp.accept()
+            end
+        end
+
         local columns = {}
 
         if not vim.g.icons_enabled then
@@ -105,11 +129,12 @@ return {
                     "fallback",
                 },
                 ["<Tab>"] = {
-                    emacs_tab,
+                    tab_action,
                     "snippet_forward",
                     "fallback",
                 },
                 ["<S-Tab>"] = { custom_insert_prev },
+                ["<C-y>"] = { "accept", "fallback" },
                 ["<C-n>"] = { "select_next", "fallback" },
                 ["<C-p>"] = { "select_prev", "fallback" },
             },
@@ -140,18 +165,12 @@ return {
             completion = {
                 list = {
                     selection = {
-                        preselect = false,
+                        preselect = vim.g.emacs_tab ~= true,
                     },
                     cycle = { from_top = false },
                 },
                 menu = {
-                    auto_show = function(ctx)
-                        -- Always show for DressingInput (opencode prompts)
-                        if ctx.mode == "DressingInput" then
-                            return true
-                        end
-                        return false
-                    end,
+                    auto_show = vim.g.emacs_tab ~= true,
                     max_height = 20,
                     draw = {
                         columns = columns,

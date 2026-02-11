@@ -207,7 +207,7 @@ export ANDROID_HOME="$HOME/Android/Sdk"
 export ANDROID_SDK_ROOT="$ANDROID_HOME"
 export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
 
-eval "$(mise activate bash)"
+eval "$(mise activate zsh)"
 
 precmd() {
   print -Pn "\e]2;%~\e\\"

@@ -47,6 +47,7 @@ return {
                 "rust_analyzer",
                 "sqlls",
                 "eslint",
+                "ols",
             })
         end,
     },
@@ -61,11 +62,13 @@ return {
     },
     {
         "folke/lazydev.nvim",
+        dependencies = { "DrKJeff16/wezterm-types" },
         ft = "lua",
         config = function()
             require("lazydev").setup({
                 library = {
                     { path = "${3rd}/luv/library", words = { "vim%.uv" } },
+                    { path = "wezterm-types", mods = { "wezterm" } },
                 },
             })
         end,
