@@ -1,3 +1,63 @@
+local function nav_hunk(direction)
+    if vim.wo.diff then
+        local key = direction == "next" and "]c" or "[c"
+        vim.cmd.normal({ key, bang = true })
+        return
+    end
+
+    local popup = require("gitsigns.popup")
+    popup.close("hunk")
+
+    local win = vim.api.nvim_get_current_win()
+    if vim.api.nvim_win_get_config(win).relative ~= "" then
+        for _, w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+            if vim.api.nvim_win_get_config(w).relative == "" then
+                vim.api.nvim_set_current_win(w)
+                break
+            end
+        end
+    end
+
+    local gitsigns = require("gitsigns")
+    local bufnr = vim.api.nvim_get_current_buf()
+    local hunks = gitsigns.get_hunks(bufnr) or {}
+    if #hunks == 0 then
+        return
+    end
+
+    local cur = vim.api.nvim_win_get_cursor(0)[1]
+    local target
+
+    if direction == "next" then
+        for _, h in ipairs(hunks) do
+            if h.added.start > cur then
+                target = h.added.start
+                break
+            end
+        end
+        if not target then
+            target = hunks[1].added.start
+        end
+    else
+        for i = #hunks, 1, -1 do
+            if hunks[i].added.start < cur then
+                target = hunks[i].added.start
+                break
+            end
+        end
+        if not target then
+            target = hunks[#hunks].added.start
+        end
+    end
+
+    target = math.max(1, math.min(target, vim.api.nvim_buf_line_count(bufnr)))
+    vim.api.nvim_win_set_cursor(0, { target, 0 })
+
+    vim.schedule(function()
+        gitsigns.preview_hunk()
+    end)
+end
+
 -- Git plugins
 return {
     {
@@ -7,24 +67,14 @@ return {
             {
                 "]h",
                 function()
-                    -- if vim.wo.diff then
-                    --     vim.cmd.normal({ "]c", bang = true })
-                    -- else
-                    vim.cmd("Gitsigns next_hunk")
-                    vim.cmd("Gitsigns preview_hunk")
-                    -- end
+                    nav_hunk("next")
                 end,
                 { desc = "Next hunk" },
             },
             {
                 "[h",
                 function()
-                    -- if vim.wo.diff then
-                    --     vim.cmd.normal({ "[c", bang = true })
-                    -- else
-                    vim.cmd("Gitsigns prev_hunk")
-                    vim.cmd("Gitsigns preview_hunk")
-                    -- end
+                    nav_hunk("prev")
                 end,
                 { desc = "Previous hunk" },
             },
@@ -44,6 +94,7 @@ return {
                 attach_to_untracked = true,
                 preview_config = {
                     border = "single",
+                    focusable = false,
                 },
                 signs = {
                     add = { text = "+" },

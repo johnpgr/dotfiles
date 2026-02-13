@@ -124,8 +124,6 @@ return {
                 preset = "none",
                 ["<C-space>"] = { toggle_menu },
                 ["<CR>"] = {
-                    "accept",
-                    "snippet_forward",
                     "fallback",
                 },
                 ["<Tab>"] = {

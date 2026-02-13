@@ -14,6 +14,13 @@ return {
         },
         keys = {
             {
+                "<F1>",
+                function()
+                    require("dapui").eval(nil, { enter = true })
+                end,
+                desc = "DAP eval symbol",
+            },
+            {
                 "<F5>",
                 function()
                     require("dap").continue()

@@ -138,18 +138,11 @@ return {
         "stevearc/dressing.nvim",
         opts = {
             input = {
-                -- Enable completion for DressingInput buffers
-                buf_options = {
-                    -- Enable omnifunc for blink.cmp compatibility
-                    omnifunc = "v:lua.vim.lsp.omnifunc",
-                    filetype = "DressingInput",
-                },
-                -- Enable filetype for buffer-specific completion config
-                win_options = {
-                    winhighlight = "NormalFloat:Normal,FloatBorder:FloatBorder",
-                },
-                -- Ensure we start in insert mode for immediate completion
-                start_mode = "insert",
+                get_config = function(opts)
+                    if opts.prompt and opts.prompt:match("^Compile command") then
+                        return { enabled = false }
+                    end
+                end,
             },
         },
     },
