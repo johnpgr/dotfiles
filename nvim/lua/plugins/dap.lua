@@ -196,7 +196,7 @@ return {
             })
 
             require("mason-nvim-dap").setup({
-                ensure_installed = { "codelldb" },
+                ensure_installed = {},
                 automatic_installation = true,
             })
 
@@ -210,19 +210,20 @@ return {
                 dapui.close()
             end
 
-            local codelldb_path = vim.fn.stdpath("data") .. "/mason/bin/codelldb"
-            dap.adapters.codelldb = {
-                type = "server",
-                port = "${port}",
-                executable = {
-                    command = codelldb_path,
-                    args = { "--port", "${port}" },
-                },
+            local lldb_dap_path = vim.fn.exepath("lldb-dap")
+            if lldb_dap_path == "" then
+                lldb_dap_path = vim.fn.exepath("lldb-vscode")
+            end
+
+            dap.adapters.lldb = {
+                type = "executable",
+                command = lldb_dap_path,
+                name = "lldb",
             }
 
-            local codelldb_config = {
+            local lldb_config = {
                 name = "Launch",
-                type = "codelldb",
+                type = "lldb",
                 request = "launch",
                 program = function()
                     return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
@@ -232,16 +233,17 @@ return {
                 args = {},
             }
 
-            local codelldb_attach = {
+            local lldb_attach = {
                 name = "Attach",
-                type = "codelldb",
+                type = "lldb",
                 request = "attach",
                 pid = require("dap.utils").pick_process,
                 cwd = "${workspaceFolder}",
             }
 
-            dap.configurations.c = { codelldb_config, codelldb_attach }
+            dap.configurations.c = { lldb_config, lldb_attach }
             dap.configurations.cpp = dap.configurations.c
+            dap.configurations.odin = dap.configurations.c
         end,
     },
 }

@@ -126,6 +126,14 @@ vim.api.nvim_create_autocmd("ColorScheme", {
                 hi WinBar                   guibg=none    ctermbg=none
                 hi StatusLine               guibg=none    cterm=none ctermbg=none ctermfg=white
                 hi StatusLineNC             guibg=none    cterm=none ctermbg=none ctermfg=white
+                hi SignColumn               guibg=none    ctermbg=none
+                hi GruvboxGreenSign         guibg=none    ctermbg=none
+                hi GruvboxAquaSign          guibg=none    ctermbg=none
+                hi GruvboxRedSign           guibg=none    ctermbg=none
+                hi CursorLine               guibg=#101241 ctermbg=17
+                hi CursorLineNr             guibg=#101241 ctermbg=17
+                hi CursorLineFold           guibg=#101241 ctermbg=17
+                hi CursorLineSign           guibg=#101241 ctermbg=17
             ]])
 
             set_neogit_cterm_highlights()

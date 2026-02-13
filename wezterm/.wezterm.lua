@@ -22,8 +22,8 @@ config.font_rules = {
 }
 
 config.bold_brightens_ansi_colors = false
-config.font_size = 14
-config.freetype_interpreter_version = 35
+config.font_size = 13
+config.freetype_interpreter_version = 40
 config.hide_tab_bar_if_only_one_tab = true
 config.color_scheme = "GruvboxDarkHard"
 
