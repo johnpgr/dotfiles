@@ -12,12 +12,12 @@ config.font_rules = {
 	{
 		intensity = "Bold",
 		italic = false,
-		font = wezterm.font("Liberation Mono", { weight = "Regular" }),
+		font = wezterm.font("Consolas Nerd Font", { weight = "Regular" }),
 	},
 	{
 		intensity = "Bold",
 		italic = true,
-		font = wezterm.font("Liberation Mono", { weight = "Regular", style = "Italic" }),
+		font = wezterm.font("Consolas Nerd Font", { weight = "Regular", style = "Italic" }),
 	},
 }
 
@@ -26,10 +26,12 @@ config.font_size = 14
 config.freetype_interpreter_version = 40
 config.hide_tab_bar_if_only_one_tab = true
 config.color_scheme = "Default Dark (base16)"
+config.window_close_confirmation = "NeverPrompt" 
 
 config.colors = {
 	-- background = "#1d2021",
-    background = "#0e1415"
+    background = "#0e1415",
+    cursor_bg = "#00d850"
 }
 
 config.window_padding = {

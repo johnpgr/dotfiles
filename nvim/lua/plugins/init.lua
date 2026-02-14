@@ -60,21 +60,6 @@ return {
         lazy = true,
         cond = vim.g.icons_enabled,
     },
-    {
-        "nvim-mini/mini.bufremove",
-        config = function()
-            require("mini.bufremove").setup({})
-        end,
-        keys = {
-            {
-                "<leader>bd",
-                function()
-                    require("mini.bufremove").delete()
-                end,
-                desc = "Buffer delete",
-            },
-        },
-    },
     -- Session management
     { "farmergreg/vim-lastplace", event = "BufReadPre" },
     -- UI enhancements
