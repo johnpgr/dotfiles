@@ -140,7 +140,7 @@ export ARCHFLAGS="-arch $(uname -m)"
 alias ls='ls -C -t -U -A -p --color=auto'
 alias grep='grep --color=auto'
 alias vi='nvim'
-alias commit='git commit -F - < <(commitmsg --gpt-5-mini)'
+alias commit='commitmsg --grok-code-fast-1 | git commit -F -'
 
 easandroidlocal() {
     mkdir -p "$HOME/tmp/eas" "$HOME/tmp/gradle" "$HOME/tmp/eas-build-local"

@@ -7,7 +7,7 @@ local config = wezterm.config_builder()
 config.max_fps = 165
 config.cursor_blink_rate = 0
 config.term = "wezterm"
-config.font = wezterm.font("Liberation Mono")
+config.font = wezterm.font("Consolas Nerd Font")
 config.font_rules = {
 	{
 		intensity = "Bold",
@@ -22,13 +22,14 @@ config.font_rules = {
 }
 
 config.bold_brightens_ansi_colors = false
-config.font_size = 13
+config.font_size = 14
 config.freetype_interpreter_version = 40
 config.hide_tab_bar_if_only_one_tab = true
-config.color_scheme = "GruvboxDarkHard"
+config.color_scheme = "Default Dark (base16)"
 
 config.colors = {
-	background = "#1d2021",
+	-- background = "#1d2021",
+    background = "#0e1415"
 }
 
 config.window_padding = {

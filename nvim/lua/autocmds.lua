@@ -57,7 +57,13 @@ vim.api.nvim_create_autocmd("LspAttach", {
 })
 
 local function set_neogit_cterm_highlights()
+    -- only applies if termguicolors is not enabled, otherwise the colors are defined in the colorscheme.
     if vim.o.termguicolors then
+        return
+    end
+
+    -- only applies on certain colorschemes that doesnt have them defined.
+    if vim.o.colorscheme ~= "sonokai" then
         return
     end
 
@@ -110,30 +116,30 @@ vim.api.nvim_create_autocmd("ColorScheme", {
     callback = function()
         vim.defer_fn(function()
             vim.cmd([[
-                hi Underlined               gui=undercurl cterm=undercurl
-                hi @markup.underline        gui=undercurl cterm=undercurl
-                hi @ibl.scope.underline.1   gui=undercurl cterm=undercurl
-                hi DiagnosticUnderlineOk    gui=undercurl cterm=undercurl
-                hi DiagnosticUnderlineHint  gui=undercurl cterm=undercurl
-                hi DiagnosticUnderlineInfo  gui=undercurl cterm=undercurl
-                hi DiagnosticUnderlineWarn  gui=undercurl cterm=undercurl
-                hi DiagnosticUnderlineError gui=undercurl cterm=undercurl
-                hi Normal                   guibg=none    ctermbg=none
-                hi NormalFloat              guibg=none    ctermbg=none
-                hi FloatBorder              guibg=none    ctermbg=none
-                hi NormalNC                 guibg=none    ctermbg=none
-                hi WinSeparator             guibg=none    ctermbg=none
-                hi WinBar                   guibg=none    ctermbg=none
-                hi StatusLine               guibg=none    cterm=none ctermbg=none ctermfg=white
-                hi StatusLineNC             guibg=none    cterm=none ctermbg=none ctermfg=white
-                hi SignColumn               guibg=none    ctermbg=none
-                hi GruvboxGreenSign         guibg=none    ctermbg=none
-                hi GruvboxAquaSign          guibg=none    ctermbg=none
-                hi GruvboxRedSign           guibg=none    ctermbg=none
-                hi CursorLine               guibg=#101241 ctermbg=17
-                hi CursorLineNr             guibg=#101241 ctermbg=17
-                hi CursorLineFold           guibg=#101241 ctermbg=17
-                hi CursorLineSign           guibg=#101241 ctermbg=17
+                hi  Underlined               gui=undercurl cterm=undercurl
+                hi  @markup.underline        gui=undercurl cterm=undercurl
+                hi  @ibl.scope.underline.1   gui=undercurl cterm=undercurl
+                hi  DiagnosticUnderlineOk    gui=undercurl cterm=undercurl
+                hi  DiagnosticUnderlineHint  gui=undercurl cterm=undercurl
+                hi  DiagnosticUnderlineInfo  gui=undercurl cterm=undercurl
+                hi  DiagnosticUnderlineWarn  gui=undercurl cterm=undercurl
+                hi  DiagnosticUnderlineError gui=undercurl cterm=undercurl
+                " hi  Normal                   guibg=none    ctermbg=none
+                hi  NormalFloat              guibg=none    ctermbg=none
+                hi! link                     FloatBorder   NormalFloat
+                " hi  NormalNC                 guibg=none    ctermbg=none
+                " hi  WinSeparator             guibg=none    ctermbg=none
+                " hi  WinBar                   guibg=none    ctermbg=none
+                " hi  StatusLine               guibg=none    cterm=none ctermbg=none ctermfg=white
+                " hi  StatusLineNC             guibg=none    cterm=none ctermbg=none ctermfg=white
+                " hi  SignColumn               guibg=none    ctermbg=none
+                " hi  GruvboxGreenSign         guibg=none    ctermbg=none
+                " hi  GruvboxAquaSign          guibg=none    ctermbg=none
+                " hi  GruvboxRedSign           guibg=none    ctermbg=none
+                " hi  CursorLine               guibg=#101241 ctermbg=17
+                " hi  CursorLineNr             guibg=#101241 ctermbg=17
+                " hi  CursorLineFold           guibg=#101241 ctermbg=17
+                " hi  CursorLineSign           guibg=#101241 ctermbg=17
             ]])
 
             set_neogit_cterm_highlights()
