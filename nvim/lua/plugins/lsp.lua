@@ -47,7 +47,7 @@ return {
                 "astro",
                 "rust_analyzer",
                 "sqlls",
-                "eslint",
+                "oxlint",
                 "ols",
             })
         end,

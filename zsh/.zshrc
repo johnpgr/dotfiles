@@ -140,6 +140,7 @@ export ARCHFLAGS="-arch $(uname -m)"
 alias ls='ls -C -t -U -A -p --color=auto'
 alias grep='grep --color=auto'
 alias vi='nvim'
+alias codex-desktop="~/codex-desktop-linux/codex-app/start.sh"
 # Moved to a script file in $HOME/.local/bin/commit
 # alias commit='commitmsg --grok-code-fast-1 | git commit -F -'
 

@@ -47,6 +47,30 @@ return {
 
         local ts_start = vim.treesitter.start
         if not vim.g.treesitter_enabled then
+            local allowed_langs = {
+                markdown = true,
+                javascript = true,
+                typescript = true,
+                tsx = true,
+            }
+
+            local filetype_to_lang = {
+                markdown = "markdown",
+                javascript = "javascript",
+                typescript = "typescript",
+                javascriptreact = "tsx",
+                typescriptreact = "tsx",
+            }
+
+            local function resolve_lang(bufnr, lang)
+                if lang and allowed_langs[lang] then
+                    return lang
+                end
+
+                local filetype = vim.bo[bufnr].filetype
+                return filetype_to_lang[filetype]
+            end
+
             ---@diagnostic disable-next-line: duplicate-set-field
             vim.treesitter.start = function(bufnr, lang)
                 bufnr = bufnr or vim.api.nvim_get_current_buf()
@@ -56,8 +80,9 @@ return {
                     return ts_start(bufnr, lang)
                 end
 
-                if lang == "markdown" then
-                    return ts_start(bufnr, lang)
+                local resolved_lang = resolve_lang(bufnr, lang)
+                if resolved_lang then
+                    return ts_start(bufnr, lang or resolved_lang)
                 end
             end
         end

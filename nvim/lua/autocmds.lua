@@ -51,7 +51,11 @@ vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
 vim.api.nvim_create_autocmd("LspAttach", {
     callback = function(args)
         local client = vim.lsp.get_client_by_id(args.data.client_id)
-        ---@diagnostic disable-next-line: need-check-nil
+        if not client then
+            return
+        end
+
+        vim.lsp.semantic_tokens.stop(args.buf, client.id)
         client.server_capabilities.semanticTokensProvider = nil
     end,
 })

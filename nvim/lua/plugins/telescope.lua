@@ -48,43 +48,36 @@ return {
             end,
             desc = "Search highlight group",
         },
-        {
-            "<leader>sd",
-            function()
-                require("utils").live_multi_grep({
-                    cwd = require("telescope.utils").buffer_dir(),
-                })
-            end,
-            desc = "Search current directory",
-        },
-        {
-            "<leader>sf",
-            function()
-                require("telescope.builtin").find_files({ cwd = require("telescope.utils").buffer_dir() })
-            end,
-            desc = "Search file",
-        },
-        {
-            "<leader>sp",
-            function()
-                require("telescope.builtin").find_files({ cwd = vim.fs.joinpath(vim.fn.stdpath("data"), "lazy") })
-            end,
-            desc = "Search file in plugins",
-        },
-        {
-            "<leader>/",
-            function()
-                require("utils").live_multi_grep()
-            end,
-            desc = "Search workspace",
-        },
-        {
-            "<leader><space>",
-            function()
-                require("telescope.builtin").find_files()
-            end,
-            desc = "Find file in workspace",
-        },
+        -- {
+        --     "<leader>sd",
+        --     function()
+        --         require("utils").live_multi_grep({
+        --             cwd = require("telescope.utils").buffer_dir(),
+        --         })
+        --     end,
+        --     desc = "Search current directory",
+        -- },
+        -- {
+        --     "<leader>sf",
+        --     function()
+        --         require("telescope.builtin").find_files({ cwd = require("telescope.utils").buffer_dir() })
+        --     end,
+        --     desc = "Search file",
+        -- },
+        -- {
+        --     "<leader>/",
+        --     function()
+        --         require("utils").live_multi_grep()
+        --     end,
+        --     desc = "Search workspace",
+        -- },
+        -- {
+        --     "<leader><space>",
+        --     function()
+        --         require("telescope.builtin").find_files()
+        --     end,
+        --     desc = "Find file in workspace",
+        -- },
         {
             "<leader>so",
             function()
@@ -92,20 +85,13 @@ return {
             end,
             desc = "Search option",
         },
-        {
-            "<leader>fR",
-            function()
-                require("telescope.builtin").oldfiles()
-            end,
-            desc = "Recent files",
-        },
-        {
-            "<leader>fn",
-            function()
-                require("telescope.builtin").find_files({ cwd = vim.fn.stdpath("config") })
-            end,
-            desc = "Browse .config/nvim",
-        },
+        -- {
+        --     "<leader>fR",
+        --     function()
+        --         require("telescope.builtin").oldfiles()
+        --     end,
+        --     desc = "Recent files",
+        -- },
         {
             "<leader>fp",
             function()
@@ -115,15 +101,15 @@ return {
             end,
             desc = "Find file in plugins",
         },
-        {
-            "<leader>fr",
-            function()
-                require("telescope.builtin").oldfiles({
-                    only_cwd = true,
-                })
-            end,
-            desc = "Recent files in workspace",
-        },
+        -- {
+        --     "<leader>fr",
+        --     function()
+        --         require("telescope.builtin").oldfiles({
+        --             only_cwd = true,
+        --         })
+        --     end,
+        --     desc = "Recent files in workspace",
+        -- },
         { "<leader>sb", utils.fuzzy_find_current_buffer, desc = "Search buffer" },
         {
             "<leader>ll",
