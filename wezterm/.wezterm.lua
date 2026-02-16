@@ -7,31 +7,31 @@ local config = wezterm.config_builder()
 config.max_fps = 165
 config.cursor_blink_rate = 0
 config.term = "wezterm"
-config.font = wezterm.font("Consolas Nerd Font")
+config.font = wezterm.font("Consolas", { weight = "Regular" })
 config.font_rules = {
 	{
 		intensity = "Bold",
 		italic = false,
-		font = wezterm.font("Consolas Nerd Font", { weight = "Regular" }),
+		font = wezterm.font("Consolas", { weight = "Regular" }),
 	},
 	{
 		intensity = "Bold",
 		italic = true,
-		font = wezterm.font("Consolas Nerd Font", { weight = "Regular", style = "Italic" }),
+		font = wezterm.font("Consolas", { weight = "Regular", style = "Italic" }),
 	},
 }
 
 config.bold_brightens_ansi_colors = false
-config.font_size = 14
+config.font_size = 13
 config.freetype_interpreter_version = 40
 config.hide_tab_bar_if_only_one_tab = true
 config.color_scheme = "Default Dark (base16)"
-config.window_close_confirmation = "NeverPrompt" 
+config.window_close_confirmation = "NeverPrompt"
 
 config.colors = {
 	-- background = "#1d2021",
-    background = "#0e1415",
-    cursor_bg = "#00d850"
+	background = "#0e1415",
+	cursor_bg = "#00d850",
 }
 
 config.window_padding = {

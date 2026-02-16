@@ -43,7 +43,7 @@ function M.load_persisted_colorscheme()
     end
 
     -- Check system state file (managed by monitor_theme.py)
-    local state_file = os.getenv("HOME") .. "/dotfiles/.theme_state"
+    local state_file = os.getenv("HOME") .. "/.dotfiles/.theme_state"
     local f = io.open(state_file, "r")
     if f then
         local mode = f:read("*all")

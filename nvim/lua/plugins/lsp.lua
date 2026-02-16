@@ -43,6 +43,7 @@ return {
                 "dartls",
                 "glsl_analyzer",
                 "kotlin_language_server",
+                "kotlin_lsp",
                 "astro",
                 "rust_analyzer",
                 "sqlls",
