@@ -146,68 +146,18 @@ local function open_url(url)
     vim.fn.jobstart({ open_cmd, url }, { detach = true })
 end
 
--- Get provider using telescope picker (sorted by usage)
-local function get_provider(query)
-    -- Use telescope to select provider
-    local pickers = require("telescope.pickers")
-    local finders = require("telescope.finders")
-    local conf = require("telescope.config").values
-    local actions = require("telescope.actions")
-    local action_state = require("telescope.actions.state")
-    local themes = require("telescope.themes")
-
-    local selected_provider = nil
-    local co = coroutine.running()
-
-    -- Get providers sorted by usage frequency
+-- Get provider using vim.ui.select/refer picker (sorted by usage)
+local function get_provider(query, on_choice)
     local sorted_providers = sort_providers_by_usage()
-    local theme = themes.get_ivy({
-        previewer = false,
-        borderchars = {
-            { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
-            prompt = { "─", "│", " ", "│", "┌", "┐", "│", "│" },
-            results = { "─", "│", "─", "│", "├", "┤", "┘", "└" },
-            preview = { "─", "│", "─", "│", "┌", "┐", "┘", "└" },
-        },
-        layout_config = {
-            height = 12,
-        },
-        results_title = false,
-    })
 
-    local picker = pickers.new(theme, {
-        prompt_title = string.format("Search '%s' on:", query),
-        finder = finders.new_table({
-            results = sorted_providers,
-            entry_maker = function(entry)
-                local display_text = entry.name
-                return {
-                    value = entry,
-                    display = display_text,
-                    ordinal = entry.name,
-                }
-            end,
-        }),
-        sorter = conf.generic_sorter({}),
-        attach_mappings = function(prompt_bufnr, map)
-            actions.select_default:replace(function()
-                selected_provider = action_state.get_selected_entry().value
-                actions.close(prompt_bufnr)
-                if co then
-                    coroutine.resume(co)
-                end
-            end)
-            return true
+    vim.ui.select(sorted_providers, {
+        prompt = string.format("Search '%s' on:", query),
+        format_item = function(item)
+            return item.name
         end,
-    })
-
-    picker:find()
-
-    if co then
-        coroutine.yield()
-    end
-
-    return selected_provider
+    }, function(choice)
+        on_choice(choice)
+    end)
 end
 
 -- Main search function
@@ -218,8 +168,7 @@ function M.search_online_select()
         return
     end
 
-    coroutine.wrap(function()
-        local provider = get_provider(query)
+    get_provider(query, function(provider)
         if not provider then
             return
         end
@@ -239,7 +188,7 @@ function M.search_online_select()
 
         vim.notify(string.format("Searching for '%s' on %s", query, provider.name), vim.log.levels.INFO)
         open_url(url)
-    end)()
+    end)
 end
 
 return M

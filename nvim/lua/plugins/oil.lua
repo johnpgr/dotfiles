@@ -122,6 +122,12 @@ return {
             -- 	},
             -- },
             skip_confirm_for_simple_edits = true,
+            view_options = {
+                show_hidden = true,
+                is_always_hidden = function(name, _)
+                    return name == ".." or name == "../"
+                end,
+            },
             keymaps = {
                 ["q"] = "actions.close",
                 ["<RightMouse>"] = "<LeftMouse><cmd>lua require('oil.actions').select.callback()<CR>",

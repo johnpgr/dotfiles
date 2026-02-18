@@ -1,8 +1,5 @@
 return {
     {
-        "https://github.com/p00f/alabaster.nvim",
-    },
-    {
         "morhetz/gruvbox",
         config = function()
             vim.g.gruvbox_contrast_dark = "hard"

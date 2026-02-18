@@ -29,6 +29,7 @@ vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
                         ["*"] = "xclip -selection clipboard -o",
                     },
                 }
+
             elseif vim.fn.executable("xsel") == 1 then
                 vim.g.clipboard = {
                     copy = {
@@ -48,17 +49,17 @@ vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
 })
 
 -- LSP attach autocmd
-vim.api.nvim_create_autocmd("LspAttach", {
-    callback = function(args)
-        local client = vim.lsp.get_client_by_id(args.data.client_id)
-        if not client then
-            return
-        end
-
-        vim.lsp.semantic_tokens.stop(args.buf, client.id)
-        client.server_capabilities.semanticTokensProvider = nil
-    end,
-})
+-- vim.api.nvim_create_autocmd("LspAttach", {
+--     callback = function(args)
+--         local client = vim.lsp.get_client_by_id(args.data.client_id)
+--         if not client then
+--             return
+--         end
+--
+--         vim.lsp.semantic_tokens.stop(args.buf, client.id)
+--         client.server_capabilities.semanticTokensProvider = nil
+--     end,
+-- })
 
 local function set_neogit_cterm_highlights()
     -- only applies if termguicolors is not enabled, otherwise the colors are defined in the colorscheme.
@@ -128,9 +129,10 @@ vim.api.nvim_create_autocmd("ColorScheme", {
                 hi  DiagnosticUnderlineInfo  gui=undercurl cterm=undercurl
                 hi  DiagnosticUnderlineWarn  gui=undercurl cterm=undercurl
                 hi  DiagnosticUnderlineError gui=undercurl cterm=undercurl
-                " hi  Normal                   guibg=none    ctermbg=none
                 hi  NormalFloat              guibg=none    ctermbg=none
                 hi! link                     FloatBorder   NormalFloat
+                hi! link                     OilFileHidden OilFile
+                hi! link                     OilDirHidden  OilDir
                 " hi  NormalNC                 guibg=none    ctermbg=none
                 " hi  WinSeparator             guibg=none    ctermbg=none
                 " hi  WinBar                   guibg=none    ctermbg=none

@@ -196,16 +196,7 @@ return {
                 },
             },
             cmdline = {
-                completion = {
-                    menu = {
-                        auto_show = true,
-                        draw = {
-                            columns = {
-                                { "label", "label_description" },
-                            },
-                        },
-                    },
-                },
+                enabled = false,
             },
             fuzzy = { implementation = "prefer_rust_with_warning" },
         })

@@ -41,13 +41,14 @@ vim.filetype.add({
     },
 })
 
--- Only on nightly
+-- -- Only on nightly
 if vim.version().minor >= 12 then
-    require("vim._extui").enable({})
+    require("vim._core.ui2").enable({})
 end
 
 require("autocmds")
 require("keymaps")
+require("cmdline")
 
 if require("utils").is_neovide then
     require("neovide")

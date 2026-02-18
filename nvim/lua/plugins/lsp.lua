@@ -1,4 +1,3 @@
-local default_picker_config = require("utils").default_picker_config
 -- LSP floating window config
 local lsp_floating_preview_original = vim.lsp.util.open_floating_preview
 ---@diagnostic disable-next-line: duplicate-set-field
@@ -23,6 +22,9 @@ vim.diagnostic.config({
     -- 	end,
     -- },
 })
+
+-- Remove LSP semantic tokens
+vim.lsp.semantic_tokens.enable(false)
 
 -- LSP plugins
 return {
@@ -122,34 +124,18 @@ return {
                     }
 
                     vim.keymap.set("n", "<leader>lt", function()
-                        require("telescope.pickers")
-                            .new({}, {
-                                finder = require("telescope.finders").new_table({
-                                    results = items,
-                                    entry_maker = function(entry)
-                                        return {
-                                            value = entry.name,
-                                            display = string.format("%-24s %s", entry.name, entry.desc or ""),
-                                            ordinal = (entry.name or "") .. " " .. (entry.desc or ""),
-                                            name = entry.name,
-                                            desc = entry.desc,
-                                        }
-                                    end,
-                                }),
-                                sorter = require("telescope.sorters").get_generic_fuzzy_sorter(),
-                                attach_mappings = function(prompt_bufnr, _)
-                                    require("telescope.actions").select_default:replace(function()
-                                        local selection = require("telescope.actions.state").get_selected_entry()
-                                        require("telescope.actions").close(prompt_bufnr)
-                                        if not selection or not selection.value then
-                                            return
-                                        end
-                                        vim.cmd("VtsExec " .. selection.value)
-                                    end)
-                                    return true
-                                end,
-                            })
-                            :find()
+                        vim.ui.select(items, {
+                            prompt = "TypeScript LSP actions",
+                            format_item = function(entry)
+                                return string.format("%-24s %s", entry.name, entry.desc or "")
+                            end,
+                        }, function(selection)
+                            if not selection or not selection.name then
+                                return
+                            end
+
+                            vim.cmd("VtsExec " .. selection.name)
+                        end)
                     end, { desc = "Typescript LSP actions (vtsls)", buffer = args.buf })
                 end,
             })
