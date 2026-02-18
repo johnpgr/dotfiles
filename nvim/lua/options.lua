@@ -1,6 +1,6 @@
 vim.g.emacs_tab = true
 vim.g.treesitter_enabled = true
-vim.g.icons_enabled = true
+vim.g.icons_enabled = false
 vim.g.c_syntax_for_h = true
 vim.g.mapleader = " "
 vim.o.cursorline = true

@@ -1,50 +1,38 @@
 local M = {}
 
-local config_db_uri = require("utils").config_db_uri
-local sqlite = require("sqlite.db")
-local tbl = require("sqlite.tbl")
-
-local colorscheme_tbl = tbl("colorscheme", {
-    id = { "integer", primary = true },
-    name = { "text", required = true, unique = true },
-    updated_at = { "integer", default = sqlite.lib.strftime("%s", "now") },
-})
-
-M.db = sqlite({
-    uri = config_db_uri,
-    colorscheme = colorscheme_tbl,
-})
+local colorscheme_file = vim.fn.stdpath("config") .. "/.colorscheme"
 
 ---@param colors_name string
 function M.persist_colorscheme(colors_name)
-    local existing = colorscheme_tbl:get({ where = { name = colors_name }, limit = 1 })
-    if #existing > 0 then
-        colorscheme_tbl:update({
-            where = { id = existing[1].id },
-            set = { updated_at = os.time() },
-        })
-    else
-        colorscheme_tbl:insert({ name = colors_name, updated_at = os.time() })
+    local f = io.open(colorscheme_file, "w")
+    if not f then
+        vim.notify("Unable to persist colorscheme", vim.log.levels.WARN)
+        return
     end
+
+    f:write(colors_name)
+    f:close()
 end
 
 -- Load persisted colorscheme
 function M.load_persisted_colorscheme()
-    local recent = colorscheme_tbl:get({
-        order_by = { desc = "updated_at" },
-        limit = 1,
-    })
-    if #recent > 0 then
-        local ok = pcall(vim.cmd.colorscheme, recent[1].name)
-        if ok then
-            -- Manually trigger ColorScheme event since it may not fire during startup
-            vim.api.nvim_exec_autocmds("ColorScheme", { pattern = recent[1].name })
+    local f = io.open(colorscheme_file, "r")
+    if f then
+        local persisted = f:read("*all")
+        f:close()
+
+        persisted = persisted and vim.trim(persisted) or ""
+        if persisted ~= "" then
+            local ok = pcall(vim.cmd.colorscheme, persisted)
+            if ok then
+                vim.api.nvim_exec_autocmds("ColorScheme", { pattern = persisted })
+            end
         end
     end
 
     -- Check system state file (managed by monitor_theme.py)
-    local state_file = os.getenv("HOME") .. "/.dotfiles/.theme_state"
-    local f = io.open(state_file, "r")
+    local state_file = vim.fs.joinpath(vim.loop.os_homedir(), ".dotfiles", ".theme_state")
+    f = io.open(state_file, "r")
     if f then
         local mode = f:read("*all")
         f:close()

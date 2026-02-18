@@ -20,10 +20,6 @@ end
 
 return {
     {
-        "kkharji/sqlite.lua",
-        lazy = false,
-    },
-    {
         "nvim-lua/plenary.nvim",
         lazy = true,
     },
