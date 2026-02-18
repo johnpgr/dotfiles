@@ -37,6 +37,24 @@ local dired_stats_cache = {}
 local dired_line_lookup = nil
 local dired_name_col_width = 0
 local dired_highlight_patch_applied = false
+local path_sep = package.config:sub(1, 1)
+
+local function is_path_sep(char)
+    return char == "/" or char == "\\"
+end
+
+local function ends_with_path_sep(path)
+    return is_path_sep(path:sub(-1))
+end
+
+local function find_last_path_sep(path)
+    for i = #path, 1, -1 do
+        if is_path_sep(path:sub(i, i)) then
+            return i
+        end
+    end
+    return nil
+end
 
 local function ensure_dired_highlight_groups()
     vim.api.nvim_set_hl(0, "ReferDiredDir", { default = true, link = "Directory" })
@@ -126,10 +144,10 @@ local function ensure_dired_result_highlight_patch()
 end
 
 local function path_join(base, name)
-    if base:sub(-1) == "/" then
+    if ends_with_path_sep(base) then
         return base .. name
     end
-    return base .. "/" .. name
+    return base .. path_sep .. name
 end
 
 local function parse_file_input(input)
@@ -139,17 +157,17 @@ local function parse_file_input(input)
     end
 
     if query == "~" then
-        return "~/", vim.fn.expand("~"), ""
+        return "~" .. path_sep, vim.fn.expand("~"), ""
     end
 
-    if query:sub(-1) == "/" then
+    if ends_with_path_sep(query) then
         return query, vim.fn.fnamemodify(query, ":p"), ""
     end
 
-    local slash = query:match("^.*()/")
-    if slash then
-        local dir_input = query:sub(1, slash)
-        local basename = query:sub(slash + 1)
+    local sep = find_last_path_sep(query)
+    if sep then
+        local dir_input = query:sub(1, sep)
+        local basename = query:sub(sep + 1)
         return dir_input, vim.fn.fnamemodify(dir_input, ":p"), basename
     end
 
@@ -163,25 +181,33 @@ local function input_up_one_level(input)
     end
 
     if query == "~" then
-        return "~/"
+        return "~" .. path_sep
     end
 
-    while #query > 1 and query:sub(-1) == "/" do
+    if query == "/" or query == "\\" then
+        return query:sub(1, 1)
+    end
+    if query:match("^%a:[/\\]?$") then
+        return query:sub(1, 2) .. path_sep
+    end
+
+    while #query > 1 and ends_with_path_sep(query) do
+        if query:match("^%a:[/\\]$") then
+            return query:sub(1, 2) .. path_sep
+        end
         query = query:sub(1, -2)
     end
 
-    if query == "/" then
-        return "/"
-    end
-
-    local slash = query:match("^.*()/")
-    if not slash then
+    local sep = find_last_path_sep(query)
+    if not sep then
         return ""
     end
-    if slash == 1 then
-        return "/"
+
+    if sep == 1 and is_path_sep(query:sub(1, 1)) then
+        return query:sub(1, 1)
     end
-    return query:sub(1, slash)
+
+    return query:sub(1, sep)
 end
 
 local function format_filesize(size)
@@ -280,7 +306,7 @@ local function scan_directory_with_stats(directory)
         local stat = uv.fs_stat(fullpath) or {}
         local resolved_type = stat.type or entry_type
         local is_dir = resolved_type == "directory"
-        local display_name = is_dir and (name .. "/") or name
+        local display_name = is_dir and (name .. path_sep) or name
 
         local perms = vim.fn.getfperm(fullpath)
         if perms == "" then
@@ -356,9 +382,9 @@ end
 
 local function replace_input_tail(input, new_tail)
     local query = input or ""
-    local slash = query:match("^.*()/")
-    if slash then
-        return query:sub(1, slash) .. new_tail
+    local sep = find_last_path_sep(query)
+    if sep then
+        return query:sub(1, sep) .. new_tail
     end
     return new_tail
 end
@@ -378,8 +404,8 @@ local function pick_files_consult_dired_style()
     end
 
     local default_text = vim.fn.fnamemodify(initial_dir, ":~")
-    if default_text:sub(-1) ~= "/" then
-        default_text = default_text .. "/"
+    if not ends_with_path_sep(default_text) then
+        default_text = default_text .. path_sep
     end
 
     local selection_lookup = {}
