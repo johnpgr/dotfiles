@@ -16,7 +16,7 @@ function _G.get_oil_winbar()
         result = vim.api.nvim_buf_get_name(bufnr)
     end
 
-    return result
+    return "  " .. result
 end
 
 -- Oil.nvim

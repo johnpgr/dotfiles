@@ -32,6 +32,451 @@ local function pick_files_in_dir(directory, prompt)
     })
 end
 
+local uv = vim.uv or vim.loop
+local dired_stats_cache = {}
+local dired_line_lookup = nil
+local dired_name_col_width = 0
+local dired_highlight_patch_applied = false
+
+local function ensure_dired_highlight_groups()
+    vim.api.nvim_set_hl(0, "ReferDiredDir", { default = true, link = "Directory" })
+    vim.api.nvim_set_hl(0, "ReferDiredFile", { default = true, link = "Identifier" })
+    vim.api.nvim_set_hl(0, "ReferDiredHidden", { default = true, link = "Comment" })
+    vim.api.nvim_set_hl(0, "ReferDiredPermType", { default = true, fg = "#f7768e" })
+    vim.api.nvim_set_hl(0, "ReferDiredPermRead", { default = true, fg = "#9ece6a" })
+    vim.api.nvim_set_hl(0, "ReferDiredPermWrite", { default = true, fg = "#e0af68" })
+    vim.api.nvim_set_hl(0, "ReferDiredPermExec", { default = true, fg = "#f7768e" })
+    vim.api.nvim_set_hl(0, "ReferDiredPermOther", { default = true, fg = "#565f89" })
+    vim.api.nvim_set_hl(0, "ReferDiredSize", { default = true, link = "Number" })
+    vim.api.nvim_set_hl(0, "ReferDiredTime", { default = true, link = "Constant" })
+end
+
+local function permission_char_hl(char, index)
+    if index == 1 then
+        if char == "-" then
+            return "ReferDiredPermOther"
+        end
+        return "ReferDiredPermType"
+    end
+
+    if char == "r" then
+        return "ReferDiredPermRead"
+    end
+    if char == "w" then
+        return "ReferDiredPermWrite"
+    end
+    if char == "x" or char == "s" or char == "t" then
+        return "ReferDiredPermExec"
+    end
+
+    return "ReferDiredPermOther"
+end
+
+local function ensure_dired_result_highlight_patch()
+    if dired_highlight_patch_applied then
+        return
+    end
+
+    ensure_dired_highlight_groups()
+
+    local highlight = require("refer.highlight")
+    local original_highlight_entry = highlight.highlight_entry
+
+    highlight.highlight_entry = function(buf, ns, line_idx, line, highlight_code, opts)
+        local entry = dired_line_lookup and dired_line_lookup[line] or nil
+        if not entry then
+            return original_highlight_entry(buf, ns, line_idx, line, highlight_code, opts)
+        end
+
+        local function set_hl(col, end_col, hl_group, priority)
+            if end_col <= col then
+                return
+            end
+            pcall(vim.api.nvim_buf_set_extmark, buf, ns, line_idx, col, {
+                end_col = end_col,
+                hl_group = hl_group,
+                priority = priority or 90,
+            })
+        end
+
+        local name_hl = entry.is_dir and "ReferDiredDir" or "ReferDiredFile"
+        if entry.name:sub(1, 1) == "." then
+            name_hl = entry.is_dir and "ReferDiredDir" or "ReferDiredHidden"
+        end
+
+        local name_len = #entry.display_name
+        local perms_start = dired_name_col_width + 2
+        local perms_end = perms_start + #entry.perms
+        local size_start = perms_end + 2
+        local size_end = size_start + 6
+        local mtime_start = size_end + 2
+        local mtime_end = mtime_start + #entry.mtime
+
+        set_hl(0, name_len, name_hl, 92)
+        for i = 1, #entry.perms do
+            local char = entry.perms:sub(i, i)
+            local hl = permission_char_hl(char, i)
+            set_hl(perms_start + i - 1, perms_start + i, hl, 92)
+        end
+        set_hl(size_start, size_end, "ReferDiredSize", 92)
+        set_hl(mtime_start, mtime_end, "ReferDiredTime", 92)
+    end
+
+    dired_highlight_patch_applied = true
+end
+
+local function path_join(base, name)
+    if base:sub(-1) == "/" then
+        return base .. name
+    end
+    return base .. "/" .. name
+end
+
+local function parse_file_input(input)
+    local query = input or ""
+    if query == "" then
+        return "", vim.fn.getcwd(), ""
+    end
+
+    if query == "~" then
+        return "~/", vim.fn.expand("~"), ""
+    end
+
+    if query:sub(-1) == "/" then
+        return query, vim.fn.fnamemodify(query, ":p"), ""
+    end
+
+    local slash = query:match("^.*()/")
+    if slash then
+        local dir_input = query:sub(1, slash)
+        local basename = query:sub(slash + 1)
+        return dir_input, vim.fn.fnamemodify(dir_input, ":p"), basename
+    end
+
+    return "", vim.fn.getcwd(), query
+end
+
+local function input_up_one_level(input)
+    local query = input or ""
+    if query == "" then
+        return ""
+    end
+
+    if query == "~" then
+        return "~/"
+    end
+
+    while #query > 1 and query:sub(-1) == "/" do
+        query = query:sub(1, -2)
+    end
+
+    if query == "/" then
+        return "/"
+    end
+
+    local slash = query:match("^.*()/")
+    if not slash then
+        return ""
+    end
+    if slash == 1 then
+        return "/"
+    end
+    return query:sub(1, slash)
+end
+
+local function format_filesize(size)
+    local bytes = tonumber(size) or 0
+    if bytes < 1024 then
+        return tostring(bytes)
+    end
+
+    local units = { "k", "m", "g", "t", "p" }
+    local value = bytes
+    for _, unit in ipairs(units) do
+        value = value / 1024
+        if value < 1024 then
+            local rounded = math.floor(value + 0.5)
+            if math.abs(value - rounded) < 0.05 then
+                return string.format("%d%s", rounded, unit)
+            end
+            return string.format("%.1f%s", value, unit)
+        end
+    end
+
+    return string.format("%.1fp", value)
+end
+
+local function format_mtime(mtime_sec)
+    if not mtime_sec then
+        return ""
+    end
+
+    local now = os.time()
+    local delta = now - mtime_sec
+    if delta < 0 then
+        delta = 0
+    end
+
+    if delta < 60 then
+        return "just now"
+    end
+    if delta < 3600 then
+        return string.format("%d mins ago", math.floor(delta / 60))
+    end
+    if delta < 86400 then
+        return string.format("%d hours ago", math.floor(delta / 3600))
+    end
+    if delta < 86400 * 7 then
+        return string.format("%d days ago", math.floor(delta / 86400))
+    end
+    if delta < 86400 * 180 then
+        return os.date("%b %d %H:%M", mtime_sec)
+    end
+    return os.date("%Y %b %d", mtime_sec)
+end
+
+local function filetype_prefix(entry_type)
+    if entry_type == "directory" then
+        return "d"
+    end
+    if entry_type == "link" then
+        return "l"
+    end
+    if entry_type == "socket" then
+        return "s"
+    end
+    if entry_type == "fifo" then
+        return "p"
+    end
+    if entry_type == "char" then
+        return "c"
+    end
+    if entry_type == "block" then
+        return "b"
+    end
+    return "-"
+end
+
+local function scan_directory_with_stats(directory)
+    local cache = dired_stats_cache[directory]
+    local now_ms = uv.now()
+    if cache and (now_ms - cache.timestamp_ms) < 500 then
+        return cache.entries
+    end
+
+    local handle = uv.fs_scandir(directory)
+    if not handle then
+        return {}
+    end
+
+    local entries = {}
+    while true do
+        local name, entry_type = uv.fs_scandir_next(handle)
+        if not name then
+            break
+        end
+
+        local fullpath = path_join(directory, name)
+        local stat = uv.fs_stat(fullpath) or {}
+        local resolved_type = stat.type or entry_type
+        local is_dir = resolved_type == "directory"
+        local display_name = is_dir and (name .. "/") or name
+
+        local perms = vim.fn.getfperm(fullpath)
+        if perms == "" then
+            perms = "---------"
+        end
+
+        table.insert(entries, {
+            name = name,
+            display_name = display_name,
+            fullpath = fullpath,
+            is_dir = is_dir,
+            perms = filetype_prefix(resolved_type) .. perms,
+            size = format_filesize(stat.size),
+            mtime = format_mtime(stat.mtime and stat.mtime.sec),
+        })
+    end
+
+    table.sort(entries, function(left, right)
+        if left.is_dir ~= right.is_dir then
+            return left.is_dir and not right.is_dir
+        end
+        return left.name:lower() < right.name:lower()
+    end)
+
+    dired_stats_cache[directory] = {
+        timestamp_ms = now_ms,
+        entries = entries,
+    }
+
+    return entries
+end
+
+local function build_file_results(entries, filter_query, show_hidden)
+    local by_name = {}
+    local names = {}
+    for _, entry in ipairs(entries) do
+        if show_hidden or entry.name:sub(1, 1) ~= "." then
+            by_name[entry.display_name] = entry
+            table.insert(names, entry.display_name)
+        end
+    end
+
+    local fuzzy = require("refer.fuzzy")
+    local ordered_names = fuzzy.filter(names, filter_query or "", { sorter = "native" })
+
+    local max_name_len = 0
+    for _, name in ipairs(ordered_names) do
+        if #name > max_name_len then
+            max_name_len = #name
+        end
+    end
+    if max_name_len < 14 then
+        max_name_len = 14
+    end
+
+    local lines = {}
+    local lookup = {}
+    for _, name in ipairs(ordered_names) do
+        local entry = by_name[name]
+        local line = string.format(
+            "%-" .. max_name_len .. "s  %s  %6s  %s",
+            name,
+            entry.perms,
+            entry.size,
+            entry.mtime
+        )
+        table.insert(lines, line)
+        lookup[line] = entry
+    end
+
+    return lines, lookup, max_name_len
+end
+
+local function replace_input_tail(input, new_tail)
+    local query = input or ""
+    local slash = query:match("^.*()/")
+    if slash then
+        return query:sub(1, slash) .. new_tail
+    end
+    return new_tail
+end
+
+local function pick_files_consult_dired_style()
+    ensure_dired_result_highlight_patch()
+
+    local initial_dir = vim.fn.getcwd()
+    if vim.bo.filetype == "oil" then
+        local ok, oil = pcall(require, "oil")
+        if ok and type(oil.get_current_dir) == "function" then
+            local oil_dir = oil.get_current_dir()
+            if type(oil_dir) == "string" and oil_dir ~= "" then
+                initial_dir = oil_dir
+            end
+        end
+    end
+
+    local default_text = vim.fn.fnamemodify(initial_dir, ":~")
+    if default_text:sub(-1) ~= "/" then
+        default_text = default_text .. "/"
+    end
+
+    local selection_lookup = {}
+    local show_hidden = false
+
+    require("refer").pick({}, nil, {
+        prompt = "Find file: ",
+        default_text = default_text,
+        min_height = 8,
+        on_change = function(query, update_ui_callback)
+            local _, abs_dir, basename_filter = parse_file_input(query)
+            local entries = scan_directory_with_stats(abs_dir)
+            local results, lookup, name_col_width = build_file_results(entries, basename_filter, show_hidden)
+            selection_lookup = lookup
+            dired_line_lookup = lookup
+            dired_name_col_width = name_col_width
+            update_ui_callback(results)
+        end,
+        on_close = function()
+            dired_line_lookup = nil
+            dired_name_col_width = 0
+        end,
+        parser = function(selection)
+            local entry = selection_lookup[selection]
+            if entry and not entry.is_dir then
+                return {
+                    filename = entry.fullpath,
+                    lnum = 1,
+                    col = 1,
+                }
+            end
+            return nil
+        end,
+        keymaps = {
+            ["<Tab>"] = function(_, builtin)
+                local first = builtin.picker.current_matches[1]
+                if not first then
+                    return
+                end
+
+                local entry = selection_lookup[first]
+                if not entry then
+                    return
+                end
+
+                local new_input = replace_input_tail(vim.api.nvim_get_current_line(), entry.display_name)
+                builtin.picker.ui:update_input({ new_input })
+                builtin.actions.refresh()
+            end,
+            ["<CR>"] = function(selection, builtin)
+                local entry = selection and selection_lookup[selection] or nil
+                if entry then
+                    if entry.is_dir then
+                        local new_input = replace_input_tail(vim.api.nvim_get_current_line(), entry.display_name)
+                        builtin.picker.ui:update_input({ new_input })
+                        builtin.actions.refresh()
+                        return
+                    end
+
+                    builtin.actions.close()
+                    vim.cmd("edit " .. vim.fn.fnameescape(entry.fullpath))
+                    return
+                end
+
+                local raw_input = vim.api.nvim_get_current_line()
+                if raw_input ~= "" then
+                    builtin.actions.close()
+                    vim.cmd("edit " .. vim.fn.fnameescape(vim.fn.fnamemodify(raw_input, ":p")))
+                end
+            end,
+            ["<C-w>"] = function(_, builtin)
+                local new_input = input_up_one_level(vim.api.nvim_get_current_line())
+                builtin.picker.ui:update_input({ new_input })
+                builtin.actions.refresh()
+            end,
+            ["<C-BS>"] = function(_, builtin)
+                local new_input = input_up_one_level(vim.api.nvim_get_current_line())
+                builtin.picker.ui:update_input({ new_input })
+                builtin.actions.refresh()
+            end,
+            ["<C-Backspace>"] = function(_, builtin)
+                local new_input = input_up_one_level(vim.api.nvim_get_current_line())
+                builtin.picker.ui:update_input({ new_input })
+                builtin.actions.refresh()
+            end,
+            ["<C-h>"] = function(_, builtin)
+                show_hidden = not show_hidden
+                vim.notify(
+                    show_hidden and "Refer files: hidden files enabled" or "Refer files: hidden files hidden",
+                    vim.log.levels.INFO
+                )
+                builtin.actions.refresh()
+            end,
+        },
+    })
+end
+
 local function escape_grep_string_chars(s)
     return (s:gsub("[%(|%)|\\|%[|%]|%-|%{%}|%?|%+|%*|%^|%$|%.]", {
         ["\\"] = "\\\\",
@@ -618,6 +1063,10 @@ local function open_refer_commands()
 end
 
 local function open_refer_files()
+    pick_files_consult_dired_style()
+end
+
+local function open_refer_files_default()
     vim.cmd("Refer Files")
 end
 
@@ -686,6 +1135,13 @@ return {
                 run_and_remember_picker(pick_colorschemes)
             end,
             desc = "Search colorscheme"
+        },
+        {
+            "<leader>sf",
+            function()
+                run_and_remember_picker(open_refer_files_default)
+            end,
+            desc = "Locate file"
         },
         {
             "<leader>so",
