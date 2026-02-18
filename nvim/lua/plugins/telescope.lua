@@ -128,13 +128,6 @@ return {
         {
             "<leader>,",
             function()
-                require("telescope.builtin").buffers({ only_cwd = true })
-            end,
-            desc = "Switch workspace buffers",
-        },
-        {
-            "<leader><",
-            function()
                 require("telescope.builtin").buffers({})
             end,
             desc = "Switch buffers",

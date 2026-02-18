@@ -126,7 +126,7 @@ vim.keymap.set("n", "<leader>ie", function()
 end, { desc = "Editorconfig" })
 
 -- LSP keymaps
-vim.keymap.set("n", "gd", vim.lsp.buf.definition, { desc = "Goto definition" })
+-- vim.keymap.set("n", "gd", vim.lsp.buf.definition, { desc = "Goto definition" })
 vim.keymap.set("n", "<leader>lr", vim.lsp.buf.rename, { desc = "Rename symbol" })
 vim.keymap.set("n", "<leader>lf", function()
     require("conform").format({ async = true })

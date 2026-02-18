@@ -35,4 +35,4 @@ vim.o.cmdheight = 1
 vim.o.showcmd = false
 vim.o.exrc = true
 vim.o.secure = true
-vim.o.spelllang="en,pt"
+vim.o.spelllang="en,pt_br"
