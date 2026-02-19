@@ -1076,20 +1076,229 @@ local function pick_help_tags()
     })
 end
 
-local last_picker_runner = nil
+local last_picker_session = nil
+local active_picker_session = nil
+local active_session_should_restore = false
+local refer_picker_resume_patch_applied = false
+
+local function get_picker_input_text(picker)
+    if not picker or not picker.input_buf or not vim.api.nvim_buf_is_valid(picker.input_buf) then
+        return ""
+    end
+
+    local lines = vim.api.nvim_buf_get_lines(picker.input_buf, 0, 1, false)
+    return lines[1] or ""
+end
+
+local function capture_picker_state(picker)
+    local state = {
+        input = get_picker_input_text(picker),
+        selected_index = nil,
+        selected_value = nil,
+        marked = {},
+    }
+
+    if type(picker.selected_index) == "number" then
+        state.selected_index = picker.selected_index
+    end
+
+    if type(picker.current_matches) == "table" and type(state.selected_index) == "number" then
+        state.selected_value = picker.current_matches[state.selected_index]
+    end
+
+    if type(picker.marked) == "table" then
+        for item, is_marked in pairs(picker.marked) do
+            if is_marked then
+                state.marked[item] = true
+            end
+        end
+    end
+
+    return state
+end
+
+local function restore_picker_state(picker, state)
+    if not picker or type(state) ~= "table" then
+        return
+    end
+
+    local target_input = tostring(state.input or "")
+    local needs_selection_restore = state.selected_value ~= nil or type(state.selected_index) == "number"
+    local attempts = 0
+    local max_attempts = 40
+    local timer = uv.new_timer()
+    if not timer then
+        return
+    end
+
+    local function stop_timer()
+        if timer then
+            timer:stop()
+            timer:close()
+            timer = nil
+        end
+    end
+
+    local function apply_once()
+        if not picker.input_buf or not vim.api.nvim_buf_is_valid(picker.input_buf) then
+            return true
+        end
+
+        if get_picker_input_text(picker) ~= target_input then
+            return true
+        end
+
+        if type(state.marked) == "table" then
+            picker.marked = vim.deepcopy(state.marked)
+        end
+
+        local matches = type(picker.current_matches) == "table" and picker.current_matches or {}
+        local target_index = nil
+
+        if state.selected_value ~= nil then
+            for idx, value in ipairs(matches) do
+                if value == state.selected_value then
+                    target_index = idx
+                    break
+                end
+            end
+        end
+
+        if not target_index and type(state.selected_index) == "number" then
+            if state.selected_index >= 1 and state.selected_index <= #matches then
+                target_index = state.selected_index
+            end
+        end
+
+        if target_index then
+            picker.selected_index = target_index
+        end
+
+        if picker.render then
+            picker:render()
+        end
+
+        if not needs_selection_restore then
+            return true
+        end
+
+        return target_index ~= nil or attempts >= max_attempts
+    end
+
+    timer:start(0, 40, vim.schedule_wrap(function()
+        attempts = attempts + 1
+        if apply_once() then
+            stop_timer()
+        end
+    end))
+end
+
+local function build_resume_aware_opts(opts, session, should_restore)
+    local picker_opts = vim.deepcopy(opts or {})
+    local original_on_close = picker_opts.on_close
+    local picker_ref = nil
+    local state_to_restore = nil
+
+    if should_restore and session and session.state then
+        state_to_restore = vim.deepcopy(session.state)
+        picker_opts.default_text = tostring(state_to_restore.input or "")
+    end
+
+    picker_opts.on_close = function()
+        if session and picker_ref then
+            session.state = capture_picker_state(picker_ref)
+        end
+
+        if original_on_close then
+            original_on_close()
+        end
+    end
+
+    return picker_opts, function(picker)
+        picker_ref = picker
+        if state_to_restore then
+            restore_picker_state(picker, state_to_restore)
+        end
+    end
+end
+
+local function ensure_refer_picker_resume_patch()
+    if refer_picker_resume_patch_applied then
+        return
+    end
+
+    local ok, refer = pcall(require, "refer")
+    if not ok then
+        return
+    end
+
+    if type(refer.pick) ~= "function" or type(refer.pick_async) ~= "function" then
+        return
+    end
+
+    local original_pick = refer.pick
+    local original_pick_async = refer.pick_async
+
+    refer.pick = function(items_or_provider, on_select, opts)
+        local session = active_picker_session
+        if not session then
+            return original_pick(items_or_provider, on_select, opts)
+        end
+
+        local picker_opts, on_created = build_resume_aware_opts(opts, session, active_session_should_restore)
+        local picker = original_pick(items_or_provider, on_select, picker_opts)
+        on_created(picker)
+        return picker
+    end
+
+    refer.pick_async = function(command_generator, on_select, opts)
+        local session = active_picker_session
+        if not session then
+            return original_pick_async(command_generator, on_select, opts)
+        end
+
+        local picker_opts, on_created = build_resume_aware_opts(opts, session, active_session_should_restore)
+        local picker = original_pick_async(command_generator, on_select, picker_opts)
+        on_created(picker)
+        return picker
+    end
+
+    refer_picker_resume_patch_applied = true
+end
+
+local function run_picker_session(session, should_restore)
+    ensure_refer_picker_resume_patch()
+
+    active_picker_session = session
+    active_session_should_restore = should_restore == true
+
+    local ok, result = pcall(session.runner)
+
+    active_picker_session = nil
+    active_session_should_restore = false
+
+    if not ok then
+        error(result)
+    end
+
+    return result
+end
 
 local function run_and_remember_picker(runner)
-    last_picker_runner = runner
-    return runner()
+    last_picker_session = {
+        runner = runner,
+        state = nil,
+    }
+    return run_picker_session(last_picker_session, false)
 end
 
 local function resume_last_picker()
-    if not last_picker_runner then
+    if not last_picker_session then
         vim.notify("No picker to resume", vim.log.levels.INFO)
         return
     end
 
-    return last_picker_runner()
+    return run_picker_session(last_picker_session, true)
 end
 
 local function open_refer_commands()
@@ -1147,6 +1356,7 @@ return {
         })
 
         require("refer").setup_ui_select()
+        ensure_refer_picker_resume_patch()
     end,
     keys = {
         {
