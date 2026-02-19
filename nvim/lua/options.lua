@@ -1,4 +1,4 @@
-vim.g.emacs_tab = true
+vim.g.emacs_tab = false
 vim.g.treesitter_enabled = true
 vim.g.icons_enabled = false
 vim.g.c_syntax_for_h = true

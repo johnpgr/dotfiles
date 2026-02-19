@@ -401,6 +401,14 @@ local function pick_files_consult_dired_style()
                 initial_dir = oil_dir
             end
         end
+    elseif vim.bo.buftype == "" then
+        local buffer_path = vim.api.nvim_buf_get_name(0)
+        if buffer_path ~= "" then
+            local buffer_dir = vim.fn.fnamemodify(buffer_path, ":p:h")
+            if type(buffer_dir) == "string" and buffer_dir ~= "" then
+                initial_dir = buffer_dir
+            end
+        end
     end
 
     local default_text = vim.fn.fnamemodify(initial_dir, ":~")
@@ -1163,11 +1171,11 @@ return {
             desc = "Search colorscheme"
         },
         {
-            "<leader>sf",
+            "<leader>ff",
             function()
                 run_and_remember_picker(open_refer_files_default)
             end,
-            desc = "Locate file"
+            desc = "Find file"
         },
         {
             "<leader>so",

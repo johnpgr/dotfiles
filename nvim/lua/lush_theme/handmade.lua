@@ -30,10 +30,12 @@ local palette = {
     text_cycle_1 = "#A00000",
     text_cycle_2 = "#00A000",
     text_cycle_3 = "#0020B0",
+    text_cycle_3b = "#00B0B0",
     text_cycle_4 = "#A0A000",
 }
 
-return lush(function()
+return lush(function(injected_functions)
+    local sym = injected_functions.sym
     return {
         Normal { fg = palette.default, bg = palette.back },
         NormalNC { Normal },
@@ -75,6 +77,7 @@ return lush(function()
         Boolean { fg = palette.str_constant },
 
         Identifier { fg = palette.default },
+        sym("@variable") { fg = palette.preproc },
         Function { fg = palette.bar_active },
 
         Statement { fg = palette.keyword },
@@ -125,7 +128,7 @@ return lush(function()
         PmenuThumb { bg = palette.margin_active },
 
         WildMenu { fg = palette.at_highlight, bg = palette.margin_active, bold = true },
-        Directory { fg = palette.text_cycle_3 },
+        Directory { fg = palette.text_cycle_3b },
         Conceal { fg = palette.ghost_character },
         SpecialKey { fg = palette.ghost_character },
 

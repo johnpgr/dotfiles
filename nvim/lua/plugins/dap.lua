@@ -141,6 +141,8 @@ return {
                 "<leader>ds",
                 function()
                     require("dap").terminate()
+                    require("dap").disconnect()
+                    require("dap").close()
                 end,
                 desc = "Stop",
             },
@@ -224,6 +226,7 @@ return {
         },
         config = function()
             local dap = require("dap")
+            dap.set_log_level("WARN")
 
             -- Migration note:
             -- nvim-dap-ui was intentionally replaced by nvim-dap-view because
