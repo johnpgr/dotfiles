@@ -130,13 +130,13 @@ return {
                 end,
                 desc = "Pause",
             },
-            {
-                "<leader>dr",
-                function()
-                    require("dap").repl.open()
-                end,
-                desc = "Open REPL",
-            },
+            -- {
+            --     "<leader>dr",
+            --     function()
+            --         require("dap").repl.open()
+            --     end,
+            --     desc = "Open REPL",
+            -- },
             {
                 "<leader>ds",
                 function()
@@ -180,6 +180,7 @@ return {
                                 "breakpoints",
                                 "watches",
                                 "disassembly",
+                                "console",
                                 "repl",
                             },
                             default_section = "scopes",
@@ -226,7 +227,6 @@ return {
         },
         config = function()
             local dap = require("dap")
-            dap.set_log_level("WARN")
 
             -- Migration note:
             -- nvim-dap-ui was intentionally replaced by nvim-dap-view because
@@ -326,6 +326,7 @@ return {
                 name = "Launch (lldb-dap)",
                 type = "lldb",
                 request = "launch",
+                console = "integratedTerminal",
                 program = function()
                     local path = vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
                     if path == "" then

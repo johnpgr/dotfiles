@@ -1,6 +1,6 @@
 vim.g.emacs_tab = false
 vim.g.treesitter_enabled = true
-vim.g.icons_enabled = false
+vim.g.icons_enabled = true
 vim.g.c_syntax_for_h = true
 vim.g.mapleader = " "
 vim.o.cursorline = true
@@ -36,3 +36,4 @@ vim.o.showcmd = false
 vim.o.exrc = true
 vim.o.secure = true
 vim.o.spelllang="en,pt_br"
+vim.opt.fillchars = { eob = " " }
