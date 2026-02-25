@@ -448,13 +448,19 @@ local function pick_files_consult_dired_style()
             return nil
         end,
         keymaps = {
-            ["<Tab>"] = function(_, builtin)
-                local first = builtin.picker.current_matches[1]
-                if not first then
-                    return
+            ["<Tab>"] = function(selection, builtin)
+                local picker = builtin.picker
+                local selected = selection
+
+                if (not selected or selected == "") and type(picker.selected_index) == "number" then
+                    selected = picker.current_matches[picker.selected_index]
                 end
 
-                local entry = selection_lookup[first]
+                if not selected then
+                    selected = picker.current_matches[1]
+                end
+
+                local entry = selection_lookup[selected]
                 if not entry then
                     return
                 end
