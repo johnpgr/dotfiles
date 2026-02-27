@@ -8,6 +8,8 @@ return {
         "JoosepAlviste/nvim-ts-context-commentstring",
     },
     config = function()
+        require("nvim-treesitter.install").prefer_git = true
+
         ---@diagnostic disable-next-line: missing-fields
         require("nvim-treesitter.configs").setup({
             ensure_installed = {
