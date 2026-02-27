@@ -3,6 +3,7 @@ vim.g.treesitter_enabled = true
 vim.g.icons_enabled = true
 vim.g.c_syntax_for_h = true
 vim.g.mapleader = " "
+
 vim.o.cursorline = true
 vim.o.number = false
 vim.o.relativenumber = false
@@ -30,10 +31,11 @@ vim.o.undolevels = 10000
 vim.o.scrolloff = 5
 vim.o.updatetime = 250
 vim.o.timeoutlen = 500
-vim.opt.diffopt:append("linematch:60")
 vim.o.cmdheight = 1
 vim.o.showcmd = false
 vim.o.exrc = true
 vim.o.secure = true
 vim.o.spelllang="en,pt_br"
+
 vim.opt.fillchars = { eob = " " }
+vim.opt.diffopt:append("linematch:60")

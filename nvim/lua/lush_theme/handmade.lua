@@ -71,7 +71,7 @@ return lush(function(injected_functions)
         MatchParen { fg = palette.bar, bg = palette.margin_active, bold = true },
 
         Comment { fg = palette.comment },
-        Constant { fg = palette.str_constant },
+        Constant { fg = palette.default },
         String { fg = palette.str_constant },
         Character { fg = palette.str_constant },
         Number { fg = palette.str_constant },
@@ -79,14 +79,15 @@ return lush(function(injected_functions)
         Boolean { fg = palette.str_constant },
 
         Identifier { fg = palette.default },
-        sym("@variable") { fg = palette.preproc },
-        Function { fg = palette.bar_active },
+        sym("@variable") { fg = palette.default },
+        Function { fg = palette.default },
 
         Statement { fg = palette.keyword },
         Conditional { fg = palette.keyword },
+        -- TODO:
         Repeat { fg = palette.keyword },
         Label { fg = palette.keyword },
-        Operator { fg = palette.keyword },
+        Operator { fg = palette.default },
         Keyword { fg = palette.keyword },
         Exception { fg = palette.keyword },
 
@@ -96,14 +97,14 @@ return lush(function(injected_functions)
         Macro { fg = palette.preproc },
         PreCondit { fg = palette.preproc },
 
-        Type { fg = palette.preproc },
-        StorageClass { fg = palette.preproc },
-        Structure { fg = palette.preproc },
-        Typedef { fg = palette.preproc },
+        Type { fg = palette.keyword },
+        StorageClass { fg = palette.keyword },
+        Structure { fg = palette.keyword },
+        Typedef { fg = palette.keyword },
 
-        Special { fg = palette.preproc },
+        Special { fg = palette.keyword },
         SpecialChar { fg = palette.special_character },
-        Delimiter { fg = palette.mark },
+        Delimiter { fg = palette.default },
         SpecialComment { fg = palette.comment },
         Debug { fg = palette.pop2 },
 

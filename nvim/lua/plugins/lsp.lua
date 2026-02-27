@@ -32,6 +32,34 @@ return {
         "neovim/nvim-lspconfig",
         event = { "BufReadPre", "BufNewFile" },
         config = function()
+            local kotlin_root_markers = {
+                "settings.gradle.kts",
+                "settings.gradle",
+                "build.gradle.kts",
+                "build.gradle",
+                "pom.xml",
+                "workspace.json",
+                ".git",
+            }
+
+            vim.lsp.config("kotlin_lsp", {
+                root_dir = function(bufnr, on_dir)
+                    local fname = vim.api.nvim_buf_get_name(bufnr)
+                    if fname == "" then
+                        on_dir(vim.uv.cwd())
+                        return
+                    end
+
+                    local real_fname = vim.uv.fs_realpath(fname)
+                    local root = vim.fs.root(real_fname or fname, kotlin_root_markers)
+                    if not root and real_fname then
+                        root = vim.fs.root(fname, kotlin_root_markers)
+                    end
+
+                    on_dir(root or vim.fs.dirname(real_fname or fname) or vim.uv.cwd())
+                end,
+            })
+
             vim.lsp.enable({
                 "lua_ls",
                 "vtsls",
@@ -44,7 +72,6 @@ return {
                 -- "tailwindcss",
                 "dartls",
                 "glsl_analyzer",
-                "kotlin_language_server",
                 "kotlin_lsp",
                 "astro",
                 "rust_analyzer",

@@ -28,21 +28,13 @@ local function toggle_dbui_tab()
 end
 -- Database UI
 return {
-    {
-        "tpope/vim-dadbod",
-        cmd = "DBUI",
-        dependencies = {
-            "kristijanhusak/vim-dadbod-completion",
-            "kristijanhusak/vim-dadbod-ui",
-        },
-    },
-    { "kristijanhusak/vim-dadbod-completion", lazy = true },
+    { "tpope/vim-dadbod" },
+    { "kristijanhusak/vim-dadbod-completion" },
     {
         "kristijanhusak/vim-dadbod-ui",
         keys = {
             { "<leader>ub", toggle_dbui_tab, desc = "DBUI" },
             { "<leader>ua", "<cmd>DBUIAddConnection<cr>", desc = "Add new connection" },
         },
-        lazy = true,
     },
 }

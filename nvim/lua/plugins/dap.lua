@@ -244,7 +244,7 @@ return {
             -- - Console/program output goes to nvim-dap terminal and REPL
 
             vim.fn.sign_define("DapBreakpoint", {
-                text = "B",
+                text = "●",
                 texthl = "DiagnosticError",
                 linehl = "",
                 numhl = "",
