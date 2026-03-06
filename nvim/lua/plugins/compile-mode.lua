@@ -76,6 +76,12 @@ return {
                     col = 3,
                     priority = 2,
                 },
+                odin = {
+                    regex = "^\\(.\\+\\)(\\([1-9][0-9]*\\):\\([1-9][0-9]*\\)) Error:",
+                    filename = 1,
+                    row = 2,
+                    col = 3,
+                },
             },
         }
     end,

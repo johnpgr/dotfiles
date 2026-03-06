@@ -28,7 +28,14 @@ local function toggle_dbui_tab()
 end
 -- Database UI
 return {
-    { "tpope/vim-dadbod" },
+    {
+        "tpope/vim-dadbod",
+        cmd = "DBUI",
+        dependencies = {
+            "kristijanhusak/vim-dadbod-completion",
+            "kristijanhusak/vim-dadbod-ui",
+        },
+    },
     { "kristijanhusak/vim-dadbod-completion" },
     {
         "kristijanhusak/vim-dadbod-ui",

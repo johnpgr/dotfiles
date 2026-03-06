@@ -46,6 +46,12 @@ return {
             "DapDisasmSetMemref",
         },
         keys = {
+            {"<F1>",
+                function ()
+                    require("dap.ui.widgets").hover()
+                end,
+                desc = "DAP Hover"
+            },
             {
                 "<F5>",
                 function()
@@ -159,7 +165,7 @@ return {
                 desc = "Toggle disassembly view",
             },
             {
-                "<leader>de",
+                "<leader>dw",
                 function()
                     require("dap-view").add_expr()
                 end,
@@ -174,13 +180,15 @@ return {
                 config = function()
                     require("dap-view").setup({
                         winbar = {
+                            controls = {
+                                enabled = true,
+                            },
                             sections = {
                                 "scopes",
                                 "threads",
                                 "breakpoints",
                                 "watches",
                                 "disassembly",
-                                "console",
                                 "repl",
                             },
                             default_section = "scopes",
@@ -190,8 +198,8 @@ return {
                             size = 0.3,
                             position = "below",
                             terminal = {
-                                size = 0.35,
-                                position = "right",
+                                size = 0.5,
+                                position = "left",
                                 hide = {},
                             },
                         },
@@ -299,6 +307,13 @@ return {
             dap.listeners.after.event_stopped["dap_disasm_refresh"] = function()
                 pcall(require("dap-disasm").refresh)
             end
+
+            vim.api.nvim_create_autocmd("FileType", {
+                pattern = "dap-float",
+                callback = function(ev)
+                    vim.keymap.set("n", "q", "<cmd>bdelete!<cr>", { buffer = ev.buf, silent = true })
+                end,
+            })
 
             local lldb_dap_path = vim.fn.exepath("lldb-dap")
             if lldb_dap_path == "" then
