@@ -184,6 +184,17 @@ vim.keymap.set("n", "<leader>m", function()
     require("compile-mode").compile()
 end, { desc = "Compile" })
 
+vim.keymap.set("n", "<leader>M", function()
+    if vim.bo.filetype == "oil" then
+        vim.g.compilation_directory = require("oil").get_current_dir()
+    end
+    require("compile-mode").compile({
+        smods = {
+            vertical = true,
+        },
+    })
+end, { desc = "Compile (vertical)" })
+
 vim.keymap.set("n", "<leader>r", function()
     require("compile-mode").recompile()
 end, { desc = "Recompile" })
@@ -191,4 +202,3 @@ end, { desc = "Recompile" })
 vim.keymap.set("n", "<leader>?", function()
     require("utils").find_symbol_by_lang()
 end, { desc = "Search symbols" })
-

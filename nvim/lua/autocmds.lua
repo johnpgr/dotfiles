@@ -134,7 +134,7 @@ vim.api.nvim_create_autocmd("ColorScheme", {
                 hi! link                     OilFileHidden OilFile
                 hi! link                     OilDirHidden  OilDir
                 " hi  NormalNC                 guibg=none    ctermbg=none
-                hi  WinSeparator             guibg=none    ctermbg=none
+                hi  WinSeparator             guibg=none    ctermbg=none guifg=#686868
                 hi  WinBar                   guibg=none    ctermbg=none
                 " hi  StatusLine               guibg=none    cterm=none ctermbg=none ctermfg=white
                 " hi  StatusLineNC             guibg=none    cterm=none ctermbg=none ctermfg=white
