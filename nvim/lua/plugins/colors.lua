@@ -1,4 +1,5 @@
 return {
+    { "Mofiqul/vscode.nvim" },
     {
         "morhetz/gruvbox",
         config = function()

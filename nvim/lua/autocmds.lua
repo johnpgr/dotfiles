@@ -121,31 +121,22 @@ vim.api.nvim_create_autocmd("ColorScheme", {
     callback = function()
         vim.defer_fn(function()
             vim.cmd([[
-                hi  Underlined               gui=undercurl cterm=undercurl
-                hi  @markup.underline        gui=undercurl cterm=undercurl
-                hi  @ibl.scope.underline.1   gui=undercurl cterm=undercurl
-                hi  DiagnosticUnderlineOk    gui=undercurl cterm=undercurl
-                hi  DiagnosticUnderlineHint  gui=undercurl cterm=undercurl
-                hi  DiagnosticUnderlineInfo  gui=undercurl cterm=undercurl
-                hi  DiagnosticUnderlineWarn  gui=undercurl cterm=undercurl
-                hi  DiagnosticUnderlineError gui=undercurl cterm=undercurl
-                hi  NormalFloat              guibg=none    ctermbg=none
-                hi! link                     FloatBorder   NormalFloat
-                hi! link                     OilFileHidden OilFile
-                hi! link                     OilDirHidden  OilDir
-                " hi  NormalNC                 guibg=none    ctermbg=none
-                hi  WinSeparator             guibg=none    ctermbg=none guifg=#686868
-                hi  WinBar                   guibg=none    ctermbg=none
-                " hi  StatusLine               guibg=none    cterm=none ctermbg=none ctermfg=white
-                " hi  StatusLineNC             guibg=none    cterm=none ctermbg=none ctermfg=white
-                " hi  SignColumn               guibg=none    ctermbg=none
-                " hi  GruvboxGreenSign         guibg=none    ctermbg=none
-                " hi  GruvboxAquaSign          guibg=none    ctermbg=none
-                " hi  GruvboxRedSign           guibg=none    ctermbg=none
-                " hi  CursorLine               guibg=#101241 ctermbg=17
-                " hi  CursorLineNr             guibg=#101241 ctermbg=17
-                " hi  CursorLineFold           guibg=#101241 ctermbg=17
-                " hi  CursorLineSign           guibg=#101241 ctermbg=17
+                hi  Underlined               gui=undercurl    cterm=undercurl
+                hi  @markup.underline        gui=undercurl    cterm=undercurl
+                hi  @ibl.scope.underline.1   gui=undercurl    cterm=undercurl
+                hi  DiagnosticUnderlineOk    gui=undercurl    cterm=undercurl
+                hi  DiagnosticUnderlineHint  gui=undercurl    cterm=undercurl
+                hi  DiagnosticUnderlineInfo  gui=undercurl    cterm=undercurl
+                hi  DiagnosticUnderlineWarn  gui=undercurl    cterm=undercurl
+                hi  DiagnosticUnderlineError gui=undercurl    cterm=undercurl
+                hi  NormalFloat              guibg=none       ctermbg=none
+                hi! link                     FloatBorder      NormalFloat
+                hi! link                     OilFileHidden    OilFile
+                hi! link                     OilDirHidden     OilDir
+                hi  WinSeparator             guibg=none       ctermbg=none  guifg=#686868
+                hi  WinBar                   guibg=none       ctermbg=none
+                hi  StatusLine               guibg=none       cterm=none    ctermbg=none ctermfg=white
+                hi  StatusLineNC             guibg=none       cterm=none    ctermbg=none ctermfg=white
             ]])
 
             set_neogit_cterm_highlights()

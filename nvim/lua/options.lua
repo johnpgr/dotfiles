@@ -1,11 +1,11 @@
 vim.g.emacs_tab = false
-vim.g.treesitter_enabled = true
+vim.g.treesitter_enabled = false
 vim.g.icons_enabled = true
 vim.g.c_syntax_for_h = true
 vim.g.mapleader = " "
 
 vim.o.cursorline = true
-vim.o.number = false
+vim.o.number = true
 vim.o.relativenumber = false
 vim.o.confirm = true
 vim.o.wrap = false
@@ -19,7 +19,7 @@ vim.o.smartcase = true
 vim.o.list = false
 vim.o.splitbelow = true
 vim.o.splitright = true
-vim.o.signcolumn = "yes"
+vim.o.signcolumn = "no"
 vim.o.foldcolumn = "0"
 vim.o.mouse = "nv"
 vim.o.breakindent = true

@@ -146,7 +146,7 @@ return {
             },
             win_options = {
                 winbar = "%!v:lua.get_oil_winbar()",
-                signcolumn = "yes",
+                signcolumn = "no",
                 -- number = false,
                 -- relativenumber = false,
             },
