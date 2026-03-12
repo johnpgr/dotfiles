@@ -6,6 +6,7 @@ return {
         "L3MON4D3/LuaSnip",
         "rafamadriz/friendly-snippets",
         "xzbdmw/colorful-menu.nvim",
+        { "saghen/blink.compat", version = "2.*", opts = {} },
     },
     version = "1.*",
     config = function()
@@ -142,6 +143,10 @@ return {
             sources = {
                 default = { "lazydev", "lsp", "buffer", "snippets", "path" },
                 providers = {
+                    ["99"] = {
+                        name = "99",
+                        module = "blink.compat.source",
+                    },
                     dadbod = { name = "Dadbod", module = "vim_dadbod_completion.blink" },
                     lazydev = {
                         name = "LazyDev",
@@ -155,6 +160,7 @@ return {
                     },
                 },
                 per_filetype = {
+                    ["99prompt"] = { "99" },
                     sql = { "snippets", "dadbod", "buffer" },
                     ["copilot-chat"] = { "snippets" },
                     DressingInput = { "opencode_contexts", "buffer", "path" },
