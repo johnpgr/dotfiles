@@ -1,0 +1,10 @@
+[Unit]
+Description=Monitor System Theme Changes for Neovim
+After=graphical-session.target
+
+[Service]
+ExecStart=%h/.cargo/bin/theme-monitor
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

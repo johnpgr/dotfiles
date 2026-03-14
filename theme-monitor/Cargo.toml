@@ -1,0 +1,19 @@
+[package]
+name = "theme-monitor"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+zbus = { version = "5.14.0", features = ["blocking-api"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+block2 = "0.6.2"
+objc2 = "0.6.4"
+objc2-core-foundation = { version = "0.3.2", features = ["CFRunLoop"] }
+objc2-foundation = { version = "0.3.2", features = [
+    "NSString",
+    "NSNotification",
+    "NSDistributedNotificationCenter",
+    "NSOperation",
+    "NSUserDefaults",
+] }
