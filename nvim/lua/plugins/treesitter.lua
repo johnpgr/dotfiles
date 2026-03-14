@@ -37,7 +37,7 @@ return {
                     end
                 end,
             },
-            indent = { enable = true },
+            indent = { enable = false },
             incremental_selection = {
                 enable = true,
                 keymaps = {

@@ -38,6 +38,179 @@ local dired_line_lookup = nil
 local dired_name_col_width = 0
 local dired_highlight_patch_applied = false
 local path_sep = package.config:sub(1, 1)
+local set_search_highlight -- forward declaration; defined below
+
+local fff_state = {
+    initialized = false,
+    base_path = nil,
+    fuzzy = nil,
+}
+
+local function ensure_fff()
+    if fff_state.initialized then return fff_state.fuzzy end
+
+    require("lazy").load({ plugins = { "fff.nvim" } })
+
+    local ok, fuzzy = pcall(require, "fff.fuzzy")
+    if not ok then return nil end
+
+    local core_ok, core = pcall(require, "fff.core")
+    if core_ok and type(core.ensure_initialized) == "function" then
+        pcall(core.ensure_initialized)
+    else
+        pcall(fuzzy.init_db)
+        pcall(fuzzy.scan_files)
+    end
+
+    fff_state.fuzzy = fuzzy
+    fff_state.base_path = vim.fn.getcwd()
+    fff_state.initialized = true
+
+    local group = vim.api.nvim_create_augroup("fff_refer", { clear = true })
+
+    vim.api.nvim_create_autocmd("BufEnter", {
+        group = group,
+        callback = function(ev)
+            local f = ev.file
+            if f and f ~= "" and not vim.startswith(f, "term://") then
+                pcall(fuzzy.track_access, vim.uv.fs_realpath(f) or f)
+            end
+        end,
+    })
+
+    vim.api.nvim_create_autocmd("DirChanged", {
+        group = group,
+        callback = function()
+            local cwd = vim.fn.getcwd()
+            if cwd ~= fff_state.base_path then
+                pcall(fuzzy.restart_index_in_path, cwd)
+                fff_state.base_path = cwd
+            end
+        end,
+    })
+
+    return fuzzy
+end
+
+local function pick_files_fff()
+    local fuzzy = ensure_fff()
+    if not fuzzy then
+        vim.notify("fff backend not available", vim.log.levels.ERROR)
+        return
+    end
+
+    local current_file = vim.api.nvim_buf_get_name(0)
+    if current_file == "" then current_file = nil end
+
+    local path_lookup = {}
+
+    local refer_util = require("refer.util")
+    require("refer").pick({}, function(selection, data)
+        refer_util.jump_to_location(selection, data)
+    end, {
+        prompt = "Files (fff) > ",
+        keymaps = {
+            ["<CR>"] = "select_entry",
+        },
+        on_change = function(query, update_ui_callback)
+            local ok, result = pcall(
+                fuzzy.fuzzy_search_files,
+                query or "", 4, current_file, 100, 3, 0, 100
+            )
+
+            if not ok or not result then
+                update_ui_callback({})
+                return
+            end
+
+            local items = type(result) == "table" and (result.items or result) or {}
+            local lines = {}
+            path_lookup = {}
+            for _, item in ipairs(items) do
+                local display = item.relative_path or item.path or tostring(item)
+                table.insert(lines, display)
+                path_lookup[display] = item.path or display
+            end
+            update_ui_callback(lines)
+        end,
+        parser = function(selection)
+            return {
+                filename = path_lookup[selection] or selection,
+                lnum = 1,
+                col = 1,
+            }
+        end,
+    })
+end
+
+local function pick_grep_fff(default_text, grep_mode)
+    local fuzzy = ensure_fff()
+    if not fuzzy then
+        vim.notify("fff backend not available", vim.log.levels.ERROR)
+        return
+    end
+
+    local grep_ok, grep = pcall(require, "fff.grep")
+    if not grep_ok then
+        vim.notify("fff.grep not available", vim.log.levels.ERROR)
+        return
+    end
+
+    grep_mode = grep_mode or "plain"
+    local match_lookup = {}
+
+    local refer_util = require("refer.util")
+    require("refer").pick({}, function(selection, data)
+        refer_util.jump_to_location(selection, data)
+    end, {
+        prompt = "Grep (fff) > ",
+        default_text = default_text,
+        keymaps = {
+            ["<CR>"] = "select_entry",
+        },
+        on_change = function(query, update_ui_callback)
+            if not query or query == "" then
+                update_ui_callback({})
+                return
+            end
+
+            set_search_highlight(query)
+
+            local ok, result = pcall(grep.search, query, 0, 100, nil, grep_mode)
+
+            if not ok or not result then
+                update_ui_callback({})
+                return
+            end
+
+            local items = type(result) == "table" and (result.items or result.matches or result) or {}
+            local lines = {}
+            match_lookup = {}
+            for _, item in ipairs(items) do
+                local path = item.path or item.file or ""
+                local lnum = item.line_number or item.lnum or item.line or 1
+                local col = item.col or item.column or 1
+                local text = item.text or item.content or item.line_content or ""
+                local display = string.format("%s:%d:%d: %s", path, lnum, col, vim.trim(text))
+                table.insert(lines, display)
+                match_lookup[display] = { filename = path, lnum = lnum, col = col }
+            end
+            update_ui_callback(lines)
+        end,
+        on_close = function()
+            vim.cmd("nohlsearch")
+        end,
+        parser = function(selection)
+            local entry = match_lookup[selection]
+            if entry then return entry end
+            local file, lnum, col = selection:match("^(.+):(%d+):(%d+):")
+            if file then
+                return { filename = file, lnum = tonumber(lnum), col = tonumber(col) }
+            end
+            return nil
+        end,
+    })
+end
 
 local function is_path_sep(char)
     return char == "/" or char == "\\"
@@ -536,7 +709,7 @@ local function escape_grep_string_chars(s)
     }))
 end
 
-local function set_search_highlight(query)
+set_search_highlight = function(query)
     if not query or query == "" then
         return
     end
@@ -971,29 +1144,10 @@ local function get_grep_string_query(opts)
     return tostring(word)
 end
 
-local function grep_string_with_refer(opts)
+local function grep_string_with_fff(opts)
     opts = opts or {}
     local word = get_grep_string_query(opts)
-
-    require("refer.providers.files").live_grep({
-        prompt = "Find Word (" .. word:gsub("\n", "\\n") .. ") > ",
-        default_text = word,
-        min_query_len = 0,
-        providers = {
-            grep = {
-                grep_command = function(query)
-                    set_search_highlight(query)
-                    local search = opts.use_regex and query or escape_grep_string_chars(query)
-
-                    if search == "" then
-                        return { "rg", "--vimgrep", "--smart-case", "-v", "--", "^[[:space:]]*$" }
-                    end
-
-                    return { "rg", "--vimgrep", "--smart-case", "--", search }
-                end,
-            },
-        },
-    })
+    pick_grep_fff(word, opts.use_regex and "regex" or "plain")
 end
 
 local function pick_help_tags()
@@ -1319,9 +1473,6 @@ local function open_refer_files_default()
     vim.cmd("Refer Files")
 end
 
-local function open_refer_oldfiles()
-    vim.cmd("Refer OldFiles")
-end
 
 local function open_refer_buffers()
     vim.cmd("Refer Buffers")
@@ -1339,12 +1490,68 @@ local function open_refer_references()
     vim.cmd("Refer References")
 end
 
+local function pick_files_fff_in_dir(dir, prompt)
+    local fuzzy = ensure_fff()
+    if not fuzzy then
+        vim.notify("fff backend not available", vim.log.levels.ERROR)
+        return
+    end
+
+    local original_path = fff_state.base_path
+    pcall(fuzzy.restart_index_in_path, dir)
+    fff_state.base_path = dir
+
+    local path_lookup = {}
+
+    local refer_util = require("refer.util")
+    require("refer").pick({}, function(selection, data)
+        refer_util.jump_to_location(selection, data)
+    end, {
+        prompt = prompt,
+        keymaps = {
+            ["<CR>"] = "select_entry",
+        },
+        on_change = function(query, update_ui_callback)
+            local ok, result = pcall(
+                fuzzy.fuzzy_search_files,
+                query or "", 4, nil, 100, 3, 0, 100
+            )
+            if not ok or not result then
+                update_ui_callback({})
+                return
+            end
+            local items = type(result) == "table" and (result.items or result) or {}
+            local lines = {}
+            path_lookup = {}
+            for _, item in ipairs(items) do
+                local display = item.relative_path or item.path or tostring(item)
+                table.insert(lines, display)
+                path_lookup[display] = item.path or display
+            end
+            update_ui_callback(lines)
+        end,
+        on_close = function()
+            if original_path then
+                pcall(fuzzy.restart_index_in_path, original_path)
+                fff_state.base_path = original_path
+            end
+        end,
+        parser = function(selection)
+            return {
+                filename = path_lookup[selection] or selection,
+                lnum = 1,
+                col = 1,
+            }
+        end,
+    })
+end
+
 local function open_nvim_config_files()
-    pick_files_in_dir(vim.fn.stdpath("config"), "Nvim Config Files > ")
+    pick_files_fff_in_dir(vim.fn.stdpath("config"), "Nvim Config Files > ")
 end
 
 local function open_lazy_data_files()
-    pick_files_in_dir(vim.fn.stdpath("data") .. "/lazy", "Lazy Data Files > ")
+    pick_files_fff_in_dir(vim.fn.stdpath("data") .. "/lazy", "Lazy Data Files > ")
 end
 
 return {
@@ -1389,9 +1596,9 @@ return {
         {
             "<leader>ff",
             function()
-                run_and_remember_picker(open_refer_files_default)
+                run_and_remember_picker(pick_files_fff)
             end,
-            desc = "Find file"
+            desc = "Find file (fff)"
         },
         {
             "<leader>so",
@@ -1413,13 +1620,6 @@ return {
                 run_and_remember_picker(pick_highlights)
             end,
             desc = "Search highlight group"
-        },
-        {
-            "<leader>fr",
-            function()
-                run_and_remember_picker(open_refer_oldfiles)
-            end,
-            desc = "Old files"
         },
         {
             "<leader>fn",
@@ -1445,9 +1645,9 @@ return {
         {
             "<leader>/",
             function()
-                run_and_remember_picker(open_refer_grep)
+                run_and_remember_picker(pick_grep_fff)
             end,
-            desc = "Grep"
+            desc = "Grep (fff)"
         },
         {
             "<leader>sb",
@@ -1466,7 +1666,7 @@ return {
         {
             "<leader>sw",
             function()
-                run_and_remember_picker(grep_string_with_refer)
+                run_and_remember_picker(grep_string_with_fff)
             end,
             mode = { "n", "v" },
             desc = "Search word with grep"

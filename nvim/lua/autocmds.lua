@@ -67,8 +67,8 @@ local function set_neogit_cterm_highlights()
         return
     end
 
-    -- only applies on certain colorschemes that doesnt have them defined.
-    if vim.o.colorscheme ~= "sonokai" then
+    -- only applies on certain colorschemes that doesnt have them defined. *sonokai*
+    if vim.g.colors_name ~= "sonokai" then
         return
     end
 
@@ -130,13 +130,14 @@ vim.api.nvim_create_autocmd("ColorScheme", {
                 hi  DiagnosticUnderlineWarn  gui=undercurl    cterm=undercurl
                 hi  DiagnosticUnderlineError gui=undercurl    cterm=undercurl
                 hi  NormalFloat              guibg=none       ctermbg=none
+                " hi  Normal                   guibg=none       ctermbg=none
                 hi! link                     FloatBorder      NormalFloat
                 hi! link                     OilFileHidden    OilFile
                 hi! link                     OilDirHidden     OilDir
                 hi  WinSeparator             guibg=none       ctermbg=none  guifg=#686868
                 hi  WinBar                   guibg=none       ctermbg=none
-                hi  StatusLine               guibg=none       cterm=none    ctermbg=none ctermfg=white
-                hi  StatusLineNC             guibg=none       cterm=none    ctermbg=none ctermfg=white
+                " hi  StatusLine               guibg=none       cterm=none    ctermbg=none ctermfg=white
+                " hi  StatusLineNC             guibg=none       cterm=none    ctermbg=none ctermfg=white
             ]])
 
             set_neogit_cterm_highlights()
@@ -144,9 +145,29 @@ vim.api.nvim_create_autocmd("ColorScheme", {
     end,
 })
 
+local theme_state_group = vim.api.nvim_create_augroup("ThemeStateSync", { clear = true })
 vim.api.nvim_create_autocmd("VimEnter", {
-    callback = require("colorscheme").load_persisted_colorscheme,
+    group = theme_state_group,
     once = true,
+    callback = function()
+        local colorscheme = require("colorscheme")
+        colorscheme.load_persisted_colorscheme()
+        colorscheme.start_theme_state_watcher()
+    end,
+})
+
+vim.api.nvim_create_autocmd("FocusGained", {
+    group = theme_state_group,
+    callback = function()
+        require("colorscheme").sync_theme_state()
+    end,
+})
+
+vim.api.nvim_create_autocmd("VimLeavePre", {
+    group = theme_state_group,
+    callback = function()
+        require("colorscheme").stop_theme_state_watcher()
+    end,
 })
 
 local highlight_group = vim.api.nvim_create_augroup("YankHighlight", { clear = true })

@@ -24,6 +24,24 @@ return {
     {
         "rose-pine/neovim",
         name = "rose-pine",
+        config = function()
+            require("rose-pine").setup({
+                variant = "auto", -- auto, main, moon, or dawn
+                dim_inactive_windows = false,
+
+                enable = {
+                    terminal = true,
+                    legacy_highlights = true, -- Improve compatibility for previous versions of Neovim
+                    migrations = true, -- Handle deprecated options automatically
+                },
+
+                styles = {
+                    bold = false,
+                    italic = false,
+                    transparency = true,
+                },
+            })
+        end,
     },
     {
         "rktjmp/lush.nvim",
