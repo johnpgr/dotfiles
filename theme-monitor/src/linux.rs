@@ -1,4 +1,6 @@
 use std::error::Error;
+use std::thread;
+use std::time::Duration;
 
 use zbus::blocking::Connection;
 use zbus::proxy;
@@ -34,7 +36,8 @@ pub fn run(writer: ThemeStateWriter) -> Result<(), Box<dyn Error>> {
             continue;
         }
 
-        apply_value(&writer, args.value().to_owned());
+        thread::sleep(Duration::from_millis(300));
+        sync_current(&proxy, &writer)?;
     }
 
     Err("theme monitor signal stream ended unexpectedly".into())
