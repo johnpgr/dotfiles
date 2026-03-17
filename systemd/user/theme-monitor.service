@@ -1,10 +1,14 @@
 [Unit]
 Description=Monitor System Theme Changes for Neovim
+PartOf=graphical-session.target
 After=graphical-session.target
+After=xdg-desktop-portal.service
+Wants=xdg-desktop-portal.service
 
 [Service]
 ExecStart=%h/.cargo/bin/theme-monitor
 Restart=on-failure
+RestartSec=5
 
 [Install]
-WantedBy=default.target
+WantedBy=graphical-session.target
