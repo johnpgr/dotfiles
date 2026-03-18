@@ -1554,6 +1554,69 @@ local function open_lazy_data_files()
     pick_files_fff_in_dir(vim.fn.stdpath("data") .. "/lazy", "Lazy Data Files > ")
 end
 
+local function refer_entry_to_qf_item(candidate, parser)
+    local item = { text = candidate }
+    if type(parser) ~= "function" then
+        return item
+    end
+
+    local parsed = parser(candidate)
+    if not parsed then
+        return item
+    end
+
+    if parsed.filename then
+        item.filename = parsed.filename
+    end
+    if parsed.lnum then
+        item.lnum = parsed.lnum
+    end
+    if parsed.col then
+        item.col = parsed.col
+    end
+
+    if parsed.content then
+        item.text = parsed.content
+    elseif parsed.filename and parsed.lnum then
+        local prefix_col = string.format("%s:%d:%d:", parsed.filename, parsed.lnum, parsed.col or 0)
+        local prefix_no_col = string.format("%s:%d:", parsed.filename, parsed.lnum)
+
+        if vim.startswith(candidate, prefix_col) then
+            item.text = candidate:sub(#prefix_col + 1)
+        elseif vim.startswith(candidate, prefix_no_col) then
+            item.text = candidate:sub(#prefix_no_col + 1)
+        end
+    end
+
+    return item
+end
+
+local function send_all_refer_matches_to_qf(_, builtin)
+    local picker = builtin and builtin.picker or nil
+    local matches = picker and picker.current_matches or {}
+    if #matches == 0 then
+        return
+    end
+
+    local items = {}
+    for _, candidate in ipairs(matches) do
+        table.insert(items, refer_entry_to_qf_item(candidate, picker.parser))
+    end
+
+    local title = picker.opts.prompt or "Refer Selection"
+    picker:close()
+
+    pcall(require, "quicker")
+
+    vim.schedule(function()
+        vim.fn.setqflist({}, " ", {
+            title = title,
+            items = items,
+        })
+        vim.cmd("copen")
+    end)
+end
+
 return {
     "juniorsundar/refer.nvim",
     config = function()
@@ -1565,6 +1628,9 @@ return {
                 grep = {
                     grep_command = default_live_grep_command,
                 },
+            },
+            keymaps = {
+                ["<C-q>"] = send_all_refer_matches_to_qf,
             },
         })
 

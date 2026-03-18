@@ -1,5 +1,6 @@
 {
   "99": { "branch": "master", "commit": "ec9872f7df7f4eb8b319719c1c253eb3ea8877ed" },
+  "DoNe": { "branch": "main", "commit": "f3d8ff76ebb046ae89d2c9ffa534bf9f39ee7899" },
   "LuaSnip": { "branch": "master", "commit": "dae4f5aaa3574bd0c2b9dd20fb9542a02c10471c" },
   "baleia.nvim": { "branch": "main", "commit": "fb3aff021b2b64ef820d0230d2c22ebfaf71bb6a" },
   "blink.cmp": { "branch": "main", "commit": "451168851e8e2466bc97ee3e026c3dcb9141ce07" },
