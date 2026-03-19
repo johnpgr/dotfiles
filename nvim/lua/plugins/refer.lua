@@ -1277,6 +1277,42 @@ local function capture_picker_state(picker)
     return state
 end
 
+local function capture_window_local_options(winid)
+    if not winid or not vim.api.nvim_win_is_valid(winid) then
+        return nil
+    end
+
+    local option_names = {
+        "number",
+        "relativenumber",
+        "signcolumn",
+        "cursorline",
+        "foldcolumn",
+        "spell",
+        "list",
+        "winhighlight",
+        "fillchars",
+        "statusline",
+    }
+
+    local opts = {}
+    for _, name in ipairs(option_names) do
+        opts[name] = vim.api.nvim_get_option_value(name, { scope = "local", win = winid })
+    end
+
+    return opts
+end
+
+local function restore_window_local_options(winid, opts)
+    if not opts or not winid or not vim.api.nvim_win_is_valid(winid) then
+        return
+    end
+
+    for name, value in pairs(opts) do
+        pcall(vim.api.nvim_set_option_value, name, value, { scope = "local", win = winid })
+    end
+end
+
 local function restore_picker_state(picker, state)
     if not picker or type(state) ~= "table" then
         return
@@ -1358,6 +1394,7 @@ local function build_resume_aware_opts(opts, session, should_restore)
     local original_on_close = picker_opts.on_close
     local picker_ref = nil
     local state_to_restore = nil
+    local original_win_opts = nil
 
     if should_restore and session and session.state then
         state_to_restore = vim.deepcopy(session.state)
@@ -1369,6 +1406,10 @@ local function build_resume_aware_opts(opts, session, should_restore)
             session.state = capture_picker_state(picker_ref)
         end
 
+        if picker_ref and original_win_opts then
+            restore_window_local_options(picker_ref.original_win, original_win_opts)
+        end
+
         if original_on_close then
             original_on_close()
         end
@@ -1376,6 +1417,9 @@ local function build_resume_aware_opts(opts, session, should_restore)
 
     return picker_opts, function(picker)
         picker_ref = picker
+        if picker and picker.original_win then
+            original_win_opts = capture_window_local_options(picker.original_win)
+        end
         if state_to_restore then
             restore_picker_state(picker, state_to_restore)
         end

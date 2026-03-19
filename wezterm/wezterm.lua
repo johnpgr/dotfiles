@@ -22,7 +22,6 @@ wezterm.add_to_config_reload_watch_list(theme.theme_mode_file)
 config.font = regular_font
 config.font_rules = theme.font_rules(regular_font)
 config.max_fps = 165
-config.animation_fps = 165
 config.front_end = "WebGpu"
 config.webgpu_power_preference = "HighPerformance"
 config.default_prog = platform.default_prog()
@@ -39,6 +38,9 @@ config.underline_position = "-3px"
 config.underline_thickness = "1px"
 config.color_scheme = theme.color_scheme(theme_mode)
 config.colors = theme.tab_bar_colors(theme_mode)
+config.scrollback_lines = 10000
+config.enable_wayland = false
+config.use_ime = false
 
 config.window_padding = {
 	left = 0,
