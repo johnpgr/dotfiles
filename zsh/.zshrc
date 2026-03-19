@@ -83,31 +83,78 @@ plugins=(git zoxide tmux)
 
 source $ZSH/oh-my-zsh.sh
 
-function sesh-sessions() {
-  {
-    exec </dev/tty
-    exec <&1
-    local session
-    session=$(sesh list | fzf-tmux -p 55%,60% \
-    --no-sort --ansi --border-label ' sesh ' --prompt '⚡  ' \
-    --header '  ^a all ^t tmux ^g configs ^x zoxide ^d tmux kill ^f find' \
-    --bind 'tab:down,btab:up' \
-    --bind 'ctrl-a:change-prompt(⚡  )+reload(sesh list)' \
-    --bind 'ctrl-t:change-prompt(🪟  )+reload(sesh list -t)' \
-    --bind 'ctrl-g:change-prompt(⚙️  )+reload(sesh list -c)' \
-    --bind 'ctrl-x:change-prompt(📁  )+reload(sesh list -z)' \
-    --bind 'ctrl-f:change-prompt(🔎  )+reload(fd -H -d 2 -t d -E .Trash . ~)' \
-    --bind 'ctrl-d:execute(tmux kill-session -t {})+change-prompt(⚡  )+reload(sesh list)'
-)
-    [[ -z "$session" ]] && return
-    sesh connect $session
-  }
+function _wezterm-workspace-name-from-dir() {
+  local dir="$1"
+  local name
+
+  if [[ "$dir" == "$HOME" ]]; then
+    name="home"
+  elif [[ "$dir" == "$HOME"/* ]]; then
+    name="${dir#$HOME/}"
+  else
+    name="${dir:t}"
+  fi
+
+  name="${name//\//:}"
+  print -r -- "$name"
 }
 
-zle     -N             sesh-sessions
-bindkey -M emacs '\es' sesh-sessions
-bindkey -M vicmd '\es' sesh-sessions
-bindkey -M viins '\es' sesh-sessions
+function _wezterm-workspace-list() {
+  wezterm cli --prefer-mux list --format json 2>/dev/null | jq -r '
+    map(select(.workspace != null))
+    | sort_by(.workspace)
+    | group_by(.workspace)[]
+    | ["workspace", .[0].workspace, (.[] | .cwd? // empty | tostring | select(length > 0) | .)][0:3]
+    | @tsv
+  ' 2>/dev/null
+}
+
+function _wezterm-directory-list() {
+  local dir workspace
+  while IFS= read -r dir; do
+    workspace=$(_wezterm-workspace-name-from-dir "$dir")
+    printf 'directory\t%s\t%s\n' "$workspace" "$dir"
+  done < <(fd -H -d 2 -t d -E .Trash . ~)
+}
+
+function _wezterm-workspace-entries() {
+  _wezterm-workspace-list
+  _wezterm-directory-list
+}
+
+function wezterm-workspaces() {
+  exec </dev/tty
+  exec <&1
+
+  local entry kind workspace target
+  entry=$(
+    _wezterm-workspace-entries | fzf-tmux -p 55%,60% \
+      --no-sort --ansi \
+      --delimiter=$'\t' \
+      --with-nth=2,3 \
+      --border-label ' wezterm ' \
+      --prompt '🪟  ' \
+      --header '  enter attach/create workspace' \
+      --bind 'tab:down,btab:up' \
+      --preview 'printf "%s\n" {3}'
+  )
+
+  [[ -z "$entry" ]] && return
+
+  IFS=$'\t' read -r kind workspace target <<< "$entry"
+
+  if [[ "$kind" == "workspace" ]]; then
+    setsid wezterm start --workspace "$workspace" >/dev/null 2>&1 </dev/null
+    return
+  fi
+
+  setsid wezterm start --cwd "$target" --workspace "$workspace" >/dev/null 2>&1 </dev/null
+}
+
+zle     -N             wezterm-workspaces
+bindkey -M emacs '\es' wezterm-workspaces
+bindkey -M vicmd '\es' wezterm-workspaces
+bindkey -M viins '\es' wezterm-workspaces
 
 # User configuration
 

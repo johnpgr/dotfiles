@@ -1,9 +1,32 @@
-local wezterm = require "wezterm"
+local wezterm = require("wezterm")
 local config = wezterm.config_builder()
 local regular_font = wezterm.font("Liberation Mono", { weight = "Regular", italic = false })
 local theme_mode_file = wezterm.home_dir .. "/.dotfiles/.theme_state"
 local dark_color_scheme = "Gigavolt (base16)"
 local light_color_scheme = "3024 Day"
+local is_windows = wezterm.target_triple:find("windows") ~= nil
+
+local function default_prog()
+	if is_windows then
+		return { "pwsh", "-NoLogo" }
+	end
+
+	return { "zsh" }
+end
+
+local function configure_unix_domain(cfg)
+	if is_windows then
+		return
+	end
+
+	cfg.term = "wezterm"
+	cfg.unix_domains = {
+		{
+			name = "unix",
+		},
+	}
+	cfg.default_gui_startup_args = { "connect", "unix" }
+end
 
 local function read_theme_mode()
 	local file, err = io.open(theme_mode_file, "r")
@@ -29,7 +52,7 @@ local function is_vim(pane)
 	local process_info = pane:get_foreground_process_info()
 	local process_name = process_info and process_info.name
 
-	return process_name == "nvim" or process_name == "vim"
+	return process_name == "nvim" or process_name == "vim" or process_name == "nvim.exe" or process_name == "vim.exe"
 end
 
 local direction_keys = {
@@ -161,14 +184,15 @@ config.max_fps = 165
 config.animation_fps = 165
 config.front_end = "WebGpu"
 config.webgpu_power_preference = "HighPerformance"
-config.default_prog = { "zsh" }
-config.term = "wezterm"
+config.default_prog = default_prog()
+configure_unix_domain(config)
 config.font_size = 12.0
 config.freetype_interpreter_version = 40
 config.enable_tab_bar = true
 config.hide_tab_bar_if_only_one_tab = false
 config.use_fancy_tab_bar = false
 config.tab_bar_at_bottom = true
+config.tab_max_width = 32
 config.cursor_blink_rate = 0
 config.underline_position = "-3px"
 config.underline_thickness = "1px"
@@ -183,8 +207,13 @@ config.window_padding = {
 }
 
 config.keys = {
-	{ key = "+",          mods = "ALT|SHIFT",  action = wezterm.action.SplitHorizontal { domain = "CurrentPaneDomain" } },
-	{ key = "_",          mods = "ALT|SHIFT",  action = wezterm.action.SplitVertical { domain = "CurrentPaneDomain" } },
+	{ key = "Enter", mods = "ALT", action = wezterm.action.DisableDefaultAssignment },
+	{
+		key = "+",
+		mods = "ALT|SHIFT",
+		action = wezterm.action.SplitHorizontal({ domain = "CurrentPaneDomain" }),
+	},
+	{ key = "_", mods = "ALT|SHIFT", action = wezterm.action.SplitVertical({ domain = "CurrentPaneDomain" }) },
 	split_nav("move", "h"),
 	split_nav("move", "j"),
 	split_nav("move", "k"),
@@ -194,19 +223,19 @@ config.keys = {
 	split_nav("resize", "k"),
 	split_nav("resize", "l"),
 
-	{ key = "W",          mods = "CTRL|SHIFT", action = wezterm.action.CloseCurrentPane { confirm = false } },
-	{ key = "T",          mods = "CTRL|SHIFT", action = wezterm.action.SpawnTab "CurrentPaneDomain" },
-	{ key = "1",          mods = "CTRL|ALT", action = wezterm.action.ActivateTab(0) },
-	{ key = "2",          mods = "CTRL|ALT", action = wezterm.action.ActivateTab(1) },
-	{ key = "3",          mods = "CTRL|ALT", action = wezterm.action.ActivateTab(2) },
-	{ key = "4",          mods = "CTRL|ALT", action = wezterm.action.ActivateTab(3) },
-	{ key = "5",          mods = "CTRL|ALT", action = wezterm.action.ActivateTab(4) },
-	{ key = "6",          mods = "CTRL|ALT", action = wezterm.action.ActivateTab(5) },
-	{ key = "7",          mods = "CTRL|ALT", action = wezterm.action.ActivateTab(6) },
-	{ key = "8",          mods = "CTRL|ALT", action = wezterm.action.ActivateTab(7) },
-	{ key = "9",          mods = "CTRL|ALT", action = wezterm.action.ActivateTab(8) },
-	{ key = "Tab",        mods = "CTRL",       action = wezterm.action.ActivateTabRelative(1) },
-	{ key = "Tab",        mods = "CTRL|SHIFT", action = wezterm.action.ActivateTabRelative(-1) },
+	{ key = "W", mods = "CTRL|SHIFT", action = wezterm.action.CloseCurrentPane({ confirm = false }) },
+	{ key = "T", mods = "CTRL|SHIFT", action = wezterm.action.SpawnTab("CurrentPaneDomain") },
+	{ key = "1", mods = "CTRL|ALT", action = wezterm.action.ActivateTab(0) },
+	{ key = "2", mods = "CTRL|ALT", action = wezterm.action.ActivateTab(1) },
+	{ key = "3", mods = "CTRL|ALT", action = wezterm.action.ActivateTab(2) },
+	{ key = "4", mods = "CTRL|ALT", action = wezterm.action.ActivateTab(3) },
+	{ key = "5", mods = "CTRL|ALT", action = wezterm.action.ActivateTab(4) },
+	{ key = "6", mods = "CTRL|ALT", action = wezterm.action.ActivateTab(5) },
+	{ key = "7", mods = "CTRL|ALT", action = wezterm.action.ActivateTab(6) },
+	{ key = "8", mods = "CTRL|ALT", action = wezterm.action.ActivateTab(7) },
+	{ key = "9", mods = "CTRL|ALT", action = wezterm.action.ActivateTab(8) },
+	{ key = "Tab", mods = "CTRL", action = wezterm.action.ActivateTabRelative(1) },
+	{ key = "Tab", mods = "CTRL|SHIFT", action = wezterm.action.ActivateTabRelative(-1) },
 }
 
 return config
