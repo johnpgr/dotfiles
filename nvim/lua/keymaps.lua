@@ -1,8 +1,79 @@
+local function wezterm_cli_bin()
+    if vim.fn.executable("wezterm.exe") == 1 then
+        return "wezterm.exe"
+    end
+
+    return "wezterm"
+end
+
+local function can_resize_nvim(direction)
+    local current = vim.fn.winnr()
+    local directions = (direction == "h" or direction == "l") and { "h", "l" } or { "j", "k" }
+
+    for _, dir in ipairs(directions) do
+        if vim.fn.winnr(dir) ~= current then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function resize_wezterm(direction)
+    local wezterm_directions = {
+        h = "Left",
+        j = "Down",
+        k = "Up",
+        l = "Right",
+    }
+
+    vim.fn.system({
+        wezterm_cli_bin(),
+        "cli",
+        "adjust-pane-size",
+        "--amount",
+        "3",
+        wezterm_directions[direction],
+    })
+
+    if vim.v.shell_error ~= 0 then
+        vim.notify("Unable to resize WezTerm pane", vim.log.levels.WARN)
+    end
+end
+
+local function smart_resize(direction)
+    local resize_commands = {
+        h = "vertical resize +3",
+        j = "resize +3",
+        k = "resize -3",
+        l = "vertical resize -3",
+    }
+
+    if can_resize_nvim(direction) then
+        vim.cmd(resize_commands[direction])
+        return
+    end
+
+    resize_wezterm(direction)
+end
+
 vim.keymap.set("n", "<leader>w", "<cmd>update<cr>", { desc = "Write" })
 vim.keymap.set("n", "]t", "<cmd>tabnext<cr>", { desc = "Tab next" })
 vim.keymap.set("n", "[t", "<cmd>tabprev<cr>", { desc = "Tab prev" })
 vim.keymap.set("n", "<Esc>", "<cmd>noh<cr>", { desc = "Clear highlights" })
 vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
+vim.keymap.set("n", "<M-h>", function()
+    smart_resize("h")
+end, { desc = "Resize split left" })
+vim.keymap.set("n", "<M-j>", function()
+    smart_resize("j")
+end, { desc = "Resize split down" })
+vim.keymap.set("n", "<M-k>", function()
+    smart_resize("k")
+end, { desc = "Resize split up" })
+vim.keymap.set("n", "<M-l>", function()
+    smart_resize("l")
+end, { desc = "Resize split right" })
 vim.keymap.set("n", "<leader>I", "<cmd>Inspect<cr>", { desc = "Inspect" })
 vim.keymap.set("n", "yig", ":%y<CR>", { desc = "Yank buffer" })
 vim.keymap.set("n", "vig", "ggVG", { desc = "Visual select buffer" })

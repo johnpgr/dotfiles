@@ -64,7 +64,7 @@ impl ThemeStateWriter {
             .lock()
             .map_err(|_| io::Error::other("theme state writer mutex poisoned"))?;
 
-        if last_written.as_ref() == Some(&mode) {
+        if last_written.as_ref() == Some(&mode) && read_mode_from_disk(&self.path) == Some(mode) {
             return Ok(false);
         }
 
@@ -72,10 +72,7 @@ impl ThemeStateWriter {
             .path
             .parent()
             .ok_or_else(|| io::Error::other("theme state path has no parent directory"))?;
-        let temp_path = parent.join(format!(".theme_state.tmp-{}", process::id()));
-
-        fs::write(&temp_path, mode.as_str())?;
-        fs::rename(&temp_path, &self.path)?;
+        write_atomically(&self.path, mode.as_str(), parent)?;
 
         println!("Switching to {mode} mode...");
         *last_written = Some(mode);
@@ -84,12 +81,28 @@ impl ThemeStateWriter {
 }
 
 fn theme_state_path() -> io::Result<PathBuf> {
-    let home = env::var_os("HOME")
-        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "HOME is not set"))?;
-    Ok(PathBuf::from(home).join(".dotfiles").join(".theme_state"))
+    Ok(dotfiles_dir()?.join(".theme_state"))
 }
 
-fn read_mode_from_disk(path: &PathBuf) -> Option<Mode> {
+fn dotfiles_dir() -> io::Result<PathBuf> {
+    let home = env::var_os("HOME")
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "HOME is not set"))?;
+    Ok(PathBuf::from(home).join(".dotfiles"))
+}
+
+fn write_atomically(path: &std::path::Path, content: &str, parent: &std::path::Path) -> io::Result<()> {
+    let filename = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| io::Error::other("path has no valid filename"))?;
+    let temp_path = parent.join(format!(".{filename}.tmp-{}", process::id()));
+
+    fs::write(&temp_path, content)?;
+    fs::rename(&temp_path, path)?;
+    Ok(())
+}
+
+fn read_mode_from_disk(path: &std::path::Path) -> Option<Mode> {
     let content = fs::read_to_string(path).ok()?;
     match content.trim() {
         "dark" => Some(Mode::Dark),
