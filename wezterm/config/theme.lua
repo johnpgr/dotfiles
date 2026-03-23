@@ -7,7 +7,7 @@ M.dark_color_scheme = "Gigavolt (base16)"
 M.light_color_scheme = "3024 Day"
 
 function M.regular_font()
-	return wezterm.font("Liberation Mono", { weight = "Regular", italic = false })
+	return wezterm.font("DejaVuSansM Nerd Font", { weight = "Regular", italic = false })
 end
 
 function M.font_rules(font)

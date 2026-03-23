@@ -3,6 +3,31 @@
 -- Detects the platform and wires up the fastest available clipboard tool
 -- (win32yank on Windows/WSL, xclip/xsel on Unix) and then enables
 -- `unnamedplus` so yank/put uses the system clipboard by default.
+local function set_wezterm_user_var(name, value)
+    if vim.env.TERM ~= "wezterm" and vim.env.TERM_PROGRAM ~= "WezTerm" then
+        return
+    end
+
+    local encoded = vim.base64.encode(value)
+    io.stdout:write(string.format("\27]1337;SetUserVar=%s=%s\7", name, encoded))
+    io.stdout:flush()
+end
+
+local wezterm_pane_var_group = vim.api.nvim_create_augroup("WezTermPaneVars", { clear = true })
+vim.api.nvim_create_autocmd("VimEnter", {
+    group = wezterm_pane_var_group,
+    callback = function()
+        set_wezterm_user_var("IS_NVIM", "1")
+    end,
+})
+
+vim.api.nvim_create_autocmd("VimLeavePre", {
+    group = wezterm_pane_var_group,
+    callback = function()
+        set_wezterm_user_var("IS_NVIM", "")
+    end,
+})
+
 vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
     once = true,
     callback = function()

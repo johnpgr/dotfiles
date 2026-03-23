@@ -1,44 +1,12 @@
-local function pick_files_in_dir(directory, prompt)
-    local fd_cmd = vim.fn.executable("fdfind") == 1 and "fdfind" or "fd"
-
-    require("refer.providers.files").files({
-        prompt = prompt,
-        providers = {
-            files = {
-                find_command = function(query)
-                    local needle = (query or ""):sub(1, 2)
-                    return {
-                        fd_cmd,
-                        "-H",
-                        "--type",
-                        "f",
-                        "--color",
-                        "never",
-                        "--exclude",
-                        ".git",
-                        "--exclude",
-                        ".jj",
-                        "--exclude",
-                        "node_modules",
-                        "--exclude",
-                        ".cache",
-                        "--",
-                        needle,
-                        directory,
-                    }
-                end,
-            },
-        },
-    })
-end
-
 local uv = vim.uv or vim.loop
 local dired_stats_cache = {}
 local dired_line_lookup = nil
 local dired_name_col_width = 0
 local dired_highlight_patch_applied = false
+local fff_icon_line_lookup = nil
 local path_sep = package.config:sub(1, 1)
 local set_search_highlight -- forward declaration; defined below
+local ensure_dired_result_highlight_patch -- forward declaration; defined below
 
 local fff_state = {
     initialized = false,
@@ -92,12 +60,36 @@ local function ensure_fff()
     return fuzzy
 end
 
+local function format_fff_line_with_icon(path, text)
+    if not vim.g.icons_enabled then
+        return text, nil
+    end
+
+    local ok, icons = pcall(require, "fff.file_picker.icons")
+    if not ok then
+        return text, nil
+    end
+
+    local name = vim.fn.fnamemodify(path, ":t")
+    local ext = vim.fn.fnamemodify(path, ":e")
+    local icon, icon_hl = icons.get_icon(name, ext, false)
+    if not icon or icon == "" or not icon_hl then
+        return text, nil
+    end
+
+    return string.format("%s %s", icon, text), {
+        icon = icon,
+        icon_hl = icon_hl,
+    }
+end
+
 local function pick_files_fff()
     local fuzzy = ensure_fff()
     if not fuzzy then
         vim.notify("fff backend not available", vim.log.levels.ERROR)
         return
     end
+    ensure_dired_result_highlight_patch()
 
     local current_file = vim.api.nvim_buf_get_name(0)
     if current_file == "" then current_file = nil end
@@ -126,12 +118,19 @@ local function pick_files_fff()
             local items = type(result) == "table" and (result.items or result) or {}
             local lines = {}
             path_lookup = {}
+            fff_icon_line_lookup = {}
             for _, item in ipairs(items) do
-                local display = item.relative_path or item.path or tostring(item)
+                local raw_display = item.relative_path or item.path or tostring(item)
+                local fullpath = item.path or raw_display
+                local display, icon_meta = format_fff_line_with_icon(fullpath, raw_display)
                 table.insert(lines, display)
-                path_lookup[display] = item.path or display
+                path_lookup[display] = fullpath
+                fff_icon_line_lookup[display] = icon_meta
             end
             update_ui_callback(lines)
+        end,
+        on_close = function()
+            fff_icon_line_lookup = nil
         end,
         parser = function(selection)
             return {
@@ -155,6 +154,7 @@ local function pick_grep_fff(default_text, grep_mode)
         vim.notify("fff.grep not available", vim.log.levels.ERROR)
         return
     end
+    ensure_dired_result_highlight_patch()
 
     grep_mode = grep_mode or "plain"
     local match_lookup = {}
@@ -186,18 +186,22 @@ local function pick_grep_fff(default_text, grep_mode)
             local items = type(result) == "table" and (result.items or result.matches or result) or {}
             local lines = {}
             match_lookup = {}
+            fff_icon_line_lookup = {}
             for _, item in ipairs(items) do
                 local path = item.path or item.file or ""
                 local lnum = item.line_number or item.lnum or item.line or 1
                 local col = item.col or item.column or 1
                 local text = item.text or item.content or item.line_content or ""
-                local display = string.format("%s:%d:%d: %s", path, lnum, col, vim.trim(text))
+                local raw_display = string.format("%s:%d:%d: %s", path, lnum, col, vim.trim(text))
+                local display, icon_meta = format_fff_line_with_icon(path, raw_display)
                 table.insert(lines, display)
                 match_lookup[display] = { filename = path, lnum = lnum, col = col }
+                fff_icon_line_lookup[display] = icon_meta
             end
             update_ui_callback(lines)
         end,
         on_close = function()
+            fff_icon_line_lookup = nil
             vim.cmd("nohlsearch")
         end,
         parser = function(selection)
@@ -263,7 +267,7 @@ local function permission_char_hl(char, index)
     return "ReferDiredPermOther"
 end
 
-local function ensure_dired_result_highlight_patch()
+ensure_dired_result_highlight_patch = function()
     if dired_highlight_patch_applied then
         return
     end
@@ -275,8 +279,17 @@ local function ensure_dired_result_highlight_patch()
 
     highlight.highlight_entry = function(buf, ns, line_idx, line, highlight_code, opts)
         local entry = dired_line_lookup and dired_line_lookup[line] or nil
+        local icon_meta = fff_icon_line_lookup and fff_icon_line_lookup[line] or nil
         if not entry then
-            return original_highlight_entry(buf, ns, line_idx, line, highlight_code, opts)
+            original_highlight_entry(buf, ns, line_idx, line, highlight_code, opts)
+            if icon_meta and icon_meta.icon and icon_meta.icon_hl then
+                pcall(vim.api.nvim_buf_set_extmark, buf, ns, line_idx, 0, {
+                    end_col = #icon_meta.icon,
+                    hl_group = icon_meta.icon_hl,
+                    priority = 110,
+                })
+            end
+            return
         end
 
         local function set_hl(col, end_col, hl_group, priority)
@@ -1540,6 +1553,7 @@ local function pick_files_fff_in_dir(dir, prompt)
         vim.notify("fff backend not available", vim.log.levels.ERROR)
         return
     end
+    ensure_dired_result_highlight_patch()
 
     local original_path = fff_state.base_path
     pcall(fuzzy.restart_index_in_path, dir)
@@ -1567,14 +1581,19 @@ local function pick_files_fff_in_dir(dir, prompt)
             local items = type(result) == "table" and (result.items or result) or {}
             local lines = {}
             path_lookup = {}
+            fff_icon_line_lookup = {}
             for _, item in ipairs(items) do
-                local display = item.relative_path or item.path or tostring(item)
+                local raw_display = item.relative_path or item.path or tostring(item)
+                local fullpath = item.path or raw_display
+                local display, icon_meta = format_fff_line_with_icon(fullpath, raw_display)
                 table.insert(lines, display)
-                path_lookup[display] = item.path or display
+                path_lookup[display] = fullpath
+                fff_icon_line_lookup[display] = icon_meta
             end
             update_ui_callback(lines)
         end,
         on_close = function()
+            fff_icon_line_lookup = nil
             if original_path then
                 pcall(fuzzy.restart_index_in_path, original_path)
                 fff_state.base_path = original_path

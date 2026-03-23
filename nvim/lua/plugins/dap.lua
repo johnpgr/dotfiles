@@ -7,6 +7,28 @@ local function dap_view_is_open()
     return false
 end
 
+local function dap_terminal_is_open()
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+        if vim.w[win].dapview_win_term then
+            return true
+        end
+    end
+    return false
+end
+
+local function dap_ui_is_open()
+    return dap_view_is_open() or dap_terminal_is_open()
+end
+
+local function clear_dap_virtual_text()
+    local ok, virtual_text = pcall(require, "nvim-dap-virtual-text/virtual_text")
+    if not ok then
+        return
+    end
+    virtual_text.clear_virtual_text()
+    virtual_text.clear_last_frames()
+end
+
 local function toggle_disassembly_view()
     local dapview = require("dap-view")
 
@@ -146,6 +168,7 @@ return {
             {
                 "<leader>ds",
                 function()
+                    clear_dap_virtual_text()
                     require("dap").terminate()
                     require("dap").disconnect()
                     require("dap").close()
@@ -155,7 +178,12 @@ return {
             {
                 "<leader>du",
                 function()
-                    require("dap-view").toggle()
+                    local dapview = require("dap-view")
+                    if dap_ui_is_open() then
+                        dapview.close(true)
+                        return
+                    end
+                    dapview.open()
                 end,
                 desc = "Toggle debug UI",
             },
@@ -181,7 +209,7 @@ return {
                     require("dap-view").setup({
                         winbar = {
                             controls = {
-                                enabled = true,
+                                enabled = false,
                             },
                             sections = {
                                 "scopes",
@@ -192,14 +220,21 @@ return {
                                 "repl",
                             },
                             default_section = "scopes",
-                            show_keymap_hints = true,
+                            show_keymap_hints = false,
+                            base_sections = {
+                                scopes = { label = "[S]copes", keymap = "S" },
+                                threads = { label = "[T]hreads", keymap = "T" },
+                                breakpoints = { label = "[B]reakpoints", keymap = "B" },
+                                watches = { label = "[W]atches", keymap = "W" },
+                                repl = { label = "[R]EPL", keymap = "R" },
+                            },
                         },
                         windows = {
-                            size = 0.3,
-                            position = "below",
+                            size = 0.4,
+                            position = "left",
                             terminal = {
-                                size = 0.5,
-                                position = "left",
+                                size = 0.3,
+                                position = "below",
                                 hide = {},
                             },
                         },
@@ -218,7 +253,7 @@ return {
                         dapview_register = true,
                         dapview = {
                             keymap = "D",
-                            label = "Disassembly [D]",
+                            label = "[D]isassembly",
                             short_label = "Disasm [D]",
                         },
                         sign = "DapStopped",
@@ -291,16 +326,28 @@ return {
                     if next(dap.sessions()) ~= nil then
                         return
                     end
-                    if not dap_view_is_open() then
+                    if not dap_ui_is_open() then
                         return
                     end
                     require("dap-view").close(true)
                 end, 20)
             end
 
+            local function clear_dap_state_if_idle()
+                vim.defer_fn(function()
+                    if next(dap.sessions()) ~= nil then
+                        return
+                    end
+                    clear_dap_virtual_text()
+                end, 20)
+            end
+
             dap.listeners.after.event_initialized["dapview_auto_open"] = open_dap_view_once
             dap.listeners.after.event_terminated["dapview_auto_close"] = close_dap_view_if_idle
             dap.listeners.after.event_exited["dapview_auto_close"] = close_dap_view_if_idle
+            dap.listeners.after.event_terminated["dap_virtual_text_cleanup"] = clear_dap_state_if_idle
+            dap.listeners.after.event_exited["dap_virtual_text_cleanup"] = clear_dap_state_if_idle
+            dap.listeners.after.disconnect["dap_virtual_text_cleanup"] = clear_dap_state_if_idle
 
             -- Force disassembly refresh whenever execution stops, so the view
             -- follows the current instruction pointer after each step/continue.

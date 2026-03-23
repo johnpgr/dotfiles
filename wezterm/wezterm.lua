@@ -21,11 +21,11 @@ wezterm.add_to_config_reload_watch_list(theme.theme_mode_file)
 
 config.font = regular_font
 config.font_rules = theme.font_rules(regular_font)
-config.front_end = "WebGpu"
-config.webgpu_power_preference = "HighPerformance"
+config.max_fps = 120
 config.default_prog = platform.default_prog()
 platform.configure_unix_domain(config)
-config.font_size = 12.0
+config.font_size = 14.0
+config.line_height = 1.1
 config.freetype_interpreter_version = 40
 config.enable_tab_bar = true
 config.hide_tab_bar_if_only_one_tab = false

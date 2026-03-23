@@ -13,11 +13,38 @@ local direction_keys = {
 	l = "Right",
 }
 
-local function is_vim(pane)
-	local process_info = pane:get_foreground_process_info()
-	local process_name = process_info and process_info.name
+local function basename(path)
+	if not path or path == "" then
+		return nil
+	end
 
-	return process_name == "nvim" or process_name == "vim" or process_name == "nvim.exe" or process_name == "vim.exe"
+	return path:match("([^/\\]+)$") or path
+end
+
+local function looks_like_vim_process(name)
+	if not name or name == "" then
+		return false
+	end
+
+	local normalized = basename(name):lower():gsub("%.exe$", "")
+	return normalized:match("^g?%.?(view|n?vim?x?)(%-wrapped)?(diff)?$") ~= nil
+end
+
+local function is_vim(pane)
+	if pane:get_user_vars().IS_NVIM == "1" then
+		return true
+	end
+
+	if pane:is_alt_screen_active() then
+		return true
+	end
+
+	local process_info = pane:get_foreground_process_info()
+	if not process_info then
+		return false
+	end
+
+	return looks_like_vim_process(process_info.name) or looks_like_vim_process(process_info.executable)
 end
 
 function M.split_nav(action, key)

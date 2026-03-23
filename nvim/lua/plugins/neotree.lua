@@ -7,7 +7,7 @@ return {
             "MunifTanjim/nui.nvim",
             { "nvim-tree/nvim-web-devicons", cond = vim.g.icons_enabled },
         },
-        lazy = false, -- neo-tree will lazily load itself
+        lazy = true,
         keys = {
             {
                 "<leader>b",
