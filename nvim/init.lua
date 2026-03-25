@@ -240,6 +240,7 @@ local theme_state_timer
 local last_applied_mode
 local theme_apply_in_progress = false
 local theme_sync_pending = false
+local apply_theme_state
 
 local function close_handle(handle)
     if handle and not handle:is_closing() then
@@ -361,6 +362,15 @@ local function debounce_theme_sync()
 end
 
 local function persist_colorscheme(colors_name)
+    if type(colors_name) == "table" then
+        colors_name = colors_name.text
+    end
+
+    if type(colors_name) ~= "string" or colors_name == "" then
+        vim.notify("Unable to persist colorscheme", vim.log.levels.WARN)
+        return
+    end
+
     local f = io.open(colorscheme_file, "w")
     if not f then
         vim.notify("Unable to persist colorscheme", vim.log.levels.WARN)
@@ -379,9 +389,14 @@ local function load_persisted_colorscheme()
 
         persisted = persisted and vim.trim(persisted) or ""
         if persisted ~= "" then
-            local ok = pcall(vim.cmd.colorscheme, persisted)
+            local ok, err = pcall(vim.cmd.colorscheme, persisted)
             if ok then
                 vim.api.nvim_exec_autocmds("ColorScheme", { pattern = persisted })
+            else
+                vim.notify(
+                    string.format("Unable to load persisted colorscheme '%s': %s", persisted, err),
+                    vim.log.levels.WARN
+                )
             end
         end
     end
@@ -389,7 +404,7 @@ local function load_persisted_colorscheme()
     sync_theme_state({ force = true })
 end
 
-local function apply_theme_state(mode, opts)
+apply_theme_state = function(mode, opts)
     if mode ~= "dark" and mode ~= "light" then
         return false
     end
@@ -452,6 +467,12 @@ local function stop_theme_state_watcher()
         theme_state_watcher = nil
     end
 end
+
+vim.api.nvim_create_autocmd("VimLeavePre", {
+    callback = function()
+        stop_theme_state_watcher()
+    end,
+})
 
 local function set_theme(mode)
     return apply_theme_state(mode)
@@ -1795,15 +1816,29 @@ local function pick_colorschemes()
     local colors, before_color = list_colorschemes()
     local applied = false
 
+    local function resolve_colorscheme(selection)
+        if type(selection) == "table" then
+            selection = selection.text
+        end
+
+        if type(selection) ~= "string" or selection == "" then
+            return nil
+        end
+
+        return selection
+    end
+
     local function apply_preview(selection)
-        if not selection or selection == "" then
+        selection = resolve_colorscheme(selection)
+        if not selection then
             return
         end
         pcall(vim.cmd.colorscheme, selection)
     end
 
     local function persist_and_apply(selection, builtin)
-        if not selection or selection == "" then
+        selection = resolve_colorscheme(selection)
+        if not selection then
             return
         end
 
@@ -2805,6 +2840,9 @@ vim.pack.add({
     "https://github.com/xiyaowong/transparent.nvim",
 }, { load = true, confirm = false })
 
+load_persisted_colorscheme()
+start_theme_state_watcher()
+
 vim.cmd([[
     let g:VM_maps = {}
     let g:VM_maps["Goto Prev"] = "\[\["
@@ -3730,7 +3768,7 @@ require("luasnip").setup({})
 require("nvim-treesitter.install").prefer_git = true
 
 require("transparent").setup({
-    extra_groups = { "NormalFloat", "WinBar" },
+    extra_groups = { "NormalFloat", "WinBar", "WinBarNC" },
 })
 
 ---@diagnostic disable-next-line: missing-fields
