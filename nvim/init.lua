@@ -32,10 +32,18 @@ vim.o.secure = true
 vim.o.spelllang = "en,pt_br"
 vim.opt.clipboard = "unnamedplus"
 
+if vim.fn.has("mac") == 1 and not vim.env.SDKROOT and vim.fn.executable("xcrun") == 1 then
+    local sdkroot = vim.trim(vim.fn.system("xcrun --show-sdk-path"))
+    if vim.v.shell_error == 0 and sdkroot ~= "" then
+        vim.env.SDKROOT = sdkroot
+    end
+end
+
 vim.opt.fillchars = { eob = " " }
 vim.opt.diffopt:append("linematch:60")
 
 local is_kitty = os.getenv("TERM") == "xterm-kitty" or os.getenv("TERM") == "xterm-ghostty"
+local is_kitty_terminal = os.getenv("TERM") == "xterm-kitty"
 
 local function jump_to_error_loc()
     local line = vim.fn.getline(".")
@@ -551,11 +559,43 @@ local function smart_resize(direction)
     end
 end
 
+local kitty_navigator_methods = {
+    h = "navigateLeft",
+    j = "navigateDown",
+    k = "navigateUp",
+    l = "navigateRight",
+}
+
+local function smart_navigate(direction)
+    if is_kitty_terminal then
+        local ok, kitty_navigator = pcall(require, "kitty-navigator")
+        local navigate = ok and kitty_navigator[kitty_navigator_methods[direction]] or nil
+        if type(navigate) == "function" then
+            navigate()
+            return
+        end
+    end
+
+    vim.cmd("wincmd " .. direction)
+end
+
 vim.keymap.set("n", "<leader>w", "<cmd>update<cr>", { desc = "Write" })
 vim.keymap.set("n", "]t", "<cmd>tabnext<cr>", { desc = "Tab next" })
 vim.keymap.set("n", "[t", "<cmd>tabprev<cr>", { desc = "Tab prev" })
 vim.keymap.set("n", "<Esc>", "<cmd>noh<cr>", { desc = "Clear highlights" })
 vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
+vim.keymap.set("n", "<C-h>", function()
+    smart_navigate("h")
+end, { desc = "Focus split left" })
+vim.keymap.set("n", "<C-j>", function()
+    smart_navigate("j")
+end, { desc = "Focus split down" })
+vim.keymap.set("n", "<C-k>", function()
+    smart_navigate("k")
+end, { desc = "Focus split up" })
+vim.keymap.set("n", "<C-l>", function()
+    smart_navigate("l")
+end, { desc = "Focus split right" })
 vim.keymap.set("n", "<M-h>", function()
     smart_resize("h")
 end, { desc = "Resize split left" })
@@ -981,7 +1021,7 @@ function _G.get_oil_winbar()
         result = vim.api.nvim_buf_get_name(bufnr)
     end
 
-    return "  " .. result
+    return result
 end
 
 local uv = vim.uv or vim.loop
@@ -1122,6 +1162,10 @@ local function pick_files_fff()
             fff_icon_line_lookup = nil
         end,
         parser = function(selection)
+            if type(selection) ~= "string" or selection == "" then
+                return nil
+            end
+
             return {
                 filename = path_lookup[selection] or selection,
                 lnum = 1,
@@ -1194,6 +1238,10 @@ local function pick_grep_fff(default_text, grep_mode)
             vim.cmd("nohlsearch")
         end,
         parser = function(selection)
+            if type(selection) ~= "string" or selection == "" then
+                return nil
+            end
+
             local entry = match_lookup[selection]
             if entry then
                 return entry
@@ -1608,6 +1656,10 @@ local function pick_files_consult_dired_style()
             dired_name_col_width = 0
         end,
         parser = function(selection)
+            if type(selection) ~= "string" or selection == "" then
+                return nil
+            end
+
             local entry = selection_lookup[selection]
             if entry and not entry.is_dir then
                 return {
@@ -2095,6 +2147,10 @@ local function live_grep_current_buffer()
             },
         },
         parser = function(selection)
+            if type(selection) ~= "string" or selection == "" then
+                return nil
+            end
+
             local lnum, content = selection:match("^(%d+)%s(.*)$")
             if not lnum then
                 return nil
@@ -2565,6 +2621,10 @@ local function pick_files_fff_in_dir(dir, prompt)
             end
         end,
         parser = function(selection)
+            if type(selection) ~= "string" or selection == "" then
+                return nil
+            end
+
             return {
                 filename = path_lookup[selection] or selection,
                 lnum = 1,
@@ -2583,12 +2643,27 @@ local function open_lazy_data_files()
 end
 
 local function refer_entry_to_qf_item(candidate, parser)
-    local item = { text = candidate }
-    if type(parser) ~= "function" then
+    local text
+    local parsed
+
+    if type(candidate) == "table" then
+        text = type(candidate.text) == "string" and candidate.text or ""
+        if type(candidate.data) == "table" then
+            parsed = candidate.data
+        end
+    else
+        text = type(candidate) == "string" and candidate or ""
+    end
+
+    local item = { text = text }
+    if parsed == nil and type(parser) ~= "function" then
         return item
     end
 
-    local parsed = parser(candidate)
+    if parsed == nil then
+        parsed = parser(text)
+    end
+
     if not parsed then
         return item
     end
@@ -2609,10 +2684,10 @@ local function refer_entry_to_qf_item(candidate, parser)
         local prefix_col = string.format("%s:%d:%d:", parsed.filename, parsed.lnum, parsed.col or 0)
         local prefix_no_col = string.format("%s:%d:", parsed.filename, parsed.lnum)
 
-        if vim.startswith(candidate, prefix_col) then
-            item.text = candidate:sub(#prefix_col + 1)
-        elseif vim.startswith(candidate, prefix_no_col) then
-            item.text = candidate:sub(#prefix_no_col + 1)
+        if vim.startswith(text, prefix_col) then
+            item.text = text:sub(#prefix_col + 1)
+        elseif vim.startswith(text, prefix_no_col) then
+            item.text = text:sub(#prefix_no_col + 1)
         end
     end
 
@@ -2720,6 +2795,7 @@ vim.pack.add({
     "https://github.com/mfussenegger/nvim-jdtls",
     "https://github.com/yioneko/nvim-vtsls",
     { src = "https://github.com/nvim-neo-tree/neo-tree.nvim", version = "v3.x" },
+    "https://github.com/MunsMan/kitty-navigator.nvim",
     "https://github.com/MunifTanjim/nui.nvim",
     "https://github.com/stevearc/oil.nvim",
     "https://github.com/stevearc/quicker.nvim",
@@ -2730,10 +2806,10 @@ vim.pack.add({
 }, { load = true, confirm = false })
 
 vim.cmd([[
-let g:VM_maps = {}
-let g:VM_maps["Goto Prev"] = "\[\["
-let g:VM_maps["Goto Next"] = "\]\]"
-nmap <C-M-n> <Plug>(VM-Select-All)
+    let g:VM_maps = {}
+    let g:VM_maps["Goto Prev"] = "\[\["
+    let g:VM_maps["Goto Next"] = "\]\]"
+    nmap <C-M-n> <Plug>(VM-Select-All)
 ]])
 
 require("textcase").setup({
@@ -3652,6 +3728,10 @@ ensure_refer_picker_resume_patch()
 require("luasnip.loaders.from_vscode").lazy_load()
 require("luasnip").setup({})
 require("nvim-treesitter.install").prefer_git = true
+
+require("transparent").setup({
+    extra_groups = { "NormalFloat", "WinBar" },
+})
 
 ---@diagnostic disable-next-line: missing-fields
 require("nvim-treesitter.configs").setup({
