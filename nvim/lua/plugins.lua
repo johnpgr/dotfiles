@@ -5,10 +5,13 @@ local is_kitty = os.getenv("TERM") == "xterm-kitty" or os.getenv("TERM") == "xte
 local image_enabled = is_kitty and #vim.api.nvim_list_uis() > 0
 
 return {
+    { "Mofiqul/vscode.nvim",         lazy = false },
+    { "sainnhe/sonokai",             lazy = false },
+    { "Mofiqul/dracula.nvim",        lazy = false },
     -- Dependencies (loaded when required)
-    { "nvim-lua/plenary.nvim", lazy = true },
+    { "nvim-lua/plenary.nvim",       lazy = true },
     { "nvim-tree/nvim-web-devicons", lazy = true },
-    { "MunifTanjim/nui.nvim", lazy = true },
+    { "MunifTanjim/nui.nvim",        lazy = true },
 
     -- Undotree
     {
@@ -43,7 +46,7 @@ return {
     },
 
     -- Abolish
-    { "tpope/vim-abolish", event = "VeryLazy" },
+    { "tpope/vim-abolish",  event = "VeryLazy" },
 
     -- Dispatch
     { "tpope/vim-dispatch", cmd = { "Dispatch", "Make", "Focus", "Start" } },
@@ -262,21 +265,14 @@ return {
     { "rafamadriz/friendly-snippets", lazy = true },
 
     -- Colorful Menu
-    { "xzbdmw/colorful-menu.nvim", lazy = true },
+    { "xzbdmw/colorful-menu.nvim",    lazy = true },
 
     -- Compile Mode
     {
         "ej-shafran/compile-mode.nvim",
-        version = "nightly",
+        version = "^5.0.0",
         dependencies = { "m00qek/baleia.nvim" },
         cmd = { "Compile", "Recompile" },
-        keys = {
-            { "<leader>m", desc = "Compile" },
-            { "<leader>M", desc = "Compile (vertical)" },
-            { "<leader>r", desc = "Recompile" },
-            { "]e", desc = "Next error" },
-            { "[e", desc = "Previous error" },
-        },
         config = function()
             local compile_mode = require("compile-mode")
             vim.g.compile_mode = {
@@ -346,7 +342,7 @@ return {
     },
 
     -- Baleia (for compile-mode ANSI colors)
-    { "m00qek/baleia.nvim", version = "v1.3.0", lazy = true },
+    { "m00qek/baleia.nvim",              version = "v1.3.0", lazy = true },
 
     -- Conform (formatting)
     {
@@ -422,11 +418,11 @@ return {
     {
         "mfussenegger/nvim-dap",
         keys = {
-            { "<F1>", desc = "DAP Hover" },
-            { "<F5>", desc = "DAP continue" },
-            { "<F10>", desc = "DAP step over" },
-            { "<F11>", desc = "DAP step into" },
-            { "<F12>", desc = "DAP step out" },
+            { "<F1>",       desc = "DAP Hover" },
+            { "<F5>",       desc = "DAP continue" },
+            { "<F10>",      desc = "DAP step over" },
+            { "<F11>",      desc = "DAP step into" },
+            { "<F12>",      desc = "DAP step out" },
             { "<leader>dd", desc = "Toggle breakpoint" },
             { "<leader>dB", desc = "Conditional breakpoint" },
             { "<leader>dc", desc = "Continue" },
@@ -740,9 +736,9 @@ return {
     },
 
     { "theHamsta/nvim-dap-virtual-text", lazy = true },
-    { "jay-babu/mason-nvim-dap.nvim", lazy = true },
-    { "igorlfs/nvim-dap-view", lazy = true },
-    { "Jorenar/nvim-dap-disasm", lazy = true },
+    { "jay-babu/mason-nvim-dap.nvim",    lazy = true },
+    { "igorlfs/nvim-dap-view",           lazy = true },
+    { "Jorenar/nvim-dap-disasm",         lazy = true },
 
     -- Dadbod (Database)
     {
@@ -794,10 +790,10 @@ return {
         dependencies = { "nvim-lua/plenary.nvim", "sindrets/diffview.nvim" },
         cmd = { "Neogit", "NeogitLogCurrent" },
         keys = {
-            { "<M-g>", desc = "Git status" },
+            { "<M-g>",      desc = "Git status" },
             { "<leader>gg", desc = "Git status" },
             { "<leader>gc", desc = "Git commit" },
-            { "<leader>gb", "<cmd>Neogit branch<cr>", desc = "Git branch" },
+            { "<leader>gb", "<cmd>Neogit branch<cr>",    desc = "Git branch" },
             { "<leader>gL", "<cmd>NeogitLogCurrent<cr>", desc = "Git log" },
         },
         config = function()
@@ -818,9 +814,9 @@ return {
         "sindrets/diffview.nvim",
         cmd = { "DiffviewOpen", "DiffviewFileHistory" },
         keys = {
-            { "<leader>gD", ":DiffviewOpen ", desc = "Git DiffView" },
+            { "<leader>gD", ":DiffviewOpen ",                   desc = "Git DiffView" },
             { "<leader>gh", desc = "Git file history (Current)" },
-            { "<leader>gH", "<cmd>DiffviewFileHistory<cr>", desc = "Git file history (All)" },
+            { "<leader>gH", "<cmd>DiffviewFileHistory<cr>",     desc = "Git file history (All)" },
         },
         config = function()
             require("diffview").setup({
@@ -963,21 +959,21 @@ return {
                     end
 
                     local items = {
-                        { name = "restart_tsserver", desc = "Does not restart vtsls itself, but restarts the underlying tsserver." },
-                        { name = "open_tsserver_log", desc = "It will open prompt if logging has not been enabled." },
-                        { name = "reload_projects", desc = "Reload tsserver projects for the workspace." },
-                        { name = "select_ts_version", desc = "Select version of ts either from workspace or global." },
-                        { name = "goto_project_config", desc = "Open tsconfig.json." },
+                        { name = "restart_tsserver",       desc = "Does not restart vtsls itself, but restarts the underlying tsserver." },
+                        { name = "open_tsserver_log",      desc = "It will open prompt if logging has not been enabled." },
+                        { name = "reload_projects",        desc = "Reload tsserver projects for the workspace." },
+                        { name = "select_ts_version",      desc = "Select version of ts either from workspace or global." },
+                        { name = "goto_project_config",    desc = "Open tsconfig.json." },
                         { name = "goto_source_definition", desc = "Go to the source definition instead of typings." },
-                        { name = "file_references", desc = "Show references of the current file." },
-                        { name = "rename_file", desc = "Rename the current file and update all the related paths in the project." },
-                        { name = "organize_imports", desc = "Organize imports in the current file." },
-                        { name = "sort_imports", desc = "Sort imports in the current file." },
-                        { name = "remove_unused_imports", desc = "Remove unused imports from the current file." },
-                        { name = "fix_all", desc = "Apply all available code fixes." },
-                        { name = "remove_unused", desc = "Remove unused variables and symbols." },
-                        { name = "add_missing_imports", desc = "Add missing imports for unresolved symbols." },
-                        { name = "source_actions", desc = "Pick applicable source actions (same as above)" },
+                        { name = "file_references",        desc = "Show references of the current file." },
+                        { name = "rename_file",            desc = "Rename the current file and update all the related paths in the project." },
+                        { name = "organize_imports",       desc = "Organize imports in the current file." },
+                        { name = "sort_imports",           desc = "Sort imports in the current file." },
+                        { name = "remove_unused_imports",  desc = "Remove unused imports from the current file." },
+                        { name = "fix_all",                desc = "Apply all available code fixes." },
+                        { name = "remove_unused",          desc = "Remove unused variables and symbols." },
+                        { name = "add_missing_imports",    desc = "Add missing imports for unresolved symbols." },
+                        { name = "source_actions",         desc = "Pick applicable source actions (same as above)" },
                     }
 
                     vim.keymap.set("n", "<leader>lt", function()
@@ -1019,8 +1015,8 @@ return {
         end,
     },
 
-    { "mfussenegger/nvim-jdtls", ft = "java" },
-    { "yioneko/nvim-vtsls", lazy = true },
+    { "mfussenegger/nvim-jdtls",              ft = "java" },
+    { "yioneko/nvim-vtsls",                   lazy = true },
 
     -- Neo-tree
     {
@@ -1060,11 +1056,74 @@ return {
         end,
     },
 
-    -- Kitty Navigator
+    -- Smart Splits (seamless navigation/resize across nvim + wezterm/kitty/tmux)
     {
-        "MunsMan/kitty-navigator.nvim",
-        enabled = os.getenv("TERM") == "xterm-kitty",
-        event = "VeryLazy",
+        "johnpgr/smart-splits.nvim",
+        branch = "perf/async-wezterm-cli",
+        build = vim.fn.has("win32") == 0 and "./kitty/install-kittens.bash" or nil,
+        keys = {
+            {
+                "<C-h>",
+                function()
+                    require("smart-splits").move_cursor_left()
+                end,
+                desc = "Focus split left",
+            },
+            {
+                "<C-j>",
+                function()
+                    require("smart-splits").move_cursor_down()
+                end,
+                desc = "Focus split down",
+            },
+            {
+                "<C-k>",
+                function()
+                    require("smart-splits").move_cursor_up()
+                end,
+                desc = "Focus split up",
+            },
+            {
+                "<C-l>",
+                function()
+                    require("smart-splits").move_cursor_right()
+                end,
+                desc = "Focus split right",
+            },
+            {
+                "<M-h>",
+                function()
+                    require("smart-splits").resize_left()
+                end,
+                desc = "Resize split left",
+            },
+            {
+                "<M-j>",
+                function()
+                    require("smart-splits").resize_down()
+                end,
+                desc = "Resize split down",
+            },
+            {
+                "<M-k>",
+                function()
+                    require("smart-splits").resize_up()
+                end,
+                desc = "Resize split up",
+            },
+            {
+                "<M-l>",
+                function()
+                    require("smart-splits").resize_right()
+                end,
+                desc = "Resize split right",
+            },
+        },
+        config = function()
+            require("smart-splits").setup({
+                at_edge = "stop",
+            })
+        end,
     },
 
     -- Oil
@@ -1081,6 +1140,25 @@ return {
                 ["w"] = "DiagnosticSignError",
                 ["x"] = "DiagnosticSignOk",
             }
+            local columns = {
+                {
+                    "permissions",
+                    highlight = function(permission_str)
+                        local hls = {}
+                        for i = 1, #permission_str do
+                            local char = permission_str:sub(i, i)
+                            table.insert(hls, { permission_hlgroups[char], i - 1, i })
+                        end
+                        return hls
+                    end,
+                },
+                { "size", highlight = "Special" },
+                { "mtime", highlight = "Number" },
+            }
+
+            if vim.g.icons_enabled then
+                table.insert(columns, { "icon", add_padding = false })
+            end
 
             local function oil_action_run_cmd_on_file()
                 local oil = require("oil")
@@ -1129,7 +1207,8 @@ return {
                                             vim.notify("Made file executable: " .. entry.name)
                                             show_terminal({ full_path })
                                         else
-                                            vim.notify("Failed to make file executable: " .. entry.name, vim.log.levels.ERROR)
+                                            vim.notify("Failed to make file executable: " .. entry.name,
+                                                vim.log.levels.ERROR)
                                         end
                                     else
                                         vim.notify("Aborted execution of: " .. entry.name)
@@ -1145,22 +1224,7 @@ return {
 
             require("oil").setup({
                 lsp_file_methods = { enabled = vim.version().minor ~= 12 },
-                columns = {
-                    {
-                        "permissions",
-                        highlight = function(permission_str)
-                            local hls = {}
-                            for i = 1, #permission_str do
-                                local char = permission_str:sub(i, i)
-                                table.insert(hls, { permission_hlgroups[char], i - 1, i })
-                            end
-                            return hls
-                        end,
-                    },
-                    { "size", highlight = "Special" },
-                    { "mtime", highlight = "Number" },
-                    { "icon", add_padding = false },
-                },
+                columns = columns,
                 skip_confirm_for_simple_edits = true,
                 view_options = {
                     show_hidden = true,
@@ -1285,6 +1349,21 @@ return {
                 if parsed.content then
                     item.text = parsed.content
                 elseif parsed.filename and parsed.lnum then
+                    local parsed_lnum = tonumber(parsed.lnum)
+                    local parsed_col = tonumber(parsed.col)
+                    local _, _, text_lnum, text_col, content = text:find("^.*:(%d+):(%d+):(.*)$")
+
+                    if content and tonumber(text_lnum) == parsed_lnum and (not parsed_col or tonumber(text_col) == parsed_col) then
+                        item.text = content
+                        return item
+                    end
+
+                    local _, _, text_lnum_no_col, content_no_col = text:find("^.*:(%d+):(.*)$")
+                    if content_no_col and tonumber(text_lnum_no_col) == parsed_lnum then
+                        item.text = content_no_col
+                        return item
+                    end
+
                     local prefix_col = string.format("%s:%d:%d:", parsed.filename, parsed.lnum, parsed.col or 0)
                     local prefix_no_col = string.format("%s:%d:", parsed.filename, parsed.lnum)
 
@@ -1342,72 +1421,84 @@ return {
     -- Treesitter
     {
         "nvim-treesitter/nvim-treesitter",
-        event = { "BufReadPost", "BufNewFile" },
+        lazy = false,
         build = ":TSUpdate",
         config = function()
-            require("nvim-treesitter.install").prefer_git = true
+            local nvim_treesitter = require("nvim-treesitter")
+            local treesitter_dir = vim.fs.normalize(vim.fn.stdpath("data") .. "/lazy/nvim-treesitter")
 
-            ---@diagnostic disable-next-line: missing-fields
-            require("nvim-treesitter.configs").setup({
-                ensure_installed = {
-                    "go",
-                    "lua",
-                    "python",
-                    "rust",
-                    "tsx",
-                    "javascript",
-                    "typescript",
-                    "vimdoc",
-                    "vim",
-                    "v",
-                    "markdown",
-                    "kotlin",
-                },
-                auto_install = true,
-                highlight = {
-                    enable = true,
-                    disable = function(_, buf)
-                        local max_filesize = 1024 * 1024
-                        local ok, stats = pcall(vim.uv.fs_stat, vim.api.nvim_buf_get_name(buf))
-                        if ok and stats and stats.size > max_filesize then
-                            return true
-                        end
-                    end,
-                },
-                indent = { enable = false },
-                incremental_selection = {
-                    enable = true,
-                    keymaps = {
-                        init_selection = "vv",
-                        node_incremental = "vv",
-                    },
-                },
-            })
+            if vim.fn.isdirectory(treesitter_dir) == 1 then
+                vim.opt.rtp:remove(treesitter_dir)
+                vim.opt.rtp:append(treesitter_dir)
+            end
+
+            require("nvim-treesitter.install").prefer_git = true
+            nvim_treesitter.setup({})
+
+            local function is_large_buffer(bufnr)
+                local bufname = vim.api.nvim_buf_get_name(bufnr)
+                if bufname == "" then
+                    return false
+                end
+
+                local max_filesize = 1024 * 1024
+                local ok, stats = pcall(vim.uv.fs_stat, bufname)
+                return ok and stats and stats.size > max_filesize
+            end
+
+            local function resolve_lang(bufnr, lang)
+                if lang and lang ~= "" then
+                    return lang
+                end
+
+                local filetype = vim.bo[bufnr].filetype
+                local ok, resolved = pcall(vim.treesitter.language.get_lang, filetype)
+                if ok and resolved then
+                    return resolved
+                end
+
+                local filetype_to_lang = {
+                    javascriptreact = "tsx",
+                    typescriptreact = "tsx",
+                }
+
+                return filetype_to_lang[filetype]
+            end
 
             local ts_start = vim.treesitter.start
-            if not vim.g.treesitter_enabled then
+
+            local function start_treesitter(bufnr, lang)
+                bufnr = bufnr or vim.api.nvim_get_current_buf()
+                if vim.bo[bufnr].buftype ~= "" or is_large_buffer(bufnr) then
+                    return
+                end
+
+                local resolved_lang = resolve_lang(bufnr, lang)
+                if resolved_lang then
+                    pcall(ts_start, bufnr, lang or resolved_lang)
+                end
+            end
+
+            if vim.g.treesitter_enabled then
+                local group = vim.api.nvim_create_augroup("TreesitterAutoStart", { clear = true })
+
+                vim.api.nvim_create_autocmd("FileType", {
+                    group = group,
+                    callback = function(args)
+                        start_treesitter(args.buf)
+                    end,
+                })
+
+                vim.schedule(function()
+                    start_treesitter(vim.api.nvim_get_current_buf())
+                end)
+            else
                 local allowed_langs = {
                     markdown = true,
                     javascript = true,
                     typescript = true,
                     tsx = true,
                 }
-
-                local filetype_to_lang = {
-                    markdown = "markdown",
-                    javascript = "javascript",
-                    typescript = "typescript",
-                    javascriptreact = "tsx",
-                    typescriptreact = "tsx",
-                }
-
-                local function resolve_lang(bufnr, lang)
-                    if lang and allowed_langs[lang] then
-                        return lang
-                    end
-                    local filetype = vim.bo[bufnr].filetype
-                    return filetype_to_lang[filetype]
-                end
 
                 ---@diagnostic disable-next-line: duplicate-set-field
                 vim.treesitter.start = function(bufnr, lang)
@@ -1417,7 +1508,7 @@ return {
                         return ts_start(bufnr, lang)
                     end
                     local resolved_lang = resolve_lang(bufnr, lang)
-                    if resolved_lang then
+                    if resolved_lang and allowed_langs[resolved_lang] then
                         return ts_start(bufnr, lang or resolved_lang)
                     end
                 end
@@ -1439,16 +1530,16 @@ return {
                 },
             })
             wk.add({
-                { "<leader>f", group = "file" },
-                { "<leader>s", group = "search" },
-                { "<leader>g", group = "git" },
+                { "<leader>f",  group = "file" },
+                { "<leader>s",  group = "search" },
+                { "<leader>g",  group = "git" },
                 { "<leader>gl", group = "list" },
-                { "<leader>h", group = "hunk" },
-                { "<leader>l", group = "lsp" },
-                { "<leader>t", group = "toggle" },
-                { "<leader>i", group = "insert" },
-                { "<leader>d", group = "debug" },
-                { "<leader>c", group = "opencode" },
+                { "<leader>h",  group = "hunk" },
+                { "<leader>l",  group = "lsp" },
+                { "<leader>t",  group = "toggle" },
+                { "<leader>i",  group = "insert" },
+                { "<leader>d",  group = "debug" },
+                { "<leader>c",  group = "opencode" },
             })
         end,
     },
@@ -1456,11 +1547,12 @@ return {
     -- Transparent
     {
         "xiyaowong/transparent.nvim",
-        event = "VeryLazy",
+        lazy = false,
         config = function()
             require("transparent").setup({
-                extra_groups = { "NormalFloat", "WinBar", "WinBarNC" },
+                extra_groups = { "NormalFloat", "WinBar", "WinBarNC", "NeoTreeNormal", "NeoTreeNormalNC" },
             })
         end,
     },
+
 }

@@ -3,11 +3,11 @@ local wezterm = require("wezterm")
 local M = {}
 
 M.theme_mode_file = wezterm.home_dir .. "/.dotfiles/.theme_state"
-M.dark_color_scheme = "Gigavolt (base16)"
+M.dark_color_scheme = "JetBrains Darcula"
 M.light_color_scheme = "3024 Day"
 
 function M.regular_font()
-	return wezterm.font("DejaVuSansM Nerd Font", { weight = "Regular", italic = false })
+	return wezterm.font("Liberation Mono", { weight = "Regular", italic = false })
 end
 
 function M.font_rules(font)
@@ -63,6 +63,24 @@ function M.color_scheme(mode)
 	return M.dark_color_scheme
 end
 
+function M.window_frame(mode, font)
+	local bg = mode == "light" and "#d6d5d4" or "#11151b"
+	local btn_fg = mode == "light" and "#4a4543" or "#7f8da1"
+	local btn_hover_bg = mode == "light" and "#f7f7f7" or "#1a212a"
+	local btn_hover_fg = mode == "light" and "#3a3432" or "#b8c7dd"
+
+	return {
+		font = font,
+		font_size = 10.0,
+		active_titlebar_bg = bg,
+		inactive_titlebar_bg = bg,
+		button_fg = btn_fg,
+		button_bg = bg,
+		button_hover_fg = btn_hover_fg,
+		button_hover_bg = btn_hover_bg,
+	}
+end
+
 function M.tab_bar_colors(mode)
 	if mode == "light" then
 		return {
@@ -86,7 +104,7 @@ function M.tab_bar_colors(mode)
 					fg_color = "#807d7c",
 				},
 				new_tab_hover = {
-					bg_color = "#f7f7f7",
+					bg_color = "#d6d5d4",
 					fg_color = "#4a4543",
 				},
 			},
@@ -110,11 +128,11 @@ function M.tab_bar_colors(mode)
 				fg_color = "#b8c7dd",
 			},
 			new_tab = {
-				bg_color = "#161b22",
+				bg_color = "#11151b",
 				fg_color = "#7f8da1",
 			},
 			new_tab_hover = {
-				bg_color = "#1a212a",
+				bg_color = "#11151b",
 				fg_color = "#b8c7dd",
 			},
 		},

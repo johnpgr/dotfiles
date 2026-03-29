@@ -12,18 +12,4 @@ function M.default_prog()
 	return { "zsh" }
 end
 
-function M.configure_unix_domain(config)
-	if M.is_windows then
-		return
-	end
-
-	config.term = "wezterm"
-	config.unix_domains = {
-		{
-			name = "unix",
-		},
-	}
-	config.default_gui_startup_args = { "connect", "unix" }
-end
-
 return M

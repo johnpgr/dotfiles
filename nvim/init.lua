@@ -1,8 +1,10 @@
 vim.g.emacs_tab = false
 vim.g.treesitter_enabled = true
-vim.g.icons_enabled = true
+vim.g.icons_enabled = false
 vim.g.c_syntax_for_h = true
 vim.g.mapleader = " "
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
 
 vim.o.cursorline = false
 vim.o.number = false
@@ -43,7 +45,6 @@ vim.opt.fillchars = { eob = " " }
 vim.opt.diffopt:append("linematch:60")
 
 local is_kitty = os.getenv("TERM") == "xterm-kitty" or os.getenv("TERM") == "xterm-ghostty"
-local is_kitty_terminal = os.getenv("TERM") == "xterm-kitty"
 
 local function jump_to_error_loc()
     local line = vim.fn.getline(".")
@@ -125,6 +126,14 @@ indent_size = 2
 indent_style = space
 indent_size = 2
 ]]
+
+vim.api.nvim_create_autocmd("ColorScheme", {
+    callback = function()
+        vim.cmd [[
+            hi! link WinSeparator NonText
+        ]]
+    end
+})
 
 
 local theme_uv = vim.uv or vim.loop
@@ -452,81 +461,12 @@ vim.api.nvim_create_autocmd("CmdlineLeave", {
     end,
 })
 
-local function can_resize_nvim(direction)
-    local current = vim.fn.winnr()
-    local directions = (direction == "h" or direction == "l") and { "h", "l" } or { "j", "k" }
-
-    for _, dir in ipairs(directions) do
-        if vim.fn.winnr(dir) ~= current then
-            return true
-        end
-    end
-
-    return false
-end
-
-local function smart_resize(direction)
-    local resize_commands = {
-        h = "vertical resize +3",
-        j = "resize +3",
-        k = "resize -3",
-        l = "vertical resize -3",
-    }
-
-    if can_resize_nvim(direction) then
-        vim.cmd(resize_commands[direction])
-    end
-end
-
-local kitty_navigator_methods = {
-    h = "navigateLeft",
-    j = "navigateDown",
-    k = "navigateUp",
-    l = "navigateRight",
-}
-
-local function smart_navigate(direction)
-    if is_kitty_terminal then
-        local ok, kitty_navigator = pcall(require, "kitty-navigator")
-        local navigate = ok and kitty_navigator[kitty_navigator_methods[direction]] or nil
-        if type(navigate) == "function" then
-            navigate()
-            return
-        end
-    end
-
-    vim.cmd("wincmd " .. direction)
-end
 
 vim.keymap.set("n", "<leader>w", "<cmd>update<cr>", { desc = "Write" })
 vim.keymap.set("n", "]t", "<cmd>tabnext<cr>", { desc = "Tab next" })
 vim.keymap.set("n", "[t", "<cmd>tabprev<cr>", { desc = "Tab prev" })
 vim.keymap.set("n", "<Esc>", "<cmd>noh<cr>", { desc = "Clear highlights" })
 vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
-vim.keymap.set("n", "<C-h>", function()
-    smart_navigate("h")
-end, { desc = "Focus split left" })
-vim.keymap.set("n", "<C-j>", function()
-    smart_navigate("j")
-end, { desc = "Focus split down" })
-vim.keymap.set("n", "<C-k>", function()
-    smart_navigate("k")
-end, { desc = "Focus split up" })
-vim.keymap.set("n", "<C-l>", function()
-    smart_navigate("l")
-end, { desc = "Focus split right" })
-vim.keymap.set("n", "<M-h>", function()
-    smart_resize("h")
-end, { desc = "Resize split left" })
-vim.keymap.set("n", "<M-j>", function()
-    smart_resize("j")
-end, { desc = "Resize split down" })
-vim.keymap.set("n", "<M-k>", function()
-    smart_resize("k")
-end, { desc = "Resize split up" })
-vim.keymap.set("n", "<M-l>", function()
-    smart_resize("l")
-end, { desc = "Resize split right" })
 vim.keymap.set("n", "<leader>I", "<cmd>Inspect<cr>", { desc = "Inspect" })
 vim.keymap.set("n", "yig", ":%y<CR>", { desc = "Yank buffer" })
 vim.keymap.set("n", "vig", "ggVG", { desc = "Visual select buffer" })
@@ -699,6 +639,7 @@ vim.keymap.set("n", "[e", function()
 end, { desc = "Previous error" })
 
 vim.keymap.set("n", "<leader>m", function()
+    vim.print("test")
     if vim.bo.filetype == "oil" then
         vim.g.compilation_directory = require("oil").get_current_dir()
     end
@@ -946,7 +887,7 @@ local dired_name_col_width = 0
 local dired_highlight_patch_applied = false
 local fff_icon_line_lookup = nil
 local path_sep = package.config:sub(1, 1)
-local set_search_highlight -- forward declaration; defined below
+local set_search_highlight                -- forward declaration; defined below
 local ensure_dired_result_highlight_patch -- forward declaration; defined below
 
 local fff_state = {
@@ -2610,6 +2551,21 @@ local function refer_entry_to_qf_item(candidate, parser)
     if parsed.content then
         item.text = parsed.content
     elseif parsed.filename and parsed.lnum then
+        local parsed_lnum = tonumber(parsed.lnum)
+        local parsed_col = tonumber(parsed.col)
+        local _, _, text_lnum, text_col, content = text:find("^.*:(%d+):(%d+):(.*)$")
+
+        if content and tonumber(text_lnum) == parsed_lnum and (not parsed_col or tonumber(text_col) == parsed_col) then
+            item.text = content
+            return item
+        end
+
+        local _, _, text_lnum_no_col, content_no_col = text:find("^.*:(%d+):(.*)$")
+        if content_no_col and tonumber(text_lnum_no_col) == parsed_lnum then
+            item.text = content_no_col
+            return item
+        end
+
         local prefix_col = string.format("%s:%d:%d:", parsed.filename, parsed.lnum, parsed.col or 0)
         local prefix_no_col = string.format("%s:%d:", parsed.filename, parsed.lnum)
 
@@ -2672,7 +2628,7 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
     if vim.v.shell_error ~= 0 then
         vim.api.nvim_echo({
             { "Failed to clone lazy.nvim:\n", "ErrorMsg" },
-            { out, "WarningMsg" },
+            { out,                            "WarningMsg" },
             { "\nPress any key to exit..." },
         }, true, {})
         vim.fn.getchar()
@@ -2700,6 +2656,10 @@ require("lazy").setup("plugins", {
         rtp = {
             disabled_plugins = {
                 "gzip",
+                "matchit",
+                "netrw",
+                "netrwPlugin",
+                "netrwFileHandlers",
                 "tarPlugin",
                 "tohtml",
                 "tutor",

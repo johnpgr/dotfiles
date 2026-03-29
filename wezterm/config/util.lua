@@ -1,6 +1,5 @@
 local wezterm = require("wezterm")
 local platform = require("config.platform")
-
 local M = {}
 
 function M.trim_path(path)
@@ -48,53 +47,6 @@ function M.safe_read_dir(path)
 
 	table.sort(entries)
 	return entries
-end
-
-local function wezterm_cli_candidates()
-	local executable_dir = M.trim_path(wezterm.executable_dir or "")
-	local candidates = {}
-
-	if executable_dir ~= "" then
-		if platform.is_windows then
-			table.insert(candidates, executable_dir .. "\\wezterm.exe")
-			table.insert(candidates, executable_dir .. "\\wezterm-gui.exe")
-		else
-			table.insert(candidates, executable_dir .. "/wezterm")
-			table.insert(candidates, executable_dir .. "/wezterm-gui")
-		end
-	end
-
-	if platform.is_windows then
-		table.insert(candidates, "wezterm.exe")
-	end
-
-	table.insert(candidates, "wezterm")
-	return candidates
-end
-
-function M.run_wezterm_cli(args)
-	local errors = {}
-
-	for _, executable in ipairs(wezterm_cli_candidates()) do
-		local command = { executable, "cli" }
-		if not platform.is_windows then
-			table.insert(command, "--prefer-mux")
-		end
-		for _, arg in ipairs(args) do
-			table.insert(command, arg)
-		end
-
-		local ok, stdout, stderr = wezterm.run_child_process(command)
-		if ok then
-			return true, stdout, stderr
-		end
-
-		if stderr and stderr ~= "" then
-			table.insert(errors, stderr)
-		end
-	end
-
-	return false, "", table.concat(errors, "\n")
 end
 
 return M

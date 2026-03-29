@@ -9,29 +9,27 @@ package.path = table.concat({
 
 local config = wezterm.config_builder()
 local act = wezterm.action
-local navigation = require("config.navigation")
+local smart_splits = wezterm.plugin.require("https://github.com/mrjones2014/smart-splits.nvim")
 local platform = require("config.platform")
 local theme = require("config.theme")
-local workspaces = require("config.workspaces")
 
 local regular_font = theme.regular_font()
 local theme_mode = theme.read_theme_mode()
 
 wezterm.add_to_config_reload_watch_list(theme.theme_mode_file)
 
+config.front_end = "WebGpu"
 config.font = regular_font
 config.font_rules = theme.font_rules(regular_font)
-config.max_fps = 120
+config.max_fps = 165
 config.default_prog = platform.default_prog()
-platform.configure_unix_domain(config)
-config.font_size = 14.0
-config.line_height = 1.1
-config.freetype_interpreter_version = 40
+config.font_size = 12.0
 config.enable_tab_bar = true
 config.hide_tab_bar_if_only_one_tab = false
-config.use_fancy_tab_bar = false
-config.tab_bar_at_bottom = true
+config.use_fancy_tab_bar = true
+config.window_decorations = "INTEGRATED_BUTTONS|RESIZE"
 config.tab_max_width = 32
+config.window_frame = theme.window_frame(theme_mode, regular_font)
 config.cursor_blink_rate = 0
 config.underline_position = "-3px"
 config.underline_thickness = "1px"
@@ -44,7 +42,7 @@ config.use_ime = false
 config.window_padding = {
 	left = 0,
 	right = 0,
-	top = 0,
+	top = 8,
 	bottom = 0,
 }
 
@@ -53,33 +51,11 @@ config.keys = {
 	{
 		key = "+",
 		mods = "ALT|SHIFT",
-		action = act.SplitHorizontal({ domain = "CurrentPaneDomain" }),
+		action = act.SplitHorizontal({}),
 	},
-	{ key = "_", mods = "ALT|SHIFT", action = act.SplitVertical({ domain = "CurrentPaneDomain" }) },
-	{
-		key = "s",
-		mods = "ALT",
-		action = wezterm.action_callback(function(window, pane)
-			workspaces.show_selector(window, pane, "switch")
-		end),
-	},
-	{
-		key = "S",
-		mods = "ALT|SHIFT",
-		action = wezterm.action_callback(function(window, pane)
-			workspaces.show_selector(window, pane, "close")
-		end),
-	},
-	navigation.split_nav("move", "h"),
-	navigation.split_nav("move", "j"),
-	navigation.split_nav("move", "k"),
-	navigation.split_nav("move", "l"),
-	navigation.split_nav("resize", "h"),
-	navigation.split_nav("resize", "j"),
-	navigation.split_nav("resize", "k"),
-	navigation.split_nav("resize", "l"),
+	{ key = "_", mods = "ALT|SHIFT", action = act.SplitVertical({}) },
 	{ key = "W", mods = "CTRL|SHIFT", action = act.CloseCurrentPane({ confirm = false }) },
-	{ key = "T", mods = "CTRL|SHIFT", action = act.SpawnTab("CurrentPaneDomain") },
+	{ key = "T", mods = "CTRL|SHIFT", action = act.SpawnTab("DefaultDomain") },
 	{ key = "1", mods = "CTRL|ALT", action = act.ActivateTab(0) },
 	{ key = "2", mods = "CTRL|ALT", action = act.ActivateTab(1) },
 	{ key = "3", mods = "CTRL|ALT", action = act.ActivateTab(2) },
@@ -92,5 +68,13 @@ config.keys = {
 	{ key = "Tab", mods = "CTRL", action = act.ActivateTabRelative(1) },
 	{ key = "Tab", mods = "CTRL|SHIFT", action = act.ActivateTabRelative(-1) },
 }
+
+smart_splits.apply_to_config(config, {
+	direction_keys = { "h", "j", "k", "l" },
+	modifiers = {
+		move = "CTRL",
+		resize = "META",
+	},
+})
 
 return config
