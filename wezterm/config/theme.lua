@@ -3,11 +3,11 @@ local wezterm = require("wezterm")
 local M = {}
 
 M.theme_mode_file = wezterm.home_dir .. "/.dotfiles/.theme_state"
-M.dark_color_scheme = "JetBrains Darcula"
+M.dark_color_scheme = "One Half Black (Gogh)"
 M.light_color_scheme = "3024 Day"
 
 function M.regular_font()
-	return wezterm.font("Liberation Mono", { weight = "Regular", italic = false })
+	return wezterm.font("FiraMono Nerd Font", { weight = "Regular", italic = false })
 end
 
 function M.font_rules(font)

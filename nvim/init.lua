@@ -1,13 +1,13 @@
 vim.g.emacs_tab = false
 vim.g.treesitter_enabled = true
-vim.g.icons_enabled = false
+vim.g.icons_enabled = true
 vim.g.c_syntax_for_h = true
 vim.g.mapleader = " "
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 
 vim.o.cursorline = false
-vim.o.number = false
+vim.o.number = true
 vim.o.relativenumber = false
 vim.o.confirm = true
 vim.o.wrap = false
@@ -131,6 +131,7 @@ vim.api.nvim_create_autocmd("ColorScheme", {
     callback = function()
         vim.cmd [[
             hi! link WinSeparator NonText
+            hi! link StatusLine Normal
         ]]
     end
 })
@@ -836,29 +837,6 @@ vim.diagnostic.config({
 })
 
 vim.lsp.semantic_tokens.enable(false)
-
-local function open_neotree()
-    local reveal_file = vim.fn.expand("%:p")
-    if reveal_file == "" then
-        reveal_file = vim.fn.getcwd()
-    else
-        local f = io.open(reveal_file, "r")
-        if f then
-            f:close()
-        else
-            reveal_file = vim.fn.getcwd()
-        end
-    end
-
-    require("neo-tree.command").execute({
-        action = "focus",
-        source = "filesystem",
-        position = "left",
-        toggle = true,
-        reveal_file = reveal_file,
-        reveal_force_cwd = true,
-    })
-end
 
 function _G.get_oil_winbar()
     local result = ""
@@ -2642,6 +2620,9 @@ require("lazy").setup("plugins", {
     defaults = {
         lazy = true, -- All plugins are lazy-loaded by default
     },
+    rocks = {
+        enabled = false, -- Disable luarocks integration (image.nvim will use magick_cli instead)
+    },
     install = {
         colorscheme = { "default" },
     },
@@ -2687,24 +2668,6 @@ vim.keymap.set("n", "<leader>tb", "<cmd>Gitsigns toggle_current_line_blame<cr>",
 vim.keymap.set("n", "<leader>hp", "<cmd>Gitsigns preview_hunk<cr>", { desc = "Preview hunk" })
 vim.keymap.set("n", "<leader>hi", "<cmd>Gitsigns preview_hunk_inline<cr>", { desc = "Preview hunk inline" })
 vim.keymap.set("n", "<leader>hd", "<cmd>Gitsigns toggle_word_diff<cr>", { desc = "Toggle word diff" })
-vim.keymap.set("n", "<M-g>", function()
-    require("neogit").open({ kind = "replace" })
-end, { desc = "Git status" })
-vim.keymap.set("n", "<leader>gg", function()
-    require("neogit").open({ kind = "replace" })
-end, { desc = "Git status" })
-vim.keymap.set("n", "<leader>gc", function()
-    require("neogit.buffers.commit_view").new("HEAD"):open("replace")
-end, { desc = "Git commit" })
-vim.keymap.set("n", "<leader>gb", "<cmd>Neogit branch<cr>", { desc = "Git branch" })
-vim.keymap.set("n", "<leader>gL", "<cmd>NeogitLogCurrent<cr>", { desc = "Git log" })
-vim.keymap.set("n", "<leader>gD", ":DiffviewOpen ", { desc = "Git DiffView" })
-vim.keymap.set("n", "<leader>gh", function()
-    vim.cmd("DiffviewFileHistory " .. vim.fn.expand("%"))
-end, { desc = "Git file history (Current)" })
-vim.keymap.set("n", "<leader>gH", "<cmd>DiffviewFileHistory<cr>", { desc = "Git file history (All)" })
-
-vim.keymap.set("n", "<leader>b", open_neotree, { desc = "Explorer" })
 vim.keymap.set("n", "<leader>e", "<cmd>Oil<cr>", { desc = "Explore" })
 vim.keymap.set("n", "<leader>q", function()
     require("quicker").toggle()
@@ -2713,13 +2676,13 @@ end, { desc = "Quickfix list" })
 vim.keymap.set("n", "<M-x>", function()
     run_and_remember_picker(open_refer_commands)
 end, { desc = "commands" })
-vim.keymap.set("n", "<leader><space>", function()
-    run_and_remember_picker(open_refer_files)
-end, { desc = "Find Files" })
+-- vim.keymap.set("n", "<leader><space>", function()
+--     run_and_remember_picker(open_refer_files)
+-- end, { desc = "Find Files" })
 vim.keymap.set("n", "<leader>sc", function()
     run_and_remember_picker(pick_colorschemes)
 end, { desc = "Search colorscheme" })
-vim.keymap.set("n", "<leader>ff", function()
+vim.keymap.set("n", "<leader><space>", function()
     run_and_remember_picker(pick_files_fff)
 end, { desc = "Find file (fff)" })
 vim.keymap.set("n", "<leader>so", function()
