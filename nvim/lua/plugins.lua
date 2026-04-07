@@ -5,6 +5,27 @@ local is_kitty = os.getenv("TERM") == "xterm-kitty" or os.getenv("TERM") == "xte
 local image_enabled = is_kitty and #vim.api.nvim_list_uis() > 0
 
 return {
+    {
+        "https://github.com/sainnhe/everforest",
+        config = function()
+            vim.g.everforest_background = "soft"
+            vim.g.everforest_better_performance = 1
+            vim.g.everforest_disable_italic_comment = 1
+            vim.g.everforest_disable_italic = 1
+        end,
+        lazy = false,
+    },
+	{
+		"sainnhe/gruvbox-material",
+        config = function()
+            vim.g.gruvbox_material_background = "hard"
+            vim.g.gruvbox_material_better_performance = 1
+            vim.g.gruvbox_material_disable_italic_comment = 1
+            vim.g.gruvbox_material_disable_italic = 1
+            vim.g.gruvbox_material_foreground = "material"
+        end,
+		lazy = false,
+	},
 	{
 		"travisvroman/adwaita.nvim",
 		lazy = false,
@@ -14,7 +35,7 @@ return {
 	},
 	{
 		"2nthony/vitesse.nvim",
-        lazy = false,
+		lazy = false,
 		dependencies = {
 			"tjdevries/colorbuddy.nvim",
 		},
@@ -1154,9 +1175,9 @@ return {
 
 	-- Smart Splits (seamless navigation/resize across nvim + wezterm/kitty/tmux)
 	{
-		"johnpgr/smart-splits.nvim",
-		branch = "perf/async-wezterm-cli",
-        lazy = false,
+		"mrjones2014/smart-splits.nvim",
+		dir = vim.fn.expand("~/.dotfiles/nvim/smart-splits.nvim"),
+		lazy = false,
 		build = vim.fn.has("win32") == 0 and "./kitty/install-kittens.bash" or nil,
 		keys = {
 			{
@@ -1653,7 +1674,17 @@ return {
 		lazy = false,
 		config = function()
 			require("transparent").setup({
-				extra_groups = { "NormalFloat", "WinBar", "WinBarNC", "NeoTreeNormal", "NeoTreeNormalNC" },
+				extra_groups = {
+					"VertSplit",
+					"NormalFloat",
+					"WinBar",
+					"WinBarNC",
+					"NeoTreeNormal",
+					"NeoTreeNormalNC",
+					"NeoTreeEndOfBuffer",
+                    "WhichKeyTitle",
+                    "FloatBorder",
+				},
 			})
 		end,
 	},

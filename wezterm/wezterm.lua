@@ -18,7 +18,7 @@ local theme_mode = theme.read_theme_mode()
 
 wezterm.add_to_config_reload_watch_list(theme.theme_mode_file)
 
--- config.front_end = "WebGpu"
+config.front_end = "WebGpu"
 config.font = regular_font
 config.font_rules = theme.font_rules(regular_font)
 config.max_fps = 165
@@ -27,7 +27,7 @@ config.font_size = 12.0
 config.enable_tab_bar = true
 config.hide_tab_bar_if_only_one_tab = true
 config.use_fancy_tab_bar = true
-config.window_decorations = "TITLE|RESIZE"
+-- config.window_decorations = "TITLE|RESIZE"
 config.freetype_interpreter_version = 40
 config.tab_max_width = 32
 config.window_frame = theme.window_frame(theme_mode, regular_font)
@@ -39,7 +39,7 @@ config.colors = theme.tab_bar_colors(theme_mode)
 config.scrollback_lines = 10000
 config.enable_wayland = true
 config.use_ime = false
-config.window_background_opacity = 0.5
+-- config.window_background_opacity = 0.5
 config.kde_window_background_blur = true
 
 config.window_padding = {

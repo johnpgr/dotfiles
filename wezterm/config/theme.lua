@@ -7,7 +7,7 @@ M.dark_color_scheme = "One Half Black (Gogh)"
 M.light_color_scheme = "3024 Day"
 
 function M.regular_font()
-	return wezterm.font("FiraMono Nerd Font", { weight = "Regular", italic = false })
+	return wezterm.font("Monaco Nerd Font", { weight = "Regular", italic = false })
 end
 
 function M.font_rules(font)
