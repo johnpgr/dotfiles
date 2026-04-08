@@ -24,6 +24,7 @@ config.font_rules = theme.font_rules(regular_font)
 config.max_fps = 165
 config.default_prog = platform.default_prog()
 config.font_size = 12.0
+config.line_height = 1.2
 config.enable_tab_bar = true
 config.hide_tab_bar_if_only_one_tab = true
 config.use_fancy_tab_bar = true
