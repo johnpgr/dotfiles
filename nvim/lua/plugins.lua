@@ -6,6 +6,10 @@ local image_enabled = is_kitty and #vim.api.nvim_list_uis() > 0
 
 return {
     {
+        "fenetikm/falcon",
+        lazy = false,
+    },
+    {
         "https://github.com/sainnhe/everforest",
         config = function()
             vim.g.everforest_background = "soft"
@@ -1175,8 +1179,8 @@ return {
 
 	-- Smart Splits (seamless navigation/resize across nvim + wezterm/kitty/tmux)
 	{
-		"mrjones2014/smart-splits.nvim",
-		dir = vim.fn.expand("~/.dotfiles/nvim/smart-splits.nvim"),
+		"johnpgr/smart-splits.nvim",
+        branch = "perf/async-wezterm-cli",
 		lazy = false,
 		build = vim.fn.has("win32") == 0 and "./kitty/install-kittens.bash" or nil,
 		keys = {

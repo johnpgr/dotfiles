@@ -8,7 +8,7 @@ vim.g.loaded_netrwPlugin = 1
 
 vim.o.cursorline = false
 vim.o.number = true
-vim.o.relativenumber = false
+vim.o.relativenumber = true
 vim.o.confirm = true
 vim.o.wrap = false
 vim.o.inccommand = "split"
