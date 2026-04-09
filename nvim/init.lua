@@ -2,13 +2,14 @@ vim.g.emacs_tab = true
 vim.g.treesitter_enabled = true
 vim.g.icons_enabled = false
 vim.g.c_syntax_for_h = true
+vim.treesitter.language.register("c", "cpp")
 vim.g.mapleader = " "
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 
 vim.o.cursorline = false
-vim.o.number = true
-vim.o.relativenumber = true
+vim.o.number = false
+vim.o.relativenumber = false
 vim.o.confirm = true
 vim.o.wrap = false
 vim.o.inccommand = "split"
@@ -22,12 +23,13 @@ vim.o.list = false
 vim.o.splitbelow = true
 vim.o.splitright = true
 vim.o.signcolumn = "no"
-vim.o.foldcolumn = "0"
+vim.o.foldcolumn = "1"
 vim.o.mouse = "nv"
 vim.o.breakindent = true
 vim.o.smartindent = true
 vim.o.autoindent = true
 vim.o.termguicolors = true
+vim.o.updatetime = 300
 vim.o.undofile = true
 vim.o.exrc = true
 vim.o.secure = true
@@ -44,52 +46,6 @@ end
 vim.opt.fillchars = { eob = " " }
 vim.opt.diffopt:append("linematch:60")
 
-local is_kitty = os.getenv("TERM") == "xterm-kitty" or os.getenv("TERM") == "xterm-ghostty"
-
-local function jump_to_error_loc()
-    local line = vim.fn.getline(".")
-    local file, lnum, col = string.match(line, "([^:]+):(%d+):(%d+)")
-
-    if not (file and lnum and col) then
-        return false
-    end
-
-    if vim.fn.filereadable(file) ~= 1 then
-        vim.notify("File not found: " .. file, vim.log.levels.ERROR)
-        return false
-    end
-
-    lnum = tonumber(lnum)
-    col = tonumber(col)
-
-    local bufnr = vim.fn.bufnr(vim.fn.fnamemodify(file, ":p"))
-    local win_id = nil
-
-    if bufnr ~= -1 then
-        local wins = vim.fn.getbufinfo(bufnr)[1].windows
-        if #wins > 0 then
-            win_id = wins[1]
-        end
-    end
-
-    if win_id then
-        vim.fn.win_gotoid(win_id)
-    else
-        local window_above = vim.fn.winnr("#")
-
-        if window_above ~= 0 then
-            vim.cmd("wincmd k")
-            vim.cmd("edit " .. file)
-        else
-            vim.cmd("topleft split " .. file)
-        end
-    end
-
-    vim.api.nvim_win_set_cursor(0, { lnum, col - 1 })
-    vim.cmd("normal! zz")
-
-    return true
-end
 
 local editorconfig = [[
 # EditorConfig is awesome: https://editorconfig.org
@@ -127,13 +83,114 @@ indent_style = space
 indent_size = 2
 ]]
 
-vim.api.nvim_create_autocmd("ColorScheme", {
-    callback = function()
-        vim.cmd [[
-            hi! link WinSeparator NonText
-            hi! link StatusLine Normal
-        ]]
+local function apply_colorscheme_overrides()
+    vim.cmd [[
+        hi! link WinSeparator NonText
+        hi! link StatusLine Normal
+    ]]
+
+    local normal_hl = vim.api.nvim_get_hl(0, { name = "Normal" })
+    local nontext_hl = vim.api.nvim_get_hl(0, { name = "NonText" })
+    local comment_hl = vim.api.nvim_get_hl(0, { name = "Comment" })
+    local hint_hl = vim.api.nvim_get_hl(0, { name = "DiagnosticHint" })
+    local warn_hl = vim.api.nvim_get_hl(0, { name = "DiagnosticWarn" })
+    local muted_color = (nontext_hl and nontext_hl.fg) or (comment_hl and comment_hl.fg) or normal_hl.fg
+
+    vim.api.nvim_set_hl(0, "TabLineFill", {
+        fg = normal_hl.fg,
+        bg = normal_hl.bg,
+    })
+    vim.api.nvim_set_hl(0, "TabLine", {
+        fg = normal_hl.fg,
+        bg = normal_hl.bg,
+    })
+    vim.api.nvim_set_hl(0, "TabLineSel", {
+        fg = warn_hl.fg,
+        bg = normal_hl.bg,
+        bold = true,
+    })
+    vim.api.nvim_set_hl(0, "Visual", { reverse = true })
+    vim.api.nvim_set_hl(0, "VisualNOS", { reverse = true })
+
+    for _, group in ipairs({
+        "@number",
+        "@operator",
+        "@constant",
+        "@punctuation.bracket",
+        "@punctuation.delimiter",
+        "@variable",
+        "@variable.parameter",
+        "@property",
+        "@constructor",
+    }) do
+        vim.api.nvim_set_hl(0, group, { link = "Normal" })
     end
+
+    for _, group in ipairs({
+        "LspReferenceText",
+        "LspReferenceRead",
+        "LspReferenceWrite",
+    }) do
+        vim.api.nvim_set_hl(0, group, { underline = true, sp = muted_color })
+    end
+
+    for _, diagnostic in ipairs({ "Error", "Warn", "Info", "Hint" }) do
+        local diagnostic_hl = vim.api.nvim_get_hl(0, { name = "Diagnostic" .. diagnostic })
+        vim.api.nvim_set_hl(0, "DiagnosticUnderline" .. diagnostic, {
+            underline = true,
+            sp = diagnostic_hl.fg or muted_color,
+        })
+    end
+
+    vim.api.nvim_set_hl(0, "DiagnosticUnnecessary", {
+        fg = muted_color,
+        underline = true,
+        sp = hint_hl.fg or muted_color,
+    })
+
+    vim.api.nvim_set_hl(0, "DiagnosticDeprecated", {
+        strikethrough = true,
+        sp = warn_hl.fg or muted_color,
+    })
+end
+
+vim.api.nvim_create_autocmd("ColorScheme", {
+    callback = apply_colorscheme_overrides,
+})
+
+vim.api.nvim_create_autocmd("BufWinEnter", {
+    callback = function(args)
+        if vim.b[args.buf].last_position_restored then
+            return
+        end
+
+        if vim.bo[args.buf].buftype ~= "" then
+            return
+        end
+
+        local mark = vim.api.nvim_buf_get_mark(args.buf, '"')
+        local lnum, col = mark[1], mark[2]
+        local last_line = vim.api.nvim_buf_line_count(args.buf)
+        local win = vim.fn.bufwinid(args.buf)
+
+        if lnum < 1 or lnum > last_line or win == -1 then
+            return
+        end
+
+        vim.b[args.buf].last_position_restored = true
+
+        vim.schedule(function()
+            if not vim.api.nvim_buf_is_valid(args.buf) or not vim.api.nvim_win_is_valid(win) then
+                return
+            end
+
+            if vim.api.nvim_win_get_buf(win) ~= args.buf then
+                return
+            end
+
+            pcall(vim.api.nvim_win_set_cursor, win, { lnum, col })
+        end)
+    end,
 })
 
 
@@ -382,14 +439,81 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
     end,
 })
 
-local function set_theme(mode)
-    return apply_theme_state(mode)
-end
-
 local ignored_ls = {
     "opencode",
     "copilot",
 }
+
+local function listed_buffers()
+    local buffers = {}
+    for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_valid(bufnr) and vim.bo[bufnr].buflisted then
+            table.insert(buffers, bufnr)
+        end
+    end
+    return buffers
+end
+
+local function cycle_listed_buffer(step)
+    local buffers = listed_buffers()
+    if #buffers == 0 then
+        return
+    end
+
+    local current = vim.api.nvim_get_current_buf()
+    local index = vim.fn.index(buffers, current)
+    if index == -1 then
+        index = step > 0 and 0 or 2
+    else
+        index = index + 1 + step
+    end
+
+    local target = buffers[((index - 1) % #buffers) + 1]
+    vim.api.nvim_win_set_buf(0, target)
+end
+
+local function tabline_label(bufnr)
+    local name = vim.api.nvim_buf_get_name(bufnr)
+    if name == "" then
+        name = "[No Name]"
+    else
+        name = vim.fn.fnamemodify(name, ":t")
+    end
+
+    if vim.bo[bufnr].modified then
+        name = name .. "[+]"
+    end
+
+    return name
+end
+
+function _G.tabline_click(bufnr, _, button)
+    if button ~= "l" then
+        return
+    end
+    if not vim.api.nvim_buf_is_valid(bufnr) or not vim.bo[bufnr].buflisted then
+        return
+    end
+    vim.api.nvim_win_set_buf(0, bufnr)
+end
+
+function _G.tabline()
+    local current = vim.api.nvim_get_current_buf()
+    local parts = {}
+
+    for _, bufnr in ipairs(listed_buffers()) do
+        local hl = bufnr == current and "%#TabLineSel#" or "%#TabLine#"
+        table.insert(parts, hl)
+        table.insert(parts, "%" .. bufnr .. "@v:lua.tabline_click@")
+        table.insert(parts, " ")
+        table.insert(parts, tabline_label(bufnr))
+        table.insert(parts, " ")
+        table.insert(parts, "%T")
+    end
+
+    table.insert(parts, "%#TabLineFill#%=")
+    return table.concat(parts)
+end
 
 -- Statusline
 local function lsp_status()
@@ -424,6 +548,8 @@ function _G.statusline()
 end
 
 vim.o.statusline = "%{%v:lua._G.statusline()%}"
+vim.o.showtabline = 2
+vim.o.tabline = "%!v:lua._G.tabline()"
 
 -- CMDLINE AUTOCOMPLETION (see :h cmdline-autocompletion)
 
@@ -466,6 +592,12 @@ vim.api.nvim_create_autocmd("CmdlineLeave", {
 vim.keymap.set("n", "<leader>w", "<cmd>update<cr>", { desc = "Write" })
 vim.keymap.set("n", "]t", "<cmd>tabnext<cr>", { desc = "Tab next" })
 vim.keymap.set("n", "[t", "<cmd>tabprev<cr>", { desc = "Tab prev" })
+vim.keymap.set("n", "<Tab>", function()
+    cycle_listed_buffer(1)
+end, { desc = "Buffer next" })
+vim.keymap.set("n", "<S-Tab>", function()
+    cycle_listed_buffer(-1)
+end, { desc = "Buffer prev" })
 vim.keymap.set("n", "<Esc>", "<cmd>noh<cr>", { desc = "Clear highlights" })
 vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 vim.keymap.set("n", "<leader>I", "<cmd>Inspect<cr>", { desc = "Inspect" })
@@ -488,9 +620,6 @@ vim.keymap.set("v", ">", ">gv", { desc = "Increase indent" })
 vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv", { desc = "Move line down" })
 vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv", { desc = "Move line up" })
 vim.keymap.set("n", "K", vim.lsp.buf.hover, { desc = "Hover" })
-vim.keymap.set("n", "<leader>sl", function()
-    search_online_select()
-end, { desc = "Search lookup (online search)" })
 
 -- Toggle keybinds
 vim.keymap.set("n", "<leader>tl", function()
@@ -662,85 +791,6 @@ vim.keymap.set("n", "<leader>r", function()
     require("compile-mode").recompile()
 end, { desc = "Recompile" })
 
-local function dap_view_is_open()
-    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-        if vim.w[win].dapview_win then
-            return true
-        end
-    end
-    return false
-end
-
-local function dap_terminal_is_open()
-    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-        if vim.w[win].dapview_win_term then
-            return true
-        end
-    end
-    return false
-end
-
-local function dap_ui_is_open()
-    return dap_view_is_open() or dap_terminal_is_open()
-end
-
-local function clear_dap_virtual_text()
-    local ok, virtual_text = pcall(require, "nvim-dap-virtual-text/virtual_text")
-    if not ok then
-        return
-    end
-    virtual_text.clear_virtual_text()
-    virtual_text.clear_last_frames()
-end
-
-local function toggle_disassembly_view()
-    local dapview = require("dap-view")
-
-    if not dap_view_is_open() then
-        dapview.open()
-        dapview.show_view("disassembly")
-        return
-    end
-
-    if vim.bo.filetype == "dap-disassembly" then
-        dapview.show_view("scopes")
-        return
-    end
-
-    dapview.jump_to_view("disassembly")
-end
-
-local function toggle_dbui_tab()
-    local function toggle_dbui_tab()
-        -- Find a tab that has DBUI open (by filetype or buffer name)
-        local dbui_tab = nil
-        for _, tab in ipairs(vim.api.nvim_list_tabpages()) do
-            for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
-                local buf = vim.api.nvim_win_get_buf(win)
-                local ft = vim.api.nvim_buf_get_option(buf, "filetype")
-                local name = vim.api.nvim_buf_get_name(buf) or ""
-                if ft == "dbui" or name:match("DBUI") or name:match("dbui") then
-                    dbui_tab = tab
-                    break
-                end
-            end
-            if dbui_tab then
-                break
-            end
-        end
-
-        if dbui_tab then
-            -- Close the tab that contains DBUI
-            vim.api.nvim_set_current_tabpage(dbui_tab)
-            vim.cmd("tabclose")
-        else
-            -- Open DBUI in a new tab
-            vim.cmd("tabnew")
-            vim.cmd("DBUI")
-        end
-    end
-end
-
 local function nav_hunk(direction)
     if vim.wo.diff then
         local key = direction == "next" and "]c" or "[c"
@@ -808,18 +858,6 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
     end,
 })
 
-local image_enabled = is_kitty and #vim.api.nvim_list_uis() > 0
-local image_opts = {
-    backend = "kitty",
-    processor = "magick_cli",
-    integrations = {
-        markdown = {
-            only_render_image_at_cursor = true,
-        },
-    },
-    hijack_file_patterns = { "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp", "*.avif", "*.bmp" },
-}
-
 -- LSP floating window config
 local lsp_floating_preview_original = vim.lsp.util.open_floating_preview
 ---@diagnostic disable-next-line: duplicate-set-field
@@ -833,7 +871,7 @@ end
 vim.diagnostic.config({
     severity_sort = true,
     float = { border = "single", source = "if_many" },
-    underline = { severity = vim.diagnostic.severity.ERROR },
+    underline = true,
 })
 
 vim.lsp.semantic_tokens.enable(false)
@@ -859,12 +897,10 @@ function _G.get_oil_winbar()
 end
 
 local uv = vim.uv or vim.loop
-local dired_stats_cache = {}
 local dired_line_lookup = nil
 local dired_name_col_width = 0
 local dired_highlight_patch_applied = false
 local fff_icon_line_lookup = nil
-local path_sep = package.config:sub(1, 1)
 local set_search_highlight                -- forward declaration; defined below
 local ensure_dired_result_highlight_patch -- forward declaration; defined below
 
@@ -1089,23 +1125,6 @@ local function pick_grep_fff(default_text, grep_mode)
     })
 end
 
-local function is_path_sep(char)
-    return char == "/" or char == "\\"
-end
-
-local function ends_with_path_sep(path)
-    return is_path_sep(path:sub(-1))
-end
-
-local function find_last_path_sep(path)
-    for i = #path, 1, -1 do
-        if is_path_sep(path:sub(i, i)) then
-            return i
-        end
-    end
-    return nil
-end
-
 local function ensure_dired_highlight_groups()
     vim.api.nvim_set_hl(0, "ReferDiredDir", { default = true, link = "Directory" })
     vim.api.nvim_set_hl(0, "ReferDiredFile", { default = true, link = "Identifier" })
@@ -1202,399 +1221,6 @@ ensure_dired_result_highlight_patch = function()
     dired_highlight_patch_applied = true
 end
 
-local function path_join(base, name)
-    if ends_with_path_sep(base) then
-        return base .. name
-    end
-    return base .. path_sep .. name
-end
-
-local function parse_file_input(input)
-    local query = input or ""
-    if query == "" then
-        return "", vim.fn.getcwd(), ""
-    end
-
-    if query == "~" then
-        return "~" .. path_sep, vim.fn.expand("~"), ""
-    end
-
-    if ends_with_path_sep(query) then
-        return query, vim.fn.fnamemodify(query, ":p"), ""
-    end
-
-    local sep = find_last_path_sep(query)
-    if sep then
-        local dir_input = query:sub(1, sep)
-        local basename = query:sub(sep + 1)
-        return dir_input, vim.fn.fnamemodify(dir_input, ":p"), basename
-    end
-
-    return "", vim.fn.getcwd(), query
-end
-
-local function input_up_one_level(input)
-    local query = input or ""
-    if query == "" then
-        return ""
-    end
-
-    if query == "~" then
-        return "~" .. path_sep
-    end
-
-    if query == "/" or query == "\\" then
-        return query:sub(1, 1)
-    end
-    if query:match("^%a:[/\\]?$") then
-        return query:sub(1, 2) .. path_sep
-    end
-
-    while #query > 1 and ends_with_path_sep(query) do
-        if query:match("^%a:[/\\]$") then
-            return query:sub(1, 2) .. path_sep
-        end
-        query = query:sub(1, -2)
-    end
-
-    local sep = find_last_path_sep(query)
-    if not sep then
-        return ""
-    end
-
-    if sep == 1 and is_path_sep(query:sub(1, 1)) then
-        return query:sub(1, 1)
-    end
-
-    return query:sub(1, sep)
-end
-
-local function format_filesize(size)
-    local bytes = tonumber(size) or 0
-    if bytes < 1024 then
-        return tostring(bytes)
-    end
-
-    local units = { "k", "m", "g", "t", "p" }
-    local value = bytes
-    for _, unit in ipairs(units) do
-        value = value / 1024
-        if value < 1024 then
-            local rounded = math.floor(value + 0.5)
-            if math.abs(value - rounded) < 0.05 then
-                return string.format("%d%s", rounded, unit)
-            end
-            return string.format("%.1f%s", value, unit)
-        end
-    end
-
-    return string.format("%.1fp", value)
-end
-
-local function format_mtime(mtime_sec)
-    if not mtime_sec then
-        return ""
-    end
-
-    local now = os.time()
-    local delta = now - mtime_sec
-    if delta < 0 then
-        delta = 0
-    end
-
-    if delta < 60 then
-        return "just now"
-    end
-    if delta < 3600 then
-        return string.format("%d mins ago", math.floor(delta / 60))
-    end
-    if delta < 86400 then
-        return string.format("%d hours ago", math.floor(delta / 3600))
-    end
-    if delta < 86400 * 7 then
-        return string.format("%d days ago", math.floor(delta / 86400))
-    end
-    if delta < 86400 * 180 then
-        return os.date("%b %d %H:%M", mtime_sec)
-    end
-    return os.date("%Y %b %d", mtime_sec)
-end
-
-local function filetype_prefix(entry_type)
-    if entry_type == "directory" then
-        return "d"
-    end
-    if entry_type == "link" then
-        return "l"
-    end
-    if entry_type == "socket" then
-        return "s"
-    end
-    if entry_type == "fifo" then
-        return "p"
-    end
-    if entry_type == "char" then
-        return "c"
-    end
-    if entry_type == "block" then
-        return "b"
-    end
-    return "-"
-end
-
-local function scan_directory_with_stats(directory)
-    local cache = dired_stats_cache[directory]
-    local now_ms = uv.now()
-    if cache and (now_ms - cache.timestamp_ms) < 500 then
-        return cache.entries
-    end
-
-    local handle = uv.fs_scandir(directory)
-    if not handle then
-        return {}
-    end
-
-    local entries = {}
-    while true do
-        local name, entry_type = uv.fs_scandir_next(handle)
-        if not name then
-            break
-        end
-
-        local fullpath = path_join(directory, name)
-        local stat = uv.fs_stat(fullpath) or {}
-        local resolved_type = stat.type or entry_type
-        local is_dir = resolved_type == "directory"
-        local display_name = is_dir and (name .. path_sep) or name
-
-        local perms = vim.fn.getfperm(fullpath)
-        if perms == "" then
-            perms = "---------"
-        end
-
-        table.insert(entries, {
-            name = name,
-            display_name = display_name,
-            fullpath = fullpath,
-            is_dir = is_dir,
-            perms = filetype_prefix(resolved_type) .. perms,
-            size = format_filesize(stat.size),
-            mtime = format_mtime(stat.mtime and stat.mtime.sec),
-        })
-    end
-
-    table.sort(entries, function(left, right)
-        if left.is_dir ~= right.is_dir then
-            return left.is_dir and not right.is_dir
-        end
-        return left.name:lower() < right.name:lower()
-    end)
-
-    dired_stats_cache[directory] = {
-        timestamp_ms = now_ms,
-        entries = entries,
-    }
-
-    return entries
-end
-
-local function build_file_results(entries, filter_query, show_hidden)
-    local by_name = {}
-    local names = {}
-    for _, entry in ipairs(entries) do
-        if show_hidden or entry.name:sub(1, 1) ~= "." then
-            by_name[entry.display_name] = entry
-            table.insert(names, entry.display_name)
-        end
-    end
-
-    local fuzzy = require("refer.fuzzy")
-    local ordered_names = fuzzy.filter(names, filter_query or "", { sorter = "native" })
-
-    local max_name_len = 0
-    for _, name in ipairs(ordered_names) do
-        if #name > max_name_len then
-            max_name_len = #name
-        end
-    end
-    if max_name_len < 14 then
-        max_name_len = 14
-    end
-
-    local lines = {}
-    local lookup = {}
-    for _, name in ipairs(ordered_names) do
-        local entry = by_name[name]
-        local line = string.format("%-" .. max_name_len .. "s  %s  %6s  %s", name, entry.perms, entry.size, entry.mtime)
-        table.insert(lines, line)
-        lookup[line] = entry
-    end
-
-    return lines, lookup, max_name_len
-end
-
-local function replace_input_tail(input, new_tail)
-    local query = input or ""
-    local sep = find_last_path_sep(query)
-    if sep then
-        return query:sub(1, sep) .. new_tail
-    end
-    return new_tail
-end
-
-local function pick_files_consult_dired_style()
-    ensure_dired_result_highlight_patch()
-
-    local initial_dir = vim.fn.getcwd()
-    if vim.bo.filetype == "oil" then
-        local ok, oil = pcall(require, "oil")
-        if ok and type(oil.get_current_dir) == "function" then
-            local oil_dir = oil.get_current_dir()
-            if type(oil_dir) == "string" and oil_dir ~= "" then
-                initial_dir = oil_dir
-            end
-        end
-    elseif vim.bo.buftype == "" then
-        local buffer_path = vim.api.nvim_buf_get_name(0)
-        if buffer_path ~= "" then
-            local buffer_dir = vim.fn.fnamemodify(buffer_path, ":p:h")
-            if type(buffer_dir) == "string" and buffer_dir ~= "" then
-                initial_dir = buffer_dir
-            end
-        end
-    end
-
-    local default_text = vim.fn.fnamemodify(initial_dir, ":~")
-    if not ends_with_path_sep(default_text) then
-        default_text = default_text .. path_sep
-    end
-
-    local selection_lookup = {}
-    local show_hidden = false
-
-    require("refer").pick({}, nil, {
-        prompt = "Find file: ",
-        default_text = default_text,
-        min_height = 8,
-        on_change = function(query, update_ui_callback)
-            local _, abs_dir, basename_filter = parse_file_input(query)
-            local entries = scan_directory_with_stats(abs_dir)
-            local results, lookup, name_col_width = build_file_results(entries, basename_filter, show_hidden)
-            selection_lookup = lookup
-            dired_line_lookup = lookup
-            dired_name_col_width = name_col_width
-            update_ui_callback(results)
-        end,
-        on_close = function()
-            dired_line_lookup = nil
-            dired_name_col_width = 0
-        end,
-        parser = function(selection)
-            if type(selection) ~= "string" or selection == "" then
-                return nil
-            end
-
-            local entry = selection_lookup[selection]
-            if entry and not entry.is_dir then
-                return {
-                    filename = entry.fullpath,
-                    lnum = 1,
-                    col = 1,
-                }
-            end
-            return nil
-        end,
-        keymaps = {
-            ["<Tab>"] = function(selection, builtin)
-                local picker = builtin.picker
-                local selected = selection
-
-                if (not selected or selected == "") and type(picker.selected_index) == "number" then
-                    selected = picker.current_matches[picker.selected_index]
-                end
-
-                if not selected then
-                    selected = picker.current_matches[1]
-                end
-
-                local entry = selection_lookup[selected]
-                if not entry then
-                    return
-                end
-
-                local new_input = replace_input_tail(vim.api.nvim_get_current_line(), entry.display_name)
-                builtin.picker.ui:update_input({ new_input })
-                builtin.actions.refresh()
-            end,
-            ["<CR>"] = function(selection, builtin)
-                local entry = selection and selection_lookup[selection] or nil
-                if entry then
-                    if entry.is_dir then
-                        local new_input = replace_input_tail(vim.api.nvim_get_current_line(), entry.display_name)
-                        builtin.picker.ui:update_input({ new_input })
-                        builtin.actions.refresh()
-                        return
-                    end
-
-                    builtin.actions.close()
-                    vim.cmd("edit " .. vim.fn.fnameescape(entry.fullpath))
-                    return
-                end
-
-                local raw_input = vim.api.nvim_get_current_line()
-                if raw_input ~= "" then
-                    builtin.actions.close()
-                    vim.cmd("edit " .. vim.fn.fnameescape(vim.fn.fnamemodify(raw_input, ":p")))
-                end
-            end,
-            ["<C-w>"] = function(_, builtin)
-                local new_input = input_up_one_level(vim.api.nvim_get_current_line())
-                builtin.picker.ui:update_input({ new_input })
-                builtin.actions.refresh()
-            end,
-            ["<C-BS>"] = function(_, builtin)
-                local new_input = input_up_one_level(vim.api.nvim_get_current_line())
-                builtin.picker.ui:update_input({ new_input })
-                builtin.actions.refresh()
-            end,
-            ["<C-Backspace>"] = function(_, builtin)
-                local new_input = input_up_one_level(vim.api.nvim_get_current_line())
-                builtin.picker.ui:update_input({ new_input })
-                builtin.actions.refresh()
-            end,
-            ["<C-h>"] = function(_, builtin)
-                show_hidden = not show_hidden
-                vim.notify(
-                    show_hidden and "Refer files: hidden files enabled" or "Refer files: hidden files hidden",
-                    vim.log.levels.INFO
-                )
-                builtin.actions.refresh()
-            end,
-        },
-    })
-end
-
-local function escape_grep_string_chars(s)
-    return (
-        s:gsub("[%(|%)|\\|%[|%]|%-|%{%}|%?|%+|%*|%^|%$|%.]", {
-            ["\\"] = "\\\\",
-            ["-"] = "\\-",
-            ["("] = "\\(",
-            [")"] = "\\)",
-            ["["] = "\\[",
-            ["]"] = "\\]",
-            ["{"] = "\\{",
-            ["}"] = "\\}",
-            ["?"] = "\\?",
-            ["+"] = "\\+",
-            ["*"] = "\\*",
-            ["^"] = "\\^",
-            ["$"] = "\\$",
-            ["."] = "\\.",
-        })
-    )
-end
-
 set_search_highlight = function(query)
     if not query or query == "" then
         return
@@ -1602,11 +1228,6 @@ set_search_highlight = function(query)
 
     vim.opt.hlsearch = true
     vim.fn.setreg("/", "\\V" .. vim.fn.escape(query, "\\"))
-end
-
-local function default_live_grep_command(query)
-    set_search_highlight(query)
-    return { "rg", "--vimgrep", "--smart-case", "--", query }
 end
 
 local function list_colorschemes()
@@ -2062,8 +1683,6 @@ local function pick_help_tags()
         table.insert(tag_files[lang], file)
     end
 
-    local help_files = {}
-
     local rtp = vim.o.runtimepath
     local all_files = vim.fn.globpath(rtp, "doc/*", true, true)
     for _, fullpath in ipairs(all_files) do
@@ -2072,8 +1691,6 @@ local function pick_help_tags()
             add_tag_file("en", fullpath)
         elseif file:match("^tags%-..$") then
             add_tag_file(file:sub(-2), fullpath)
-        else
-            help_files[file] = fullpath
         end
     end
 
@@ -2395,20 +2012,8 @@ local function open_refer_commands()
     vim.cmd("Refer Commands")
 end
 
-local function open_refer_files()
-    pick_files_consult_dired_style()
-end
-
-local function open_refer_files_default()
-    vim.cmd("Refer Files")
-end
-
 local function open_refer_buffers()
     vim.cmd("Refer Buffers")
-end
-
-local function open_refer_grep()
-    vim.cmd("Refer Grep")
 end
 
 local function open_refer_definitions()
@@ -2490,99 +2095,6 @@ local function open_lazy_data_files()
     pick_files_fff_in_dir(vim.fn.stdpath("data"), "Data Files > ")
 end
 
-local function refer_entry_to_qf_item(candidate, parser)
-    local text
-    local parsed
-
-    if type(candidate) == "table" then
-        text = type(candidate.text) == "string" and candidate.text or ""
-        if type(candidate.data) == "table" then
-            parsed = candidate.data
-        end
-    else
-        text = type(candidate) == "string" and candidate or ""
-    end
-
-    local item = { text = text }
-    if parsed == nil and type(parser) ~= "function" then
-        return item
-    end
-
-    if parsed == nil then
-        parsed = parser(text)
-    end
-
-    if not parsed then
-        return item
-    end
-
-    if parsed.filename then
-        item.filename = parsed.filename
-    end
-    if parsed.lnum then
-        item.lnum = parsed.lnum
-    end
-    if parsed.col then
-        item.col = parsed.col
-    end
-
-    if parsed.content then
-        item.text = parsed.content
-    elseif parsed.filename and parsed.lnum then
-        local parsed_lnum = tonumber(parsed.lnum)
-        local parsed_col = tonumber(parsed.col)
-        local _, _, text_lnum, text_col, content = text:find("^.*:(%d+):(%d+):(.*)$")
-
-        if content and tonumber(text_lnum) == parsed_lnum and (not parsed_col or tonumber(text_col) == parsed_col) then
-            item.text = content
-            return item
-        end
-
-        local _, _, text_lnum_no_col, content_no_col = text:find("^.*:(%d+):(.*)$")
-        if content_no_col and tonumber(text_lnum_no_col) == parsed_lnum then
-            item.text = content_no_col
-            return item
-        end
-
-        local prefix_col = string.format("%s:%d:%d:", parsed.filename, parsed.lnum, parsed.col or 0)
-        local prefix_no_col = string.format("%s:%d:", parsed.filename, parsed.lnum)
-
-        if vim.startswith(text, prefix_col) then
-            item.text = text:sub(#prefix_col + 1)
-        elseif vim.startswith(text, prefix_no_col) then
-            item.text = text:sub(#prefix_no_col + 1)
-        end
-    end
-
-    return item
-end
-
-local function send_all_refer_matches_to_qf(_, builtin)
-    local picker = builtin and builtin.picker or nil
-    local matches = picker and picker.current_matches or {}
-    if #matches == 0 then
-        return
-    end
-
-    local items = {}
-    for _, candidate in ipairs(matches) do
-        table.insert(items, refer_entry_to_qf_item(candidate, picker.parser))
-    end
-
-    local title = picker.opts.prompt or "Refer Selection"
-    picker:close()
-
-    pcall(require, "quicker")
-
-    vim.schedule(function()
-        vim.fn.setqflist({}, " ", {
-            title = title,
-            items = items,
-        })
-        vim.cmd("copen")
-    end)
-end
-
 vim.filetype.add({
     extension = {
         hlsl = "hlsl",
@@ -2595,6 +2107,33 @@ vim.api.nvim_create_autocmd("TextYankPost", {
     pattern = "*",
     callback = function()
         vim.highlight.on_yank()
+    end,
+})
+
+vim.api.nvim_create_autocmd("LspAttach", {
+    group = vim.api.nvim_create_augroup("lsp-document-highlight", { clear = true }),
+    callback = function(event)
+        local client = vim.lsp.get_client_by_id(event.data.client_id)
+        if client and client:supports_method("textDocument/documentHighlight", event.buf) then
+            local augroup = vim.api.nvim_create_augroup("lsp-document-highlight-" .. event.buf, { clear = false })
+            vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
+                buffer = event.buf,
+                group = augroup,
+                callback = vim.lsp.buf.document_highlight,
+            })
+            vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
+                buffer = event.buf,
+                group = augroup,
+                callback = vim.lsp.buf.clear_references,
+            })
+            vim.api.nvim_create_autocmd("LspDetach", {
+                group = vim.api.nvim_create_augroup("lsp-document-highlight-detach-" .. event.buf, { clear = true }),
+                callback = function(event2)
+                    vim.lsp.buf.clear_references()
+                    vim.api.nvim_clear_autocmds({ group = "lsp-document-highlight-" .. event2.buf })
+                end,
+            })
+        end
     end,
 })
 
