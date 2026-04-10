@@ -2,12 +2,10 @@ vim.g.emacs_tab = true
 vim.g.treesitter_enabled = true
 vim.g.icons_enabled = false
 vim.g.c_syntax_for_h = true
-vim.treesitter.language.register("c", "cpp")
 vim.g.mapleader = " "
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
-
-vim.o.cursorline = false
+vim.o.cursorline = true
 vim.o.number = false
 vim.o.relativenumber = false
 vim.o.confirm = true
@@ -29,12 +27,14 @@ vim.o.breakindent = true
 vim.o.smartindent = true
 vim.o.autoindent = true
 vim.o.termguicolors = true
-vim.o.updatetime = 300
+vim.o.updatetime = 200
 vim.o.undofile = true
 vim.o.exrc = true
 vim.o.secure = true
 vim.o.spelllang = "en,pt_br"
 vim.opt.clipboard = "unnamedplus"
+
+vim.treesitter.language.register("c", "cpp")
 
 if vim.fn.has("mac") == 1 and not vim.env.SDKROOT and vim.fn.executable("xcrun") == 1 then
 	local sdkroot = vim.trim(vim.fn.system("xcrun --show-sdk-path"))
@@ -83,32 +83,27 @@ indent_size = 2
 ]]
 
 local function apply_colorscheme_overrides()
-	vim.cmd([[
-        hi! link WinSeparator NonText
-        hi! link StatusLine Normal
-    ]])
-
 	local normal_hl = vim.api.nvim_get_hl(0, { name = "Normal" })
-	local nontext_hl = vim.api.nvim_get_hl(0, { name = "NonText" })
-	local comment_hl = vim.api.nvim_get_hl(0, { name = "Comment" })
+    local cursorline_hl = vim.api.nvim_get_hl(0, { name = "CursorLine" })
+	local conceal_hl = vim.api.nvim_get_hl(0, { name = "Conceal" })
 	local hint_hl = vim.api.nvim_get_hl(0, { name = "DiagnosticHint" })
 	local warn_hl = vim.api.nvim_get_hl(0, { name = "DiagnosticWarn" })
 	local err_hl = vim.api.nvim_get_hl(0, { name = "DiagnosticError" })
 	local matchparen_hl = vim.api.nvim_get_hl(0, { name = "MatchParen" })
-	local muted_color = (nontext_hl and nontext_hl.fg) or (comment_hl and comment_hl.fg) or normal_hl.fg
+	local muted_color = (conceal_hl and conceal_hl.fg)
 	local accent_color = (hint_hl and hint_hl.fg) or (warn_hl and warn_hl.fg) or muted_color
 
 	vim.api.nvim_set_hl(0, "TabLineFill", {
 		fg = normal_hl.fg,
-		bg = normal_hl.bg,
+		bg = cursorline_hl.bg,
 	})
 	vim.api.nvim_set_hl(0, "TabLine", {
 		fg = normal_hl.fg,
-		bg = normal_hl.bg,
+		bg = cursorline_hl.bg,
 	})
 	vim.api.nvim_set_hl(0, "TabLineSel", {
 		fg = warn_hl.fg,
-		bg = normal_hl.bg,
+		bg = cursorline_hl.bg,
 		bold = true,
 	})
 	vim.api.nvim_set_hl(
@@ -125,6 +120,9 @@ local function apply_colorscheme_overrides()
 	)
 	vim.api.nvim_set_hl(0, "Visual", { reverse = true })
 	vim.api.nvim_set_hl(0, "VisualNOS", { reverse = true })
+
+	vim.api.nvim_set_hl(0, "CursorLineFold", { link = "CursorLine" })
+	vim.api.nvim_set_hl(0, "WinSeparator", { link = "Conceal" })
 
 	for _, group in ipairs({
 		"@number",
@@ -145,7 +143,12 @@ local function apply_colorscheme_overrides()
 		"LspReferenceRead",
 		"LspReferenceWrite",
 	}) do
-		vim.api.nvim_set_hl(0, group, { fg = normal_hl.fg, bg = muted_color })
+		vim.api.nvim_set_hl(0, group, {
+			fg = normal_hl.fg,
+			bg = "NONE",
+			sp = muted_color,
+			underline = true,
+		})
 	end
 end
 
@@ -583,6 +586,7 @@ vim.api.nvim_create_autocmd("CmdlineLeave", {
 })
 
 vim.keymap.set("n", "<leader>w", "<cmd>update<cr>", { desc = "Write" })
+vim.keymap.set("n", "<leader>", "<cmd>bdelete<cr>", { desc = "Delete buffer" })
 vim.keymap.set("n", "]t", "<cmd>tabnext<cr>", { desc = "Tab next" })
 vim.keymap.set("n", "[t", "<cmd>tabprev<cr>", { desc = "Tab prev" })
 vim.keymap.set("n", "<Tab>", function()
@@ -2121,9 +2125,10 @@ vim.api.nvim_create_autocmd("LspAttach", {
 			})
 			vim.api.nvim_create_autocmd("LspDetach", {
 				group = vim.api.nvim_create_augroup("lsp-document-highlight-detach-" .. event.buf, { clear = true }),
+				buffer = event.buf,
 				callback = function(event2)
 					vim.lsp.buf.clear_references()
-					vim.api.nvim_clear_autocmds({ group = "lsp-document-highlight-" .. event2.buf })
+					vim.api.nvim_clear_autocmds({ group = augroup, buffer = event2.buf })
 				end,
 			})
 		end
