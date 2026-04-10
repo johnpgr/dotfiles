@@ -1,7 +1,8 @@
 -- Plugin specifications for lazy.nvim
 -- All plugins load lazily by default
 
-local is_kitty = os.getenv("TERM") == "xterm-kitty" or os.getenv("TERM") == "xterm-ghostty"
+local term = os.getenv("TERM")
+local is_kitty =  term == "xterm-kitty" or term == "xterm-ghostty" or term == "wezterm"
 local image_enabled = is_kitty and #vim.api.nvim_list_uis() > 0
 
 return {
@@ -1687,11 +1688,16 @@ return {
                     "FoldColumn",
                     "WinBar",
                     "WinBarNC",
+                    "TabLine",
+                    "TabLineFill",
+                    "TabLineSel",
+                    "Directory",
                     "NeoTreeNormal",
                     "NeoTreeNormalNC",
                     "NeoTreeEndOfBuffer",
                     "WhichKeyTitle",
                     "FloatBorder",
+                    "SpecialKey",
                 },
             })
         end,
