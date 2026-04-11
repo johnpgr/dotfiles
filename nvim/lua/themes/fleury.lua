@@ -1,8 +1,8 @@
 local lush = require("lush")
 local hsl = lush.hsl
 
-local bg = hsl("#0C0C0C")
-local bg_alt = hsl("#101010")
+local bg = hsl("#202020")
+local bg_alt = hsl("#212121")
 -- local bg_cursorline = hsl("#1F1F27")
 local bg_cursorline = hsl("#2F2F37")
 local bg_visual = hsl("#2D3640")
@@ -45,6 +45,7 @@ return lush(function()
 		StatusLine { fg = fg_accent, bg = bg_cursorline },
 		StatusLineNC { fg = fg_dim, bg = bg_cursorline },
 		WinSeparator { fg = bg_cursorline.li(20), bg = bg },
+        WinBar { fg = fg_accent, bg = bg },
 		VertSplit { WinSeparator },
 		TabLine { fg = fg_dim, bg = bg_cursorline },
 		TabLineFill { fg = fg_dim, bg = bg },

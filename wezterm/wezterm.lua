@@ -18,7 +18,7 @@ local theme_mode = theme.read_theme_mode()
 
 wezterm.add_to_config_reload_watch_list(theme.theme_mode_file)
 
-config.front_end = "WebGpu"
+-- config.front_end = "WebGpu"
 config.font = regular_font
 config.font_rules = theme.font_rules(regular_font)
 config.max_fps = 165

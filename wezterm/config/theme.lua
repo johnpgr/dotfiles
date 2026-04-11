@@ -3,7 +3,7 @@ local wezterm = require("wezterm")
 local M = {}
 
 M.theme_mode_file = wezterm.home_dir .. "/.dotfiles/.theme_state"
-M.dark_color_scheme = "Oxocarbon Dark (Gogh)"
+M.dark_color_scheme = "Afterglow"
 M.light_color_scheme = "3024 Day"
 
 function M.regular_font()

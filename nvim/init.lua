@@ -5,7 +5,7 @@ vim.g.c_syntax_for_h = true
 vim.g.mapleader = " "
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
-vim.o.cursorline = true
+vim.o.cursorline = false
 vim.o.number = false
 vim.o.relativenumber = false
 vim.o.confirm = true
@@ -21,7 +21,7 @@ vim.o.list = false
 vim.o.splitbelow = true
 vim.o.splitright = true
 vim.o.signcolumn = "no"
-vim.o.foldcolumn = "1"
+vim.o.foldcolumn = "0"
 vim.o.mouse = "nv"
 vim.o.breakindent = true
 vim.o.smartindent = true
@@ -35,6 +35,8 @@ vim.o.spelllang = "en,pt_br"
 vim.opt.clipboard = "unnamedplus"
 
 vim.treesitter.language.register("c", "cpp")
+
+local is_neovide = vim.g.neovide ~= nil
 
 if vim.fn.has("mac") == 1 and not vim.env.SDKROOT and vim.fn.executable("xcrun") == 1 then
 	local sdkroot = vim.trim(vim.fn.system("xcrun --show-sdk-path"))
@@ -123,6 +125,7 @@ local function apply_colorscheme_overrides()
 
 	vim.api.nvim_set_hl(0, "CursorLineFold", { link = "CursorLine" })
 	vim.api.nvim_set_hl(0, "WinSeparator", { link = "Conceal" })
+	vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal" })
 
 	for _, group in ipairs({
 		"@number",
@@ -154,41 +157,6 @@ end
 
 vim.api.nvim_create_autocmd("ColorScheme", {
 	callback = apply_colorscheme_overrides,
-})
-
-vim.api.nvim_create_autocmd("BufWinEnter", {
-	callback = function(args)
-		if vim.b[args.buf].last_position_restored then
-			return
-		end
-
-		if vim.bo[args.buf].buftype ~= "" then
-			return
-		end
-
-		local mark = vim.api.nvim_buf_get_mark(args.buf, '"')
-		local lnum, col = mark[1], mark[2]
-		local last_line = vim.api.nvim_buf_line_count(args.buf)
-		local win = vim.fn.bufwinid(args.buf)
-
-		if lnum < 1 or lnum > last_line or win == -1 then
-			return
-		end
-
-		vim.b[args.buf].last_position_restored = true
-
-		vim.schedule(function()
-			if not vim.api.nvim_buf_is_valid(args.buf) or not vim.api.nvim_win_is_valid(win) then
-				return
-			end
-
-			if vim.api.nvim_win_get_buf(win) ~= args.buf then
-				return
-			end
-
-			pcall(vim.api.nvim_win_set_cursor, win, { lnum, col })
-		end)
-	end,
 })
 
 local theme_uv = vim.uv or vim.loop
@@ -586,7 +554,7 @@ vim.api.nvim_create_autocmd("CmdlineLeave", {
 })
 
 vim.keymap.set("n", "<leader>w", "<cmd>update<cr>", { desc = "Write" })
-vim.keymap.set("n", "<leader>", "<cmd>bdelete<cr>", { desc = "Delete buffer" })
+vim.keymap.set("n", "<leader>x", "<cmd>bdelete<cr>", { desc = "Delete buffer" })
 vim.keymap.set("n", "]t", "<cmd>tabnext<cr>", { desc = "Tab next" })
 vim.keymap.set("n", "[t", "<cmd>tabprev<cr>", { desc = "Tab prev" })
 vim.keymap.set("n", "<Tab>", function()
@@ -894,13 +862,6 @@ function _G.get_oil_winbar()
 end
 
 local uv = vim.uv or vim.loop
-local dired_line_lookup = nil
-local dired_name_col_width = 0
-local dired_highlight_patch_applied = false
-local fff_icon_line_lookup = nil
-local set_search_highlight -- forward declaration; defined below
-local ensure_dired_result_highlight_patch -- forward declaration; defined below
-
 local fff_state = {
 	initialized = false,
 	base_path = nil,
@@ -931,7 +892,7 @@ local function ensure_fff()
 	fff_state.base_path = vim.fn.getcwd()
 	fff_state.initialized = true
 
-	local group = vim.api.nvim_create_augroup("fff_refer", { clear = true })
+	local group = vim.api.nvim_create_augroup("fff_pick", { clear = true })
 
 	vim.api.nvim_create_autocmd("BufEnter", {
 		group = group,
@@ -957,27 +918,193 @@ local function ensure_fff()
 	return fuzzy
 end
 
-local function format_fff_line_with_icon(path, text)
-	if not vim.g.icons_enabled then
-		return text, nil
+local function mini_pick()
+	return require("mini.pick")
+end
+
+local function split_query_text(text)
+	if not text or text == "" then
+		return {}
 	end
 
-	local ok, icons = pcall(require, "fff.file_picker.icons")
-	if not ok then
-		return text, nil
+	return vim.fn.split(text, "\\zs")
+end
+
+local function set_picker_default_text(text)
+	if not text or text == "" then
+		return
 	end
 
-	local name = vim.fn.fnamemodify(path, ":t")
-	local ext = vim.fn.fnamemodify(path, ":e")
-	local icon, icon_hl = icons.get_icon(name, ext, false)
-	if not icon or icon == "" or not icon_hl then
-		return text, nil
+	local MiniPick = mini_pick()
+	vim.schedule(function()
+		if MiniPick.get_picker_opts() == nil then
+			return
+		end
+
+		MiniPick.set_picker_query(split_query_text(text))
+	end)
+end
+
+local function picker_prompt(label)
+	if not label or label == "" then
+		return " "
 	end
 
-	return string.format("%s %s", icon, text), {
-		icon = icon,
-		icon_hl = icon_hl,
-	}
+	return label .. " "
+end
+
+local function picker_window(label, window)
+	return vim.tbl_deep_extend("force", {
+		prompt_prefix = picker_prompt(label),
+	}, window or {})
+end
+
+local function pick_start(opts)
+	local choice = mini_pick().start({
+		source = {
+			items = opts.items,
+			name = opts.name or opts.prompt or "Pick",
+			cwd = opts.cwd,
+			show = opts.show,
+			preview = opts.preview,
+			choose = opts.choose,
+			choose_marked = opts.choose_marked,
+		},
+		mappings = opts.mappings,
+		options = opts.options,
+		window = picker_window(opts.prompt, opts.window),
+	})
+
+	set_picker_default_text(opts.default_text)
+	return choice
+end
+
+local function pick_dynamic(opts)
+	local MiniPick = mini_pick()
+	local group = vim.api.nvim_create_augroup("MiniPickDynamic" .. tostring(uv.hrtime()), { clear = true })
+	local last_query = nil
+
+	local function refresh_items()
+		if MiniPick.get_picker_opts() == nil then
+			return
+		end
+
+		local query = table.concat(MiniPick.get_picker_query() or {})
+		if query == last_query then
+			return
+		end
+		last_query = query
+
+		local querytick = MiniPick.get_querytick()
+		local ok, items = pcall(opts.items, query)
+		if not ok then
+			vim.notify(items, vim.log.levels.ERROR)
+			items = {}
+		end
+
+		MiniPick.set_picker_items(items or {}, { querytick = querytick })
+	end
+
+	vim.api.nvim_create_autocmd("User", {
+		group = group,
+		pattern = { "MiniPickStart", "MiniPickMatch", "MiniPickStop" },
+		callback = function(ev)
+			if ev.match == "MiniPickStop" then
+				if opts.on_close then
+					opts.on_close()
+				end
+				pcall(vim.api.nvim_del_augroup_by_id, group)
+				return
+			end
+
+			refresh_items()
+		end,
+	})
+
+	local result = pick_start({
+		items = nil,
+		name = opts.name,
+		prompt = opts.prompt,
+		cwd = opts.cwd,
+		show = opts.show,
+		preview = opts.preview,
+		choose = opts.choose,
+		choose_marked = opts.choose_marked,
+		mappings = opts.mappings,
+		options = vim.tbl_deep_extend("force", { use_cache = false }, opts.options or {}),
+		window = opts.window,
+		default_text = opts.default_text,
+	})
+
+	pcall(vim.api.nvim_del_augroup_by_id, group)
+	return result
+end
+
+local function show_path_items(buf_id, items, query)
+	mini_pick().default_show(buf_id, items, query, { show_icons = false })
+end
+
+local function show_plain_items(buf_id, items)
+	local lines = {}
+	for _, item in ipairs(items) do
+		table.insert(lines, item.text or tostring(item))
+	end
+
+	vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
+end
+
+local function choose_path_item(item)
+	if not item or not item.path or item.path == "" then
+		return
+	end
+
+	local state = mini_pick().get_picker_state()
+	local target_win = state and state.windows and state.windows.target or 0
+	if target_win == 0 or not vim.api.nvim_win_is_valid(target_win) then
+		target_win = vim.api.nvim_get_current_win()
+	end
+
+	vim.api.nvim_win_call(target_win, function()
+		vim.cmd("edit " .. vim.fn.fnameescape(item.path))
+		vim.api.nvim_win_set_cursor(0, {
+			item.lnum or 1,
+			math.max((item.col or 1) - 1, 0),
+		})
+	end)
+end
+
+local function file_items_from_fff(result)
+	local items = type(result) == "table" and (result.items or result) or {}
+	local out = {}
+
+	for _, item in ipairs(items) do
+		local text = item.relative_path or item.path or tostring(item)
+		local path = item.path or text
+		table.insert(out, { text = text, path = path })
+	end
+
+	return out
+end
+
+local function grep_items_from_fff(result)
+	local items = type(result) == "table" and (result.items or result.matches or result) or {}
+	local out = {}
+
+	for _, item in ipairs(items) do
+		local path = item.path or item.file or ""
+		local lnum = tonumber(item.line_number or item.lnum or item.line or 1) or 1
+		local col = tonumber(item.col or item.column or 1) or 1
+		local text = vim.trim(item.text or item.content or item.line_content or "")
+		local filename = vim.fn.fnamemodify(path, ":t")
+		table.insert(out, {
+			text = string.format("%s:%d:%d: %s", filename, lnum, col, text),
+			path = path,
+			lnum = lnum,
+			col = col,
+		})
+	end
+
+	return out
 end
 
 local function pick_files_fff()
@@ -986,58 +1113,23 @@ local function pick_files_fff()
 		vim.notify("fff backend not available", vim.log.levels.ERROR)
 		return
 	end
-	ensure_dired_result_highlight_patch()
 
 	local current_file = vim.api.nvim_buf_get_name(0)
 	if current_file == "" then
 		current_file = nil
 	end
 
-	local path_lookup = {}
-
-	local refer_util = require("refer.util")
-	require("refer").pick({}, function(selection, data)
-		refer_util.jump_to_location(selection, data)
-	end, {
-		prompt = "Files (fff) > ",
-		keymaps = {
-			["<CR>"] = "select_entry",
-		},
-		on_change = function(query, update_ui_callback)
+	pick_dynamic({
+		prompt = "Files",
+		show = show_path_items,
+		choose = choose_path_item,
+		items = function(query)
 			local ok, result = pcall(fuzzy.fuzzy_search_files, query or "", 4, current_file, 100, 3, 0, 100)
-
 			if not ok or not result then
-				update_ui_callback({})
-				return
+				return {}
 			end
 
-			local items = type(result) == "table" and (result.items or result) or {}
-			local lines = {}
-			path_lookup = {}
-			fff_icon_line_lookup = {}
-			for _, item in ipairs(items) do
-				local raw_display = item.relative_path or item.path or tostring(item)
-				local fullpath = item.path or raw_display
-				local display, icon_meta = format_fff_line_with_icon(fullpath, raw_display)
-				table.insert(lines, display)
-				path_lookup[display] = fullpath
-				fff_icon_line_lookup[display] = icon_meta
-			end
-			update_ui_callback(lines)
-		end,
-		on_close = function()
-			fff_icon_line_lookup = nil
-		end,
-		parser = function(selection)
-			if type(selection) ~= "string" or selection == "" then
-				return nil
-			end
-
-			return {
-				filename = path_lookup[selection] or selection,
-				lnum = 1,
-				col = 1,
-			}
+			return file_items_from_fff(result)
 		end,
 	})
 end
@@ -1054,177 +1146,25 @@ local function pick_grep_fff(default_text, grep_mode)
 		vim.notify("fff.grep not available", vim.log.levels.ERROR)
 		return
 	end
-	ensure_dired_result_highlight_patch()
-
 	grep_mode = grep_mode or "plain"
-	local match_lookup = {}
-
-	local refer_util = require("refer.util")
-	require("refer").pick({}, function(selection, data)
-		refer_util.jump_to_location(selection, data)
-	end, {
-		prompt = "Grep (fff) > ",
+	pick_dynamic({
+		prompt = "Grep",
+		show = show_plain_items,
+		choose = choose_path_item,
 		default_text = default_text,
-		keymaps = {
-			["<CR>"] = "select_entry",
-		},
-		on_change = function(query, update_ui_callback)
+		items = function(query)
 			if not query or query == "" then
-				update_ui_callback({})
-				return
+				return {}
 			end
-
-			set_search_highlight(query)
 
 			local ok, result = pcall(grep.search, query, 0, 100, nil, grep_mode)
-
 			if not ok or not result then
-				update_ui_callback({})
-				return
+				return {}
 			end
 
-			local items = type(result) == "table" and (result.items or result.matches or result) or {}
-			local lines = {}
-			match_lookup = {}
-			fff_icon_line_lookup = {}
-			for _, item in ipairs(items) do
-				local path = item.path or item.file or ""
-				local lnum = item.line_number or item.lnum or item.line or 1
-				local col = item.col or item.column or 1
-				local text = item.text or item.content or item.line_content or ""
-				local raw_display = string.format("%s:%d:%d: %s", path, lnum, col, vim.trim(text))
-				local display, icon_meta = format_fff_line_with_icon(path, raw_display)
-				table.insert(lines, display)
-				match_lookup[display] = { filename = path, lnum = lnum, col = col }
-				fff_icon_line_lookup[display] = icon_meta
-			end
-			update_ui_callback(lines)
-		end,
-		on_close = function()
-			fff_icon_line_lookup = nil
-			vim.cmd("nohlsearch")
-		end,
-		parser = function(selection)
-			if type(selection) ~= "string" or selection == "" then
-				return nil
-			end
-
-			local entry = match_lookup[selection]
-			if entry then
-				return entry
-			end
-			local file, lnum, col = selection:match("^(.+):(%d+):(%d+):")
-			if file then
-				return { filename = file, lnum = tonumber(lnum), col = tonumber(col) }
-			end
-			return nil
+			return grep_items_from_fff(result)
 		end,
 	})
-end
-
-local function ensure_dired_highlight_groups()
-	vim.api.nvim_set_hl(0, "ReferDiredDir", { default = true, link = "Directory" })
-	vim.api.nvim_set_hl(0, "ReferDiredFile", { default = true, link = "Identifier" })
-	vim.api.nvim_set_hl(0, "ReferDiredHidden", { default = true, link = "Comment" })
-	vim.api.nvim_set_hl(0, "ReferDiredPermType", { default = true, fg = "#f7768e" })
-	vim.api.nvim_set_hl(0, "ReferDiredPermRead", { default = true, fg = "#9ece6a" })
-	vim.api.nvim_set_hl(0, "ReferDiredPermWrite", { default = true, fg = "#e0af68" })
-	vim.api.nvim_set_hl(0, "ReferDiredPermExec", { default = true, fg = "#f7768e" })
-	vim.api.nvim_set_hl(0, "ReferDiredPermOther", { default = true, fg = "#565f89" })
-	vim.api.nvim_set_hl(0, "ReferDiredSize", { default = true, link = "Number" })
-	vim.api.nvim_set_hl(0, "ReferDiredTime", { default = true, link = "Constant" })
-end
-
-local function permission_char_hl(char, index)
-	if index == 1 then
-		if char == "-" then
-			return "ReferDiredPermOther"
-		end
-		return "ReferDiredPermType"
-	end
-
-	if char == "r" then
-		return "ReferDiredPermRead"
-	end
-	if char == "w" then
-		return "ReferDiredPermWrite"
-	end
-	if char == "x" or char == "s" or char == "t" then
-		return "ReferDiredPermExec"
-	end
-
-	return "ReferDiredPermOther"
-end
-
-ensure_dired_result_highlight_patch = function()
-	if dired_highlight_patch_applied then
-		return
-	end
-
-	ensure_dired_highlight_groups()
-
-	local highlight = require("refer.highlight")
-	local original_highlight_entry = highlight.highlight_entry
-
-	highlight.highlight_entry = function(buf, ns, line_idx, line, highlight_code, opts)
-		local entry = dired_line_lookup and dired_line_lookup[line] or nil
-		local icon_meta = fff_icon_line_lookup and fff_icon_line_lookup[line] or nil
-		if not entry then
-			original_highlight_entry(buf, ns, line_idx, line, highlight_code, opts)
-			if icon_meta and icon_meta.icon and icon_meta.icon_hl then
-				pcall(vim.api.nvim_buf_set_extmark, buf, ns, line_idx, 0, {
-					end_col = #icon_meta.icon,
-					hl_group = icon_meta.icon_hl,
-					priority = 110,
-				})
-			end
-			return
-		end
-
-		local function set_hl(col, end_col, hl_group, priority)
-			if end_col <= col then
-				return
-			end
-			pcall(vim.api.nvim_buf_set_extmark, buf, ns, line_idx, col, {
-				end_col = end_col,
-				hl_group = hl_group,
-				priority = priority or 90,
-			})
-		end
-
-		local name_hl = entry.is_dir and "ReferDiredDir" or "ReferDiredFile"
-		if entry.name:sub(1, 1) == "." then
-			name_hl = entry.is_dir and "ReferDiredDir" or "ReferDiredHidden"
-		end
-
-		local name_len = #entry.display_name
-		local perms_start = dired_name_col_width + 2
-		local perms_end = perms_start + #entry.perms
-		local size_start = perms_end + 2
-		local size_end = size_start + 6
-		local mtime_start = size_end + 2
-		local mtime_end = mtime_start + #entry.mtime
-
-		set_hl(0, name_len, name_hl, 92)
-		for i = 1, #entry.perms do
-			local char = entry.perms:sub(i, i)
-			local hl = permission_char_hl(char, i)
-			set_hl(perms_start + i - 1, perms_start + i, hl, 92)
-		end
-		set_hl(size_start, size_end, "ReferDiredSize", 92)
-		set_hl(mtime_start, mtime_end, "ReferDiredTime", 92)
-	end
-
-	dired_highlight_patch_applied = true
-end
-
-set_search_highlight = function(query)
-	if not query or query == "" then
-		return
-	end
-
-	vim.opt.hlsearch = true
-	vim.fn.setreg("/", "\\V" .. vim.fn.escape(query, "\\"))
 end
 
 local function list_colorschemes()
@@ -1239,85 +1179,23 @@ local function list_colorschemes()
 		end
 	end
 
-	return colors, current
+	return colors
 end
 
 local function pick_colorschemes()
-	local before_background = vim.o.background
-	local colors, before_color = list_colorschemes()
-	local applied = false
-
-	local function resolve_colorscheme(selection)
-		if type(selection) == "table" then
-			selection = selection.text
-		end
-
-		if type(selection) ~= "string" or selection == "" then
-			return nil
-		end
-
-		return selection
-	end
-
-	local function apply_preview(selection)
-		selection = resolve_colorscheme(selection)
-		if not selection then
-			return
-		end
-		pcall(vim.cmd.colorscheme, selection)
-	end
-
-	local function persist_and_apply(selection, builtin)
-		selection = resolve_colorscheme(selection)
-		if not selection then
-			return
-		end
-
-		applied = true
-		persist_colorscheme(selection)
-		pcall(vim.cmd.colorscheme, selection)
-		if builtin then
-			builtin.actions.close()
-		end
-	end
-
-	require("refer").pick(colors, function(selection)
-		persist_and_apply(selection)
-	end, {
-		prompt = "Change Colorscheme > ",
-		on_change = function(query, update_ui_callback)
-			local fuzzy = require("refer.fuzzy")
-			local matches = fuzzy.filter(colors, query or "", { sorter = "native" })
-			update_ui_callback(matches)
-			apply_preview(matches[1])
-		end,
-		keymaps = {
-			["<CR>"] = function(selection, builtin)
-				persist_and_apply(selection, builtin)
-			end,
-			["<C-n>"] = function(_, builtin)
-				builtin.actions.next_item()
-				apply_preview(builtin.picker.current_matches[builtin.picker.selected_index])
-			end,
-			["<C-p>"] = function(_, builtin)
-				builtin.actions.prev_item()
-				apply_preview(builtin.picker.current_matches[builtin.picker.selected_index])
-			end,
-			["<Down>"] = function(_, builtin)
-				builtin.actions.next_item()
-				apply_preview(builtin.picker.current_matches[builtin.picker.selected_index])
-			end,
-			["<Up>"] = function(_, builtin)
-				builtin.actions.prev_item()
-				apply_preview(builtin.picker.current_matches[builtin.picker.selected_index])
-			end,
-		},
-		on_close = function()
-			if not applied then
-				vim.o.background = before_background
-				pcall(vim.cmd.colorscheme, before_color)
+	pick_start({
+		items = vim.tbl_map(function(color)
+			return { text = color }
+		end, list_colorschemes()),
+		name = "Colorschemes",
+		prompt = "Colorscheme",
+		choose = function(item)
+			if not item or not item.text then
+				return
 			end
-			vim.cmd("nohlsearch")
+
+			persist_colorscheme(item.text)
+			pcall(vim.cmd.colorscheme, item.text)
 		end,
 	})
 end
@@ -1338,9 +1216,15 @@ local function pick_vim_options()
 		local ok, value = pcall(vim.api.nvim_get_option_value, option.name, {})
 		if ok then
 			table.insert(options, {
+				text = string.format(
+					"%-24s [%s] [%s] %s",
+					option.name,
+					option.type,
+					option.scope,
+					option_value_to_text(value)
+				),
 				name = option.name,
 				type = option.type,
-				scope = option.scope,
 				value = value,
 			})
 		end
@@ -1350,236 +1234,79 @@ local function pick_vim_options()
 		return left.name < right.name
 	end)
 
-	local entries = {}
-	local lookup = {}
-	for _, option in ipairs(options) do
-		local entry = string.format(
-			"%-24s [%s] [%s] %s",
-			option.name,
-			option.type,
-			option.scope,
-			option_value_to_text(option.value)
-		)
-		table.insert(entries, entry)
-		lookup[entry] = option
-	end
+	pick_start({
+		items = options,
+		name = "Options",
+		prompt = "Options",
+		choose = function(item)
+			if not item then
+				return
+			end
 
-	require("refer").pick(entries, function(selection)
-		local option = lookup[selection]
-		if not option then
-			return
-		end
+			local esc = ""
+			if vim.fn.mode() == "i" then
+				esc = vim.api.nvim_replace_termcodes("<esc>", true, false, true)
+			end
 
-		local esc = ""
-		if vim.fn.mode() == "i" then
-			esc = vim.api.nvim_replace_termcodes("<esc>", true, false, true)
-		end
+			local cmd
+			if item.type == "boolean" then
+				cmd = string.format("%s:set %s!", esc, item.name)
+			else
+				cmd = string.format("%s:set %s=%s", esc, item.name, tostring(item.value))
+			end
 
-		local cmd
-		if option.type == "boolean" then
-			cmd = string.format("%s:set %s!", esc, option.name)
-		else
-			cmd = string.format("%s:set %s=%s", esc, option.name, tostring(option.value))
-		end
-
-		vim.api.nvim_feedkeys(cmd, "m", true)
-	end, {
-		prompt = "Options > ",
-		keymaps = {
-			["<CR>"] = "select_entry",
-		},
+			vim.api.nvim_feedkeys(cmd, "m", true)
+		end,
 	})
 end
 
 local function pick_spell_suggestions()
-	local cursor_word = vim.fn.expand("<cword>")
-	local suggestions = vim.fn.spellsuggest(cursor_word)
+	pick_start({
+		items = vim.tbl_map(function(item)
+			return { text = item }
+		end, vim.fn.spellsuggest(vim.fn.expand("<cword>"))),
+		name = "Spelling Suggestions",
+		prompt = "Spelling",
+		choose = function(item)
+			if not item or not item.text or item.text == "" then
+				return
+			end
 
-	require("refer").pick(suggestions, function(selection)
-		if not selection or selection == "" then
-			return
-		end
-
-		vim.cmd('normal! "_ciw' .. selection)
-		vim.cmd("stopinsert")
-	end, {
-		prompt = "Spelling Suggestions > ",
-		keymaps = {
-			["<CR>"] = "select_entry",
-		},
+			vim.cmd('normal! "_ciw' .. item.text)
+			vim.cmd("stopinsert")
+		end,
 	})
 end
 
-local function build_highlight_preview_lines()
-	local output = vim.split(vim.fn.execute("highlight"), "\n", { trimempty = true })
-	local lines = {}
-
-	for _, line in ipairs(output) do
-		if line ~= "" then
-			if line:sub(1, 1) == " " and #lines > 0 then
-				local continuation = line:match("%s+(.*)") or ""
-				lines[#lines] = lines[#lines] .. continuation
-			else
-				table.insert(lines, line)
-			end
-		end
-	end
-
-	return lines
-end
-
 local function pick_highlights()
-	local highlight_groups = vim.fn.getcompletion("", "highlight")
+	local highlight_groups = vim.tbl_map(function(group)
+		return { text = group }
+	end, vim.fn.getcompletion("", "highlight"))
 	if #highlight_groups == 0 then
 		return
 	end
 
-	local preview_win = vim.api.nvim_get_current_win()
-	local preview_buf = nil
-	local preview_lines = build_highlight_preview_lines()
-	local preview_line_by_group = {}
-
-	local preview_ns = vim.api.nvim_create_namespace("refer_highlight_preview")
-	local preview_cursor_ns = vim.api.nvim_create_namespace("refer_highlight_preview_cursor")
-	local results_ns = vim.api.nvim_create_namespace("refer_highlight_results")
-
-	for i, line in ipairs(preview_lines) do
-		local group = line:match("^([^ ]+)")
-		if group and not preview_line_by_group[group] then
-			preview_line_by_group[group] = i
-		end
-	end
-
-	local function ensure_preview_buffer()
-		if preview_buf and vim.api.nvim_buf_is_valid(preview_buf) then
-			return preview_buf
-		end
-
-		preview_buf = vim.api.nvim_create_buf(false, true)
-		vim.bo[preview_buf].buftype = "nofile"
-		vim.bo[preview_buf].bufhidden = "wipe"
-		vim.bo[preview_buf].swapfile = false
-		vim.bo[preview_buf].filetype = "vim"
-
-		vim.api.nvim_buf_set_lines(preview_buf, 0, -1, false, preview_lines)
-
-		for i, line in ipairs(preview_lines) do
-			local start_pos = line:find("xxx", 1, true)
-			local group = line:match("^([^ ]+)")
-			if start_pos and group and vim.fn.hlexists(group) == 1 then
-				pcall(vim.api.nvim_buf_set_extmark, preview_buf, preview_ns, i - 1, start_pos - 1, {
-					end_col = start_pos + 2,
-					hl_group = group,
-					priority = 90,
-				})
+	pick_start({
+		items = highlight_groups,
+		name = "Highlights",
+		prompt = "Highlights",
+		preview = function(buf_id, item)
+			if not item or not item.text then
+				return
 			end
-		end
 
-		return preview_buf
-	end
-
-	local function highlight_results_buffer()
-		local results_buf = nil
-		for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-			if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].filetype == "refer_results" then
-				results_buf = buf
-				break
-			end
-		end
-
-		if not results_buf then
-			return
-		end
-
-		vim.api.nvim_buf_clear_namespace(results_buf, results_ns, 0, -1)
-		local lines = vim.api.nvim_buf_get_lines(results_buf, 0, -1, false)
-		for i, line in ipairs(lines) do
-			if vim.fn.hlexists(line) == 1 then
-				pcall(vim.api.nvim_buf_set_extmark, results_buf, results_ns, i - 1, 0, {
-					end_col = #line,
-					hl_group = line,
-					priority = 95,
-				})
-			end
-		end
-	end
-
-	local function show_highlight_preview(group, winid)
-		if not group or group == "" then
-			return
-		end
-
-		local target_win = winid
-		if not target_win or not vim.api.nvim_win_is_valid(target_win) then
-			target_win = preview_win
-		end
-		if not target_win or not vim.api.nvim_win_is_valid(target_win) then
-			return
-		end
-
-		local buf = ensure_preview_buffer()
-		vim.api.nvim_win_set_buf(target_win, buf)
-
-		local lnum = preview_line_by_group[group] or 1
-		pcall(vim.api.nvim_win_set_cursor, target_win, { lnum, 0 })
-
-		vim.api.nvim_buf_clear_namespace(buf, preview_cursor_ns, 0, -1)
-		pcall(vim.api.nvim_buf_set_extmark, buf, preview_cursor_ns, lnum - 1, 0, {
-			line_hl_group = "Visual",
-			priority = 120,
-		})
-
-		pcall(vim.api.nvim_win_call, target_win, function()
-			vim.cmd("normal! zz")
-		end)
-	end
-
-	local function after_move(builtin)
-		local picker = builtin.picker
-		local selection = picker.current_matches[picker.selected_index]
-		show_highlight_preview(selection, picker.original_win)
-		highlight_results_buffer()
-	end
-
-	require("refer").pick(highlight_groups, function(selection)
-		if not selection or selection == "" then
-			return
-		end
-		vim.cmd("hi " .. selection)
-	end, {
-		prompt = "Highlights > ",
-		on_change = function(query, update_ui_callback)
-			local fuzzy = require("refer.fuzzy")
-			local matches = fuzzy.filter(highlight_groups, query or "", { sorter = "native" })
-			update_ui_callback(matches)
-			vim.schedule(function()
-				highlight_results_buffer()
-				show_highlight_preview(matches[1], preview_win)
-			end)
+			vim.bo[buf_id].filetype = "vim"
+			vim.api.nvim_buf_set_lines(
+				buf_id,
+				0,
+				-1,
+				false,
+				vim.split(vim.fn.execute("highlight " .. item.text), "\n", { trimempty = true })
+			)
 		end,
-		keymaps = {
-			["<CR>"] = "select_entry",
-			["<C-n>"] = function(_, builtin)
-				builtin.actions.next_item()
-				after_move(builtin)
-			end,
-			["<C-p>"] = function(_, builtin)
-				builtin.actions.prev_item()
-				after_move(builtin)
-			end,
-			["<Down>"] = function(_, builtin)
-				builtin.actions.next_item()
-				after_move(builtin)
-			end,
-			["<Up>"] = function(_, builtin)
-				builtin.actions.prev_item()
-				after_move(builtin)
-			end,
-		},
-		on_close = function()
-			vim.cmd("nohlsearch")
-			if preview_buf and vim.api.nvim_buf_is_valid(preview_buf) then
-				vim.api.nvim_buf_clear_namespace(preview_buf, preview_cursor_ns, 0, -1)
+		choose = function(item)
+			if item and item.text then
+				vim.cmd("hi " .. item.text)
 			end
 		end,
 	})
@@ -1592,42 +1319,45 @@ local function live_grep_current_buffer()
 		return
 	end
 
-	require("refer.providers.files").live_grep({
-		prompt = "Go to line > ",
-		providers = {
-			grep = {
-				grep_command = function(query)
-					set_search_highlight(query)
-					return {
-						"rg",
-						"--line-number",
-						"--no-heading",
-						"--smart-case",
-						"--no-filename",
-						"--field-match-separator= ",
-						"--",
-						query,
-						filepath,
-					}
-				end,
-			},
-		},
-		parser = function(selection)
-			if type(selection) ~= "string" or selection == "" then
-				return nil
+	pick_dynamic({
+		name = "Buffer Grep",
+		prompt = "Buffer Grep",
+		show = show_plain_items,
+		choose = choose_path_item,
+		items = function(query)
+			if not query or query == "" then
+				return {}
 			end
 
-			local lnum, content = selection:match("^(%d+)%s(.*)$")
-			if not lnum then
-				return nil
+			local output = vim.fn.systemlist({
+				"rg",
+				"--line-number",
+				"--column",
+				"--no-heading",
+				"--smart-case",
+				"--color=never",
+				"--",
+				query,
+				filepath,
+			})
+			if vim.v.shell_error > 1 then
+				return {}
 			end
 
-			return {
-				filename = filepath,
-				lnum = tonumber(lnum),
-				col = 1,
-				content = content,
-			}
+			local items = {}
+			for _, line in ipairs(output) do
+				local lnum, col, text = line:match("^(%d+):(%d+):(.*)$")
+				if lnum and col then
+					table.insert(items, {
+						text = string.format("%s:%s: %s", lnum, col, text),
+						path = filepath,
+						lnum = tonumber(lnum),
+						col = tonumber(col),
+					})
+				end
+			end
+
+			return items
 		end,
 	})
 end
@@ -1658,367 +1388,109 @@ local function grep_string_with_fff(opts)
 end
 
 local function pick_help_tags()
-	local langs = vim.split(vim.o.helplang, ",", { trimempty = true })
-	if not vim.tbl_contains(langs, "en") then
-		table.insert(langs, "en")
+	mini_pick().builtin.help(nil, {
+		window = picker_window("Help"),
+	})
+end
+
+local function open_command_picker()
+	pick_start({
+		items = vim.tbl_map(function(command)
+			return { text = command }
+		end, vim.fn.getcompletion("", "command")),
+		name = "Commands",
+		prompt = "Commands",
+		choose = function(item)
+			if item and item.text then
+				vim.cmd(item.text)
+			end
+		end,
+	})
+end
+
+local function open_buffer_picker()
+	mini_pick().builtin.buffers(nil, {
+		window = picker_window("Buffers"),
+	})
+end
+
+local function location_to_pick_item(location)
+	local uri = location.uri or location.targetUri
+	local range = location.range or location.targetSelectionRange or location.targetRange
+	if not uri or not range or not range.start then
+		return nil
 	end
 
-	local langs_map = {}
-	for _, lang in ipairs(langs) do
-		langs_map[lang] = true
+	local path = vim.uri_to_fname(uri)
+	local lnum = range.start.line + 1
+	local col = range.start.character + 1
+	return {
+		text = string.format("%s:%d:%d", vim.fn.fnamemodify(path, ":."), lnum, col),
+		path = path,
+		lnum = lnum,
+		col = col,
+	}
+end
+
+local function open_lsp_locations(method, title)
+	local clients = vim.lsp.get_clients({ bufnr = 0, method = method })
+	if #clients == 0 then
+		vim.notify("No LSP client supports " .. method, vim.log.levels.WARN)
+		return
 	end
 
-	local tag_files = {}
-	local function add_tag_file(lang, file)
-		if not langs_map[lang] then
-			return
-		end
+	vim.lsp.buf_request_all(0, method, vim.lsp.util.make_position_params(0), function(results)
+		vim.schedule(function()
+			local items = {}
+			local seen = {}
 
-		if not tag_files[lang] then
-			tag_files[lang] = {}
-		end
-		table.insert(tag_files[lang], file)
-	end
+			for _, response in pairs(results or {}) do
+				local locations = response and response.result or nil
+				if locations then
+					if not vim.islist(locations) then
+						locations = { locations }
+					end
 
-	local rtp = vim.o.runtimepath
-	local all_files = vim.fn.globpath(rtp, "doc/*", true, true)
-	for _, fullpath in ipairs(all_files) do
-		local file = vim.fs.basename(fullpath)
-		if file == "tags" then
-			add_tag_file("en", fullpath)
-		elseif file:match("^tags%-..$") then
-			add_tag_file(file:sub(-2), fullpath)
-		end
-	end
-
-	local tags = {}
-	local lookup = {}
-	local tags_map = {}
-
-	for _, lang in ipairs(langs) do
-		for _, file in ipairs(tag_files[lang] or {}) do
-			for _, line in ipairs(vim.fn.readfile(file)) do
-				if not line:match("^!_TAG_") then
-					local fields = vim.split(line, "\t", { trimempty = true })
-					if #fields == 3 and not tags_map[fields[1]] then
-						if fields[1] ~= "help-tags" or fields[2] ~= "tags" then
-							table.insert(tags, fields[1])
-							lookup[fields[1]] = fields[1] .. "@" .. lang
-							tags_map[fields[1]] = true
+					for _, location in ipairs(locations) do
+						local item = location_to_pick_item(location)
+						if item then
+							local key = string.format("%s:%d:%d", item.path, item.lnum, item.col)
+							if not seen[key] then
+								seen[key] = true
+								table.insert(items, item)
+							end
 						end
 					end
 				end
 			end
-		end
-	end
 
-	if #tags == 0 then
-		return
-	end
-
-	require("refer").pick(tags, function(selection)
-		if not selection or selection == "" then
-			return
-		end
-
-		local value = lookup[selection] or selection
-		vim.cmd("help " .. vim.fn.fnameescape(value))
-	end, {
-		prompt = "Help > ",
-		keymaps = {
-			["<CR>"] = "select_entry",
-		},
-	})
-end
-
-local last_picker_session = nil
-local active_picker_session = nil
-local active_session_should_restore = false
-local refer_picker_resume_patch_applied = false
-
-local function get_picker_input_text(picker)
-	if not picker or not picker.input_buf or not vim.api.nvim_buf_is_valid(picker.input_buf) then
-		return ""
-	end
-
-	local lines = vim.api.nvim_buf_get_lines(picker.input_buf, 0, 1, false)
-	return lines[1] or ""
-end
-
-local function capture_picker_state(picker)
-	local state = {
-		input = get_picker_input_text(picker),
-		selected_index = nil,
-		selected_value = nil,
-		marked = {},
-	}
-
-	if type(picker.selected_index) == "number" then
-		state.selected_index = picker.selected_index
-	end
-
-	if type(picker.current_matches) == "table" and type(state.selected_index) == "number" then
-		state.selected_value = picker.current_matches[state.selected_index]
-	end
-
-	if type(picker.marked) == "table" then
-		for item, is_marked in pairs(picker.marked) do
-			if is_marked then
-				state.marked[item] = true
+			if #items == 0 then
+				vim.notify("No " .. title:lower() .. " found", vim.log.levels.INFO)
+				return
 			end
-		end
-	end
 
-	return state
-end
-
-local function capture_window_local_options(winid)
-	if not winid or not vim.api.nvim_win_is_valid(winid) then
-		return nil
-	end
-
-	local option_names = {
-		"number",
-		"relativenumber",
-		"signcolumn",
-		"cursorline",
-		"foldcolumn",
-		"spell",
-		"list",
-		"winhighlight",
-		"fillchars",
-		"statusline",
-	}
-
-	local opts = {}
-	for _, name in ipairs(option_names) do
-		opts[name] = vim.api.nvim_get_option_value(name, { scope = "local", win = winid })
-	end
-
-	return opts
-end
-
-local function restore_window_local_options(winid, opts)
-	if not opts or not winid or not vim.api.nvim_win_is_valid(winid) then
-		return
-	end
-
-	for name, value in pairs(opts) do
-		pcall(vim.api.nvim_set_option_value, name, value, { scope = "local", win = winid })
-	end
-end
-
-local function restore_picker_state(picker, state)
-	if not picker or type(state) ~= "table" then
-		return
-	end
-
-	local target_input = tostring(state.input or "")
-	local needs_selection_restore = state.selected_value ~= nil or type(state.selected_index) == "number"
-	local attempts = 0
-	local max_attempts = 40
-	local timer = uv.new_timer()
-	if not timer then
-		return
-	end
-
-	local function stop_timer()
-		if timer then
-			timer:stop()
-			timer:close()
-			timer = nil
-		end
-	end
-
-	local function apply_once()
-		if not picker.input_buf or not vim.api.nvim_buf_is_valid(picker.input_buf) then
-			return true
-		end
-
-		if get_picker_input_text(picker) ~= target_input then
-			return true
-		end
-
-		if type(state.marked) == "table" then
-			picker.marked = vim.deepcopy(state.marked)
-		end
-
-		local matches = type(picker.current_matches) == "table" and picker.current_matches or {}
-		local target_index = nil
-
-		if state.selected_value ~= nil then
-			for idx, value in ipairs(matches) do
-				if value == state.selected_value then
-					target_index = idx
-					break
-				end
+			if #items == 1 then
+				mini_pick().default_choose(items[1])
+				return
 			end
-		end
 
-		if not target_index and type(state.selected_index) == "number" then
-			if state.selected_index >= 1 and state.selected_index <= #matches then
-				target_index = state.selected_index
-			end
-		end
-
-		if target_index then
-			picker.selected_index = target_index
-		end
-
-		if picker.render then
-			picker:render()
-		end
-
-		if not needs_selection_restore then
-			return true
-		end
-
-		return target_index ~= nil or attempts >= max_attempts
-	end
-
-	timer:start(
-		0,
-		40,
-		vim.schedule_wrap(function()
-			attempts = attempts + 1
-			if apply_once() then
-				stop_timer()
-			end
+			pick_start({
+				items = items,
+				name = title,
+				prompt = title,
+				show = show_path_items,
+				choose = choose_path_item,
+			})
 		end)
-	)
+	end)
 end
 
-local function build_resume_aware_opts(opts, session, should_restore)
-	local picker_opts = vim.deepcopy(opts or {})
-	local original_on_close = picker_opts.on_close
-	local picker_ref = nil
-	local state_to_restore = nil
-	local original_win_opts = nil
-
-	if should_restore and session and session.state then
-		state_to_restore = vim.deepcopy(session.state)
-		picker_opts.default_text = tostring(state_to_restore.input or "")
-	end
-
-	picker_opts.on_close = function()
-		if session and picker_ref then
-			session.state = capture_picker_state(picker_ref)
-		end
-
-		if picker_ref and original_win_opts then
-			restore_window_local_options(picker_ref.original_win, original_win_opts)
-		end
-
-		if original_on_close then
-			original_on_close()
-		end
-	end
-
-	return picker_opts,
-		function(picker)
-			picker_ref = picker
-			if picker and picker.original_win then
-				original_win_opts = capture_window_local_options(picker.original_win)
-			end
-			if state_to_restore then
-				restore_picker_state(picker, state_to_restore)
-			end
-		end
+local function open_definition_picker()
+	open_lsp_locations("textDocument/definition", "Definitions")
 end
 
-local function ensure_refer_picker_resume_patch()
-	if refer_picker_resume_patch_applied then
-		return
-	end
-
-	local ok, refer = pcall(require, "refer")
-	if not ok then
-		return
-	end
-
-	if type(refer.pick) ~= "function" or type(refer.pick_async) ~= "function" then
-		return
-	end
-
-	local original_pick = refer.pick
-	local original_pick_async = refer.pick_async
-
-	refer.pick = function(items_or_provider, on_select, opts)
-		local session = active_picker_session
-		if not session then
-			return original_pick(items_or_provider, on_select, opts)
-		end
-
-		local picker_opts, on_created = build_resume_aware_opts(opts, session, active_session_should_restore)
-		local picker = original_pick(items_or_provider, on_select, picker_opts)
-		on_created(picker)
-		return picker
-	end
-
-	refer.pick_async = function(command_generator, on_select, opts)
-		local session = active_picker_session
-		if not session then
-			return original_pick_async(command_generator, on_select, opts)
-		end
-
-		local picker_opts, on_created = build_resume_aware_opts(opts, session, active_session_should_restore)
-		local picker = original_pick_async(command_generator, on_select, picker_opts)
-		on_created(picker)
-		return picker
-	end
-
-	refer_picker_resume_patch_applied = true
-end
-
-local function run_picker_session(session, should_restore)
-	ensure_refer_picker_resume_patch()
-
-	active_picker_session = session
-	active_session_should_restore = should_restore == true
-
-	local ok, result = pcall(session.runner)
-
-	active_picker_session = nil
-	active_session_should_restore = false
-
-	if not ok then
-		error(result)
-	end
-
-	return result
-end
-
-local function run_and_remember_picker(runner)
-	last_picker_session = {
-		runner = runner,
-		state = nil,
-	}
-	return run_picker_session(last_picker_session, false)
-end
-
-local function resume_last_picker()
-	if not last_picker_session then
-		vim.notify("No picker to resume", vim.log.levels.INFO)
-		return
-	end
-
-	return run_picker_session(last_picker_session, true)
-end
-
-local function open_refer_commands()
-	vim.cmd("Refer Commands")
-end
-
-local function open_refer_buffers()
-	vim.cmd("Refer Buffers")
-end
-
-local function open_refer_definitions()
-	vim.cmd("Refer Definitions")
-end
-
-local function open_refer_references()
-	vim.cmd("Refer References")
+local function open_reference_picker()
+	open_lsp_locations("textDocument/references", "References")
 end
 
 local function pick_files_fff_in_dir(dir, prompt)
@@ -2027,59 +1499,30 @@ local function pick_files_fff_in_dir(dir, prompt)
 		vim.notify("fff backend not available", vim.log.levels.ERROR)
 		return
 	end
-	ensure_dired_result_highlight_patch()
 
 	local original_path = fff_state.base_path
 	pcall(fuzzy.restart_index_in_path, dir)
 	fff_state.base_path = dir
 
-	local path_lookup = {}
-
-	local refer_util = require("refer.util")
-	require("refer").pick({}, function(selection, data)
-		refer_util.jump_to_location(selection, data)
-	end, {
+	pick_dynamic({
+		name = prompt,
 		prompt = prompt,
-		keymaps = {
-			["<CR>"] = "select_entry",
-		},
-		on_change = function(query, update_ui_callback)
+		cwd = dir,
+		show = show_path_items,
+		choose = choose_path_item,
+		items = function(query)
 			local ok, result = pcall(fuzzy.fuzzy_search_files, query or "", 4, nil, 100, 3, 0, 100)
 			if not ok or not result then
-				update_ui_callback({})
-				return
+				return {}
 			end
-			local items = type(result) == "table" and (result.items or result) or {}
-			local lines = {}
-			path_lookup = {}
-			fff_icon_line_lookup = {}
-			for _, item in ipairs(items) do
-				local raw_display = item.relative_path or item.path or tostring(item)
-				local fullpath = item.path or raw_display
-				local display, icon_meta = format_fff_line_with_icon(fullpath, raw_display)
-				table.insert(lines, display)
-				path_lookup[display] = fullpath
-				fff_icon_line_lookup[display] = icon_meta
-			end
-			update_ui_callback(lines)
+
+			return file_items_from_fff(result)
 		end,
 		on_close = function()
-			fff_icon_line_lookup = nil
 			if original_path then
 				pcall(fuzzy.restart_index_in_path, original_path)
 				fff_state.base_path = original_path
 			end
-		end,
-		parser = function(selection)
-			if type(selection) ~= "string" or selection == "" then
-				return nil
-			end
-
-			return {
-				filename = path_lookup[selection] or selection,
-				lnum = 1,
-				col = 1,
-			}
 		end,
 	})
 end
@@ -2211,118 +1654,82 @@ vim.keymap.set("n", "<leader>q", function()
 end, { desc = "Quickfix list" })
 
 vim.keymap.set("n", "<M-x>", function()
-	run_and_remember_picker(open_refer_commands)
+	open_command_picker()
 end, { desc = "commands" })
--- vim.keymap.set("n", "<leader><space>", function()
---     run_and_remember_picker(open_refer_files)
--- end, { desc = "Find Files" })
 vim.keymap.set("n", "<leader>sc", function()
-	run_and_remember_picker(pick_colorschemes)
+	pick_colorschemes()
 end, { desc = "Search colorscheme" })
 vim.keymap.set("n", "<leader><space>", function()
-	run_and_remember_picker(pick_files_fff)
+	pick_files_fff()
 end, { desc = "Find file (fff)" })
 vim.keymap.set("n", "<leader>so", function()
-	run_and_remember_picker(pick_vim_options)
+	pick_vim_options()
 end, { desc = "Search option" })
 vim.keymap.set("n", "<leader>ss", function()
-	run_and_remember_picker(pick_spell_suggestions)
+	pick_spell_suggestions()
 end, { desc = "Search spelling suggestion" })
 vim.keymap.set("n", "<leader>sH", function()
-	run_and_remember_picker(pick_highlights)
+	pick_highlights()
 end, { desc = "Search highlight group" })
 vim.keymap.set("n", "<leader>fn", function()
-	run_and_remember_picker(open_nvim_config_files)
+	open_nvim_config_files()
 end, { desc = "Find neovim config files" })
 vim.keymap.set("n", "<leader>fp", function()
-	run_and_remember_picker(open_lazy_data_files)
+	open_lazy_data_files()
 end, { desc = "Find data files" })
 vim.keymap.set("n", "<leader>,", function()
-	run_and_remember_picker(open_refer_buffers)
+	open_buffer_picker()
 end, { desc = "Buffers" })
 vim.keymap.set("n", "<leader>/", function()
-	run_and_remember_picker(pick_grep_fff)
+	pick_grep_fff()
 end, { desc = "Grep (fff)" })
 vim.keymap.set("n", "<leader>sb", function()
-	run_and_remember_picker(live_grep_current_buffer)
+	live_grep_current_buffer()
 end, { desc = "Search buffer" })
 vim.keymap.set("n", "<leader>sh", function()
-	run_and_remember_picker(pick_help_tags)
+	pick_help_tags()
 end, { desc = "Search help" })
 vim.keymap.set({ "n", "v" }, "<leader>sw", function()
-	run_and_remember_picker(grep_string_with_fff)
+	grep_string_with_fff()
 end, { desc = "Search word with grep" })
-vim.keymap.set("n", "<leader>'", resume_last_picker, { desc = "Resume last search" })
+vim.keymap.set("n", "<leader>'", function()
+	mini_pick().builtin.resume()
+end, { desc = "Resume last search" })
 vim.keymap.set("n", "gd", function()
-	run_and_remember_picker(open_refer_definitions)
+	open_definition_picker()
 end, { desc = "Go to definitions" })
 vim.keymap.set("n", "gr", function()
-	run_and_remember_picker(open_refer_references)
+	open_reference_picker()
 end, { desc = "Go to references" })
 
-vim.api.nvim_create_autocmd("FileType", {
-	pattern = "java",
-	callback = function()
-		local project_name = vim.fn.fnamemodify(vim.fn.getcwd(), ":p:h:t")
-		local workspace_dir = vim.fn.stdpath("data") .. "/jdtls-workspace/" .. project_name
+if is_neovide then
+	vim.o.guifont = "Liberation Mono:h14"
+    vim.g.neovide_scale_factor = 0.9
+    vim.g.neovide_refresh_rate = 165
+	vim.g.neovide_opacity = 1.0
+	vim.g.neovide_normal_opacity = 1.0
+	vim.g.neovide_text_gamma = 1.0
+	vim.g.neovide_text_contrast = 0.1
+    vim.g.neovide_floating_shadow = false
 
-		local config = {
-			name = "jdtls",
-			cmd = {
-				"jdtls",
-				"-data",
-				workspace_dir,
-				"--jvm-arg=-javaagent:" .. vim.fn.expand("~/.local/share/nvim/mason/packages/jdtls/lombok.jar"),
-				"--jvm-arg=--enable-preview",
-			},
-			root_dir = vim.fs.root(0, { ".git", "mvnw", "gradlew", "pom.xml", "build.gradle" }),
-			settings = {
-				java = {
-					configuration = {
-						runtimes = {},
-					},
-					compile = {
-						nullAnalysis = {
-							mode = "automatic",
-						},
-					},
-					sources = {
-						organizeImports = {
-							starThreshold = 9999,
-							staticStarThreshold = 9999,
-						},
-					},
-					eclipse = {
-						downloadSources = true,
-					},
-					maven = {
-						downloadSources = true,
-					},
-					implementationsCodeLens = {
-						enabled = true,
-					},
-					referencesCodeLens = {
-						enabled = true,
-					},
-					format = {
-						enabled = true,
-					},
-					settings = {
-						url = vim.fn.stdpath("config") .. "/jdtls-settings.prefs",
-					},
-				},
-			},
-			init_options = {
-				bundles = {},
-				extendedClientCapabilities = {
-					progressReportProvider = false,
-				},
-			},
-			flags = {
-				allow_incremental_sync = true,
-			},
-		}
+	vim.keymap.set("n", "<C-=>", function()
+		vim.g.neovide_scale_factor = vim.g.neovide_scale_factor * 1.1
+	end, { desc = "Increase Neovide scale factor" })
 
-		require("jdtls").start_or_attach(config)
-	end,
-})
+	vim.keymap.set("n", "<C-->", function()
+		vim.g.neovide_scale_factor = vim.g.neovide_scale_factor / 1.1
+	end, { desc = "Decrease Neovide scale factor" })
+
+	if vim.g.neovide then
+		vim.keymap.set("v", "<C-S-c>", '"+y') -- Copy
+		vim.keymap.set("n", "<C-S-v>", '"+P') -- Paste normal mode
+		vim.keymap.set("v", "<C-S-v>", '"+P') -- Paste visual mode
+		vim.keymap.set("c", "<C-S-v>", "<C-R>+") -- Paste command mode
+		vim.keymap.set("i", "<C-S-v>", '<ESC>l"+Pli') -- Paste insert mode
+	end
+
+	vim.api.nvim_set_keymap("", "<C-S-v>", "+p<CR>", { noremap = true, silent = true })
+	vim.api.nvim_set_keymap("!", "<C-S-v>", "<C-R>+", { noremap = true, silent = true })
+	vim.api.nvim_set_keymap("t", "<C-S-v>", "<C-R>+", { noremap = true, silent = true })
+	vim.api.nvim_set_keymap("v", "<C-S-v>", "<C-R>+", { noremap = true, silent = true })
+end
