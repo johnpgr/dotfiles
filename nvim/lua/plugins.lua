@@ -1722,7 +1722,7 @@ return {
                 { desc = "Ask opencode…" })
             vim.keymap.set({ "n", "x" }, "<leader>ox", function() require("opencode").select() end,
                 { desc = "Execute opencode action…" })
-            vim.keymap.set({ "n", "t" }, "<leader>oc", function() require("opencode").toggle() end,
+            vim.keymap.set("n", "<leader>oc", function() require("opencode").toggle() end,
                 { desc = "Toggle opencode" })
 
             vim.keymap.set({ "n", "x" }, "go", function() return require("opencode").operator("@this ") end,
