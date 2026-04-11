@@ -111,6 +111,17 @@ return {
     -- Dispatch
     { "tpope/vim-dispatch", cmd = { "Dispatch", "Make", "Focus", "Start" } },
 
+    -- Mini Bufremove
+    {
+        "nvim-mini/mini.bufremove",
+        keys = {
+            { "<leader>x", function() require("mini.bufremove").delete() end, desc = "Delete buffer" },
+        },
+        config = function()
+            require("mini.bufremove").setup()
+        end,
+    },
+
     -- Mini Align
     {
         "nvim-mini/mini.align",

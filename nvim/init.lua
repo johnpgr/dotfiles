@@ -552,7 +552,6 @@ vim.api.nvim_create_autocmd("CmdlineLeave", {
 })
 
 vim.keymap.set("n", "<leader>w", "<cmd>update<cr>", { desc = "Write" })
-vim.keymap.set("n", "<leader>x", "<cmd>bdelete<cr>", { desc = "Delete buffer" })
 vim.keymap.set("n", "]t", "<cmd>tabnext<cr>", { desc = "Tab next" })
 vim.keymap.set("n", "[t", "<cmd>tabprev<cr>", { desc = "Tab prev" })
 vim.keymap.set("n", "<Tab>", function()
