@@ -46,6 +46,7 @@ return lush(function()
 		StatusLineNC { fg = fg_dim, bg = bg_cursorline },
 		WinSeparator { fg = bg_cursorline.li(20), bg = bg },
         WinBar { fg = fg_accent, bg = bg },
+        WinBarNC { WinBar },
 		VertSplit { WinSeparator },
 		TabLine { fg = fg_dim, bg = bg_cursorline },
 		TabLineFill { fg = fg_dim, bg = bg },

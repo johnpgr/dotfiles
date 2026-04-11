@@ -147,8 +147,6 @@ local function apply_colorscheme_overrides()
 		"LspReferenceWrite",
 	}) do
 		vim.api.nvim_set_hl(0, group, {
-			fg = normal_hl.fg,
-			bg = "NONE",
 			sp = muted_color,
 			underline = true,
 		})

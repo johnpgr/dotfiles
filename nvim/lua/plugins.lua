@@ -1630,6 +1630,7 @@ return {
         opts = {
             projects = {
                 "~/dev/*",
+                "~/.dotfiles",
             },
             last_session_on_startup = false,
             dashboard_mode = true,
@@ -1660,6 +1661,30 @@ return {
             local path = require("neovim-project.utils.path")
             local history = require("neovim-project.utils.history")
             local project = require("neovim-project.project")
+
+            local neotree_restore_group = vim.api.nvim_create_augroup("neovim-project-neotree-restore", { clear = true })
+            vim.api.nvim_create_autocmd("User", {
+                pattern = "SessionLoadPost",
+                group = neotree_restore_group,
+                callback = function()
+                    local ok_state, neotree_state = pcall(require, "neovim-project.utils.neo-tree")
+                    if not ok_state or neotree_state.dirs_to_restore == nil or #neotree_state.dirs_to_restore == 0 then
+                        return
+                    end
+                    vim.schedule(function()
+                        local ok_command, neotree_command = pcall(require, "neo-tree.command")
+                        if not ok_command then
+                            return
+                        end
+                        neotree_command.execute({
+                            action = "show",
+                            source = "filesystem",
+                            position = "left",
+                            reveal_force_cwd = true,
+                        })
+                    end)
+                end,
+            })
 
             local function get_picker_entries(discover)
                 local results
