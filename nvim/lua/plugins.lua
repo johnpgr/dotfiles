@@ -1309,6 +1309,29 @@ return {
                 table.insert(columns, { "icon", add_padding = false })
             end
 
+            local function oil_action_open_file()
+                local oil = require("oil")
+                local entry = oil.get_cursor_entry()
+                local cwd = oil.get_current_dir()
+
+                if not entry then
+                    return
+                end
+
+                local cmd = (vim.fn.has("mac") == 1) and "open"
+                    or (vim.fn.has("win32") == 1) and "start"
+                    or "xdg-open"
+
+                local full_path = cwd .. entry.name
+                vim.fn.jobstart({ cmd, full_path }, {
+                    on_exit = function(_, code)
+                        if code ~= 0 then
+                            vim.notify("Failed to open file: " .. entry.name, vim.log.levels.ERROR)
+                        end
+                    end,
+                })
+            end
+
             local function oil_action_run_cmd_on_file()
                 local oil = require("oil")
                 local entry = oil.get_cursor_entry()
@@ -1395,6 +1418,7 @@ return {
                     ["<Left>"] = { "actions.parent", mode = "n" },
                     ["<Right>"] = { "actions.select", mode = "n" },
                     ["H"] = "actions.toggle_hidden",
+                    ["<leader>o"] = oil_action_open_file,
                 },
                 confirmation = { border = "single" },
                 win_options = {
