@@ -1048,7 +1048,7 @@ return {
                 "html",
                 "cssls",
                 "jsonls",
-                "basedpyright",
+                "pyright",
                 "zls",
                 "dartls",
                 "glsl_analyzer",
