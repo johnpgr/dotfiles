@@ -970,6 +970,16 @@ return {
             "yioneko/nvim-vtsls",
         },
         config = function()
+            local capabilities = vim.lsp.protocol.make_client_capabilities()
+            capabilities.textDocument.foldingRange = {
+                dynamicRegistration = false,
+                lineFoldingOnly = true,
+            }
+
+            vim.lsp.config("*", {
+                capabilities = capabilities,
+            })
+
             local kotlin_root_markers = {
                 "settings.gradle.kts",
                 "settings.gradle",
@@ -1054,7 +1064,7 @@ return {
                 "html",
                 "cssls",
                 "jsonls",
-                "pyright",
+                "basedpyright",
                 "zls",
                 "dartls",
                 "glsl_analyzer",
@@ -1572,6 +1582,42 @@ return {
         end,
     },
 
+    -- Folding
+    {
+        "kevinhwang91/nvim-ufo",
+        dependencies = {
+            "kevinhwang91/promise-async",
+        },
+        lazy = false,
+        config = function()
+            require("ufo").setup({
+                provider_selector = function()
+                    return ""
+                end,
+            })
+        end,
+    },
+    { "kevinhwang91/promise-async", lazy = true },
+    {
+        "luukvbaal/statuscol.nvim",
+        lazy = false,
+        config = function()
+            local builtin = require("statuscol.builtin")
+
+            require("statuscol").setup({
+                segments = {
+                    { text = { builtin.foldfunc }, click = "v:lua.ScFa" },
+                    { text = { "%s" }, click = "v:lua.ScSa" },
+                    {
+                        text = { builtin.lnumfunc, " " },
+                        condition = { true, builtin.not_empty },
+                        click = "v:lua.ScLa",
+                    },
+                },
+            })
+        end,
+    },
+
     -- Which Key
     {
         "folke/which-key.nvim",
@@ -1802,6 +1848,31 @@ return {
         end,
     },
 
+    -- Scope (scope buffers per tab)
+    {
+        "tiagovla/scope.nvim",
+        lazy = false,
+        config = function()
+            require("scope").setup({})
+
+            local scope_session_group = vim.api.nvim_create_augroup("ScopeSession", { clear = true })
+            vim.api.nvim_create_autocmd("User", {
+                pattern = "SessionSavePre",
+                group = scope_session_group,
+                callback = function()
+                    vim.cmd("ScopeSaveState")
+                end,
+            })
+            vim.api.nvim_create_autocmd("User", {
+                pattern = "SessionLoadPost",
+                group = scope_session_group,
+                callback = function()
+                    vim.cmd("ScopeLoadState")
+                end,
+            })
+        end,
+    },
+
     -- Tabby (tabline with tabs + buffers)
     {
         "nanozuki/tabby.nvim",
@@ -1811,21 +1882,6 @@ return {
                 ["neo-tree"] = true,
                 ["oil"] = true,
             }
-
-            local function current_tab_buffers(line)
-                local buffers = {}
-                local seen = {}
-
-                for _, win in ipairs(line.wins_in_tab(line.api.get_current_tab()).wins) do
-                    local buf = win.buf()
-                    if not seen[buf.id] and vim.bo[buf.id].buflisted and vim.bo[buf.id].buftype == "" then
-                        seen[buf.id] = true
-                        table.insert(buffers, buf)
-                    end
-                end
-
-                return buffers
-            end
 
             local theme = {
                 fill = "TabLineFill",
@@ -1839,7 +1895,6 @@ return {
 
             require("tabby").setup({
                 line = function(line)
-                    local current_buf = vim.api.nvim_get_current_buf()
                     return {
                         line.tabs().foreach(function(tab)
                             local hl = tab.is_current() and theme.current_tab or theme.tab
@@ -1853,22 +1908,21 @@ return {
                             }
                         end),
                         line.spacer(),
-                        vim.tbl_map(function(buf)
-                            local hl = buf.id == current_buf and theme.current_buf or theme.buf
+                        line.bufs().foreach(function(buf)
+                            local hl = buf.is_current() and theme.current_buf or theme.buf
                             local name = buf.name()
                             if buf.is_changed() then
                                 name = name .. "[+]"
                             end
                             return {
                                 line.sep(" ", hl, theme.fill),
-                                buf.id == current_buf and "*" or " ",
+                                buf.is_current() and "*" or " ",
                                 name,
                                 line.sep(" ", hl, theme.fill),
-                                click = { "to_buf", buf.id },
                                 hl = hl,
                                 margin = " ",
                             }
-                        end, current_tab_buffers(line)),
+                        end),
                         hl = theme.fill,
                     }
                 end,

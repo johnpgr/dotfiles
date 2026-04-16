@@ -22,6 +22,11 @@ vim.o.splitbelow = true
 vim.o.splitright = true
 vim.o.signcolumn = "no"
 vim.o.foldcolumn = "1"
+vim.o.foldlevel = 99
+vim.o.foldmethod = "expr"
+vim.o.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+vim.o.foldlevelstart = 99
+vim.o.foldenable = true
 vim.o.mouse = "nv"
 vim.o.breakindent = true
 vim.o.smartindent = true
@@ -36,6 +41,8 @@ vim.o.spelllang = "en,pt_br"
 vim.opt.clipboard = "unnamedplus"
 
 vim.treesitter.language.register("c", "cpp")
+vim.opt.diffopt:append("linematch:60")
+vim.o.fillchars = [[eob: ,fold: ,foldopen:,foldsep: ,foldclose:]]
 
 local is_neovide = vim.g.neovide ~= nil
 
@@ -46,8 +53,6 @@ if vim.fn.has("mac") == 1 and not vim.env.SDKROOT and vim.fn.executable("xcrun")
 	end
 end
 
-vim.opt.fillchars = { eob = " " }
-vim.opt.diffopt:append("linematch:60")
 
 local editorconfig = [[
 # EditorConfig is awesome: https://editorconfig.org
@@ -147,7 +152,7 @@ local function apply_colorscheme_overrides()
 		"@property",
 		"@constructor",
 	}) do
-		vim.api.nvim_set_hl(0, group, { link = "Normal" })
+		vim.api.nvim_set_hl(0, group, { fg = normal_hl.fg })
 	end
 
 	for _, group in ipairs({
@@ -416,34 +421,6 @@ local ignored_ls = {
 	"copilot",
 }
 
-local function listed_buffers()
-	local buffers = {}
-	for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-		if vim.api.nvim_buf_is_valid(bufnr) and vim.bo[bufnr].buflisted then
-			table.insert(buffers, bufnr)
-		end
-	end
-	return buffers
-end
-
-local function cycle_listed_buffer(step)
-	local buffers = listed_buffers()
-	if #buffers == 0 then
-		return
-	end
-
-	local current = vim.api.nvim_get_current_buf()
-	local index = vim.fn.index(buffers, current)
-	if index == -1 then
-		index = step > 0 and 0 or 2
-	else
-		index = index + 1 + step
-	end
-
-	local target = buffers[((index - 1) % #buffers) + 1]
-	vim.api.nvim_win_set_buf(0, target)
-end
-
 
 
 -- Statusline
@@ -521,12 +498,10 @@ vim.api.nvim_create_autocmd("CmdlineLeave", {
 vim.keymap.set("n", "<leader>w", "<cmd>update<cr>", { desc = "Write" })
 vim.keymap.set("n", "]t", "<cmd>tabnext<cr>", { desc = "Tab next" })
 vim.keymap.set("n", "[t", "<cmd>tabprev<cr>", { desc = "Tab prev" })
-vim.keymap.set("n", "<Tab>", function()
-	cycle_listed_buffer(1)
-end, { desc = "Buffer next" })
-vim.keymap.set("n", "<S-Tab>", function()
-	cycle_listed_buffer(-1)
-end, { desc = "Buffer prev" })
+vim.keymap.set("n", "<C-S-t>", "<cmd>tabnew<cr>", { desc = "New tab" })
+vim.keymap.set("n", "<C-S-w>", "<cmd>tabclose<cr>", { desc = "Close tab" })
+vim.keymap.set("n", "<Tab>", "<cmd>bnext<cr>", { desc = "Buffer next" })
+vim.keymap.set("n", "<S-Tab>", "<cmd>bprev<cr>", { desc = "Buffer prev" })
 vim.keymap.set("n", "<Esc>", "<cmd>noh<cr>", { desc = "Clear highlights" })
 vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 vim.keymap.set("n", "<leader>I", "<cmd>Inspect<cr>", { desc = "Inspect" })
