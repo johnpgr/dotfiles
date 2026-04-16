@@ -1041,6 +1041,12 @@ return {
                 end,
             })
 
+            local vtsls_config = vim.tbl_deep_extend("force", require("vtsls").lspconfig, {
+                cmd = { vim.fs.joinpath(vim.fn.stdpath("data"), "mason", "bin", "vtsls"), "--stdio" },
+            })
+
+            vim.lsp.config("vtsls", vtsls_config)
+
             vim.lsp.enable({
                 "lua_ls",
                 "vtsls",
@@ -1060,8 +1066,6 @@ return {
                 "ols",
                 "asm_lsp",
             })
-
-            require("lspconfig.configs").vtsls = require("vtsls").lspconfig
 
             vim.api.nvim_create_autocmd("LspAttach", {
                 callback = function(args)
@@ -1120,6 +1124,7 @@ return {
 
     {
         "mason-org/mason.nvim",
+        lazy = false,
         cmd = { "Mason", "MasonInstall", "MasonUpdate" },
         build = ":MasonUpdate",
         config = function()
@@ -1645,9 +1650,9 @@ return {
             scope = { enabled = false },
         },
         config = function(_, opts)
-            local hooks = require("ibl.hooks")
-            hooks.register(hooks.type.WHITESPACE, hooks.builtin.hide_first_space_indent_level)
-            hooks.register(hooks.type.WHITESPACE, hooks.builtin.hide_first_tab_indent_level)
+            -- local hooks = require("ibl.hooks")
+            -- hooks.register(hooks.type.WHITESPACE, hooks.builtin.hide_first_space_indent_level)
+            -- hooks.register(hooks.type.WHITESPACE, hooks.builtin.hide_first_tab_indent_level)
             require("ibl").setup(opts)
         end,
     },
@@ -1794,6 +1799,105 @@ return {
                 { desc = "Scroll opencode up" })
             vim.keymap.set("n", "<S-C-d>", function() require("opencode").command("session.half.page.down") end,
                 { desc = "Scroll opencode down" })
+        end,
+    },
+
+    -- Tabby (tabline with tabs + buffers)
+    {
+        "nanozuki/tabby.nvim",
+        lazy = false,
+        config = function()
+            local ignored_tab_name_filetypes = {
+                ["neo-tree"] = true,
+                ["oil"] = true,
+            }
+
+            local function current_tab_buffers(line)
+                local buffers = {}
+                local seen = {}
+
+                for _, win in ipairs(line.wins_in_tab(line.api.get_current_tab()).wins) do
+                    local buf = win.buf()
+                    if not seen[buf.id] and vim.bo[buf.id].buflisted and vim.bo[buf.id].buftype == "" then
+                        seen[buf.id] = true
+                        table.insert(buffers, buf)
+                    end
+                end
+
+                return buffers
+            end
+
+            local theme = {
+                fill = "TabLineFill",
+                current_tab = "TabLineSel",
+                tab = "TabLine",
+                win = "TabLine",
+                tail = "TabLine",
+                current_buf = "TabLineSel",
+                buf = "TabLine",
+            }
+
+            require("tabby").setup({
+                line = function(line)
+                    local current_buf = vim.api.nvim_get_current_buf()
+                    return {
+                        line.tabs().foreach(function(tab)
+                            local hl = tab.is_current() and theme.current_tab or theme.tab
+                            return {
+                                line.sep(" ", hl, theme.fill),
+                                tab.name(),
+                                tab.close_btn("x"),
+                                line.sep(" ", hl, theme.fill),
+                                hl = hl,
+                                margin = " ",
+                            }
+                        end),
+                        line.spacer(),
+                        vim.tbl_map(function(buf)
+                            local hl = buf.id == current_buf and theme.current_buf or theme.buf
+                            local name = buf.name()
+                            if buf.is_changed() then
+                                name = name .. "[+]"
+                            end
+                            return {
+                                line.sep(" ", hl, theme.fill),
+                                buf.id == current_buf and "*" or " ",
+                                name,
+                                line.sep(" ", hl, theme.fill),
+                                click = { "to_buf", buf.id },
+                                hl = hl,
+                                margin = " ",
+                            }
+                        end, current_tab_buffers(line)),
+                        hl = theme.fill,
+                    }
+                end,
+                option = {
+                    buf_name = {
+                        mode = "tail",
+                        name_fallback = function()
+                            return "[No Name]"
+                        end,
+                    },
+                    tab_name = {
+                        name_fallback = function(tabid)
+                            local wins = require("tabby.module.api").get_tab_wins(tabid)
+                            for _, win in ipairs(wins) do
+                                local buf = vim.api.nvim_win_get_buf(win)
+                                local filetype = vim.bo[buf].filetype
+                                if vim.bo[buf].buftype == "" and not ignored_tab_name_filetypes[filetype] then
+                                    local name = vim.api.nvim_buf_get_name(buf)
+                                    if name ~= "" then
+                                        return vim.fn.fnamemodify(name, ":t")
+                                    end
+                                    return "[No Name]"
+                                end
+                            end
+                            return "Tab"
+                        end,
+                    },
+                },
+            })
         end,
     }
 }

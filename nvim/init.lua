@@ -1,4 +1,4 @@
-vim.g.emacs_tab = true
+vim.g.emacs_tab = false
 vim.g.treesitter_enabled = true
 vim.g.icons_enabled = false
 vim.g.c_syntax_for_h = true
@@ -21,7 +21,7 @@ vim.o.list = false
 vim.o.splitbelow = true
 vim.o.splitright = true
 vim.o.signcolumn = "no"
-vim.o.foldcolumn = "0"
+vim.o.foldcolumn = "1"
 vim.o.mouse = "nv"
 vim.o.breakindent = true
 vim.o.smartindent = true
@@ -31,6 +31,7 @@ vim.o.updatetime = 200
 vim.o.undofile = true
 vim.o.exrc = true
 vim.o.secure = true
+vim.o.cmdheight = 0
 vim.o.spelllang = "en,pt_br"
 vim.opt.clipboard = "unnamedplus"
 
@@ -126,6 +127,14 @@ local function apply_colorscheme_overrides()
 	vim.api.nvim_set_hl(0, "CursorLineFold", { link = "CursorLine" })
 	vim.api.nvim_set_hl(0, "WinSeparator", { link = "Conceal" })
 	vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal" })
+	vim.api.nvim_set_hl(0, "MsgArea", {
+		fg = normal_hl.fg,
+		bg = cursorline_hl.bg,
+	})
+	vim.api.nvim_set_hl(0, "MsgSeparator", {
+		fg = normal_hl.fg,
+		bg = cursorline_hl.bg,
+	})
 
 	for _, group in ipairs({
 		"@number",
@@ -435,48 +444,7 @@ local function cycle_listed_buffer(step)
 	vim.api.nvim_win_set_buf(0, target)
 end
 
-local function tabline_label(bufnr)
-	local name = vim.api.nvim_buf_get_name(bufnr)
-	if name == "" then
-		name = "[No Name]"
-	else
-		name = vim.fn.fnamemodify(name, ":t")
-	end
 
-	if vim.bo[bufnr].modified then
-		name = name .. "[+]"
-	end
-
-	return name
-end
-
-function _G.tabline_click(bufnr, _, button)
-	if button ~= "l" then
-		return
-	end
-	if not vim.api.nvim_buf_is_valid(bufnr) or not vim.bo[bufnr].buflisted then
-		return
-	end
-	vim.api.nvim_win_set_buf(0, bufnr)
-end
-
-function _G.tabline()
-	local current = vim.api.nvim_get_current_buf()
-	local parts = {}
-
-	for _, bufnr in ipairs(listed_buffers()) do
-		local hl = bufnr == current and "%#TabLineSel#" or "%#TabLine#"
-		table.insert(parts, hl)
-		table.insert(parts, "%" .. bufnr .. "@v:lua.tabline_click@")
-		table.insert(parts, " ")
-		table.insert(parts, tabline_label(bufnr))
-		table.insert(parts, " ")
-		table.insert(parts, "%T")
-	end
-
-	table.insert(parts, "%#TabLineFill#%=")
-	return table.concat(parts)
-end
 
 -- Statusline
 local function lsp_status()
@@ -512,7 +480,6 @@ end
 
 vim.o.statusline = "%{%v:lua._G.statusline()%}"
 vim.o.showtabline = 2
-vim.o.tabline = "%!v:lua._G.tabline()"
 
 -- CMDLINE AUTOCOMPLETION (see :h cmdline-autocompletion)
 
@@ -1718,15 +1685,15 @@ if is_neovide then
 	end, { desc = "Decrease Neovide scale factor" })
 
 	if vim.g.neovide then
-		vim.keymap.set("v", "<C-S-c>", '"+y') -- Copy
-		vim.keymap.set("n", "<C-S-v>", '"+P') -- Paste normal mode
-		vim.keymap.set("v", "<C-S-v>", '"+P') -- Paste visual mode
-		vim.keymap.set("c", "<C-S-v>", "<C-R>+") -- Paste command mode
-		vim.keymap.set("i", "<C-S-v>", '<ESC>l"+Pli') -- Paste insert mode
-	end
+		local function paste_clipboard()
+			-- Terminal-mode Ctrl-R is interpreted by the terminal, so use Neovim's paste API instead.
+			vim.api.nvim_paste(vim.fn.getreg("+"), true, -1)
+		end
 
-	vim.api.nvim_set_keymap("", "<C-S-v>", "+p<CR>", { noremap = true, silent = true })
-	vim.api.nvim_set_keymap("!", "<C-S-v>", "<C-R>+", { noremap = true, silent = true })
-	vim.api.nvim_set_keymap("t", "<C-S-v>", "<C-R>+", { noremap = true, silent = true })
-	vim.api.nvim_set_keymap("v", "<C-S-v>", "<C-R>+", { noremap = true, silent = true })
+		vim.keymap.set("v", "<C-S-c>", '"+y', { desc = "Copy clipboard" })
+		vim.keymap.set("n", "<C-S-v>", '"+P', { desc = "Paste clipboard" })
+		vim.keymap.set("v", "<C-S-v>", '"+P', { desc = "Paste clipboard" })
+		vim.keymap.set("c", "<C-S-v>", "<C-R>+", { desc = "Paste clipboard" })
+		vim.keymap.set({ "i", "t" }, "<C-S-v>", paste_clipboard, { desc = "Paste clipboard" })
+	end
 end
