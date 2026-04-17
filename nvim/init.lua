@@ -1,6 +1,6 @@
 vim.g.emacs_tab = false
 vim.g.treesitter_enabled = true
-vim.g.icons_enabled = false
+vim.g.icons_enabled = true
 vim.g.c_syntax_for_h = true
 vim.g.mapleader = " "
 vim.g.loaded_netrw = 1
@@ -39,10 +39,11 @@ vim.o.secure = true
 vim.o.cmdheight = 0
 vim.o.spelllang = "en,pt_br"
 vim.opt.clipboard = "unnamedplus"
-
-vim.treesitter.language.register("c", "cpp")
 vim.opt.diffopt:append("linematch:60")
+vim.treesitter.language.register("c", "cpp")
 vim.o.fillchars = [[eob: ,fold: ,foldopen:,foldsep: ,foldclose:]]
+
+require "vim._core.ui2".enable {}
 
 local is_neovide = vim.g.neovide ~= nil
 
@@ -52,7 +53,6 @@ if vim.fn.has("mac") == 1 and not vim.env.SDKROOT and vim.fn.executable("xcrun")
 		vim.env.SDKROOT = sdkroot
 	end
 end
-
 
 local editorconfig = [[
 # EditorConfig is awesome: https://editorconfig.org
@@ -92,7 +92,7 @@ indent_size = 2
 
 local function apply_colorscheme_overrides()
 	local normal_hl = vim.api.nvim_get_hl(0, { name = "Normal" })
-    local cursorline_hl = vim.api.nvim_get_hl(0, { name = "CursorLine" })
+	local cursorline_hl = vim.api.nvim_get_hl(0, { name = "CursorLine" })
 	local conceal_hl = vim.api.nvim_get_hl(0, { name = "Conceal" })
 	local hint_hl = vim.api.nvim_get_hl(0, { name = "DiagnosticHint" })
 	local warn_hl = vim.api.nvim_get_hl(0, { name = "DiagnosticWarn" })
@@ -420,8 +420,6 @@ local ignored_ls = {
 	"opencode",
 	"copilot",
 }
-
-
 
 -- Statusline
 local function lsp_status()
@@ -797,7 +795,11 @@ function _G.get_oil_winbar()
 		result = vim.api.nvim_buf_get_name(bufnr)
 	end
 
-	return result
+    if vim.o.foldcolumn == "0" then
+        return result
+    else
+        return "  " .. result
+    end
 end
 
 local uv = vim.uv or vim.loop
