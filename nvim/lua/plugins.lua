@@ -5,6 +5,7 @@ local term = os.getenv("TERM")
 local is_kitty = term == "xterm-kitty" or term == "xterm-ghostty" or term == "wezterm"
 local image_enabled = is_kitty and #vim.api.nvim_list_uis() > 0
 local is_neovide = vim.g.neovide ~= nil
+local is_windows = vim.fn.has("win32") == 1
 
 return {
 	{ "rktjmp/lush.nvim", lazy = false },
