@@ -36,7 +36,7 @@ vim.o.updatetime = 200
 vim.o.undofile = true
 vim.o.exrc = true
 vim.o.secure = true
-vim.o.cmdheight = 0
+vim.o.cmdheight = 1
 vim.o.spelllang = "en,pt_br"
 vim.opt.clipboard = "unnamedplus"
 vim.opt.diffopt:append("linematch:60")
@@ -142,10 +142,11 @@ local function apply_colorscheme_overrides()
     )
     vim.api.nvim_set_hl(0, "Visual", { reverse = true })
     vim.api.nvim_set_hl(0, "VisualNOS", { reverse = true })
-
     vim.api.nvim_set_hl(0, "CursorLineFold", { link = "CursorLine" })
     vim.api.nvim_set_hl(0, "WinSeparator", { link = "Conceal" })
     vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal" })
+	vim.api.nvim_set_hl(0, "StatusLine", { link = "Normal" })
+	vim.api.nvim_set_hl(0, "StatusLineNC", { link = "Normal" })
     vim.api.nvim_set_hl(0, "MsgArea", {
         fg = normal_hl.fg,
         bg = cursorline_hl.bg,
@@ -456,15 +457,20 @@ local function lsp_status()
     return "[" .. table.concat(names, ", ") .. "]"
 end
 
+local function tab_status()
+	return string.format("[%d/%d]", vim.fn.tabpagenr(), vim.fn.tabpagenr("$"))
+end
+
 function _G.statusline()
-    return table.concat({
-        "%f",
-        "%h%w%m%r",
-        "%=",
-        lsp_status(),
-        " %-14(%l,%c%V%)",
-        "%P",
-    }, " ")
+	return table.concat({
+		"%f",
+		"%h%w%m%r",
+		"%=",
+		tab_status(),
+		lsp_status(),
+		" %-14(%l,%c%V%)",
+		"%P",
+	}, " ")
 end
 
 vim.o.statusline = "%{%v:lua._G.statusline()%}"
@@ -685,11 +691,10 @@ vim.keymap.set("n", "[e", function()
 end, { desc = "Previous error" })
 
 vim.keymap.set("n", "<leader>m", function()
-    vim.print("test")
-    if vim.bo.filetype == "oil" then
-        vim.g.compilation_directory = require("oil").get_current_dir()
-    end
-    require("compile-mode").compile()
+	if vim.bo.filetype == "oil" then
+		vim.g.compilation_directory = require("oil").get_current_dir()
+	end
+	require("compile-mode").compile()
 end, { desc = "Compile" })
 
 vim.keymap.set("n", "<leader>M", function()
