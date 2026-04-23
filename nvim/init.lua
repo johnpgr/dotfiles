@@ -147,14 +147,6 @@ local function apply_colorscheme_overrides()
     vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal" })
 	vim.api.nvim_set_hl(0, "StatusLine", { link = "Normal" })
 	vim.api.nvim_set_hl(0, "StatusLineNC", { link = "Normal" })
-    vim.api.nvim_set_hl(0, "MsgArea", {
-        fg = normal_hl.fg,
-        bg = cursorline_hl.bg,
-    })
-    vim.api.nvim_set_hl(0, "MsgSeparator", {
-        fg = normal_hl.fg,
-        bg = cursorline_hl.bg,
-    })
 
     for _, group in ipairs({
         "@number",
@@ -458,18 +450,58 @@ local function lsp_status()
 end
 
 local function tab_status()
-	return string.format("[%d/%d]", vim.fn.tabpagenr(), vim.fn.tabpagenr("$"))
+	return string.format("tab: %d/%d", vim.fn.tabpagenr(), vim.fn.tabpagenr("$"))
+end
+
+local function file_status()
+	local path = vim.api.nvim_buf_get_name(0)
+	if path == "" then
+		return "[No Name]"
+	end
+
+	return vim.fn.fnamemodify(path, ":."):gsub("%%", "%%%%")
+end
+
+local function file_encoding_status()
+	local encoding = vim.bo.fenc ~= "" and vim.bo.fenc or vim.o.enc
+	return string.lower(encoding)
+end
+
+local mode_labels = {
+    n = "NORMAL",
+    no = "NORMAL",
+    v = "VISUAL",
+    V = "V-LINE",
+    ["\22"] = "V-BLOCK",
+    s = "SELECT",
+    S = "S-LINE",
+    i = "INSERT",
+    ic = "INSERT",
+    R = "REPLACE",
+    Rv = "V-REPLACE",
+    c = "COMMAND",
+    r = "PROMPT",
+    t = "TERMINAL",
+}
+
+local function mode_status()
+	local mode = vim.api.nvim_get_mode().mode
+
+	return mode_labels[mode] or string.upper(mode)
 end
 
 function _G.statusline()
 	return table.concat({
-		"%f",
+		"%<",
+		file_status(),
 		"%h%w%m%r",
-		"%=",
-		tab_status(),
 		lsp_status(),
-		" %-14(%l,%c%V%)",
-		"%P",
+		"%=",
+        file_encoding_status(),
+		tab_status(),
+		"col: %c",
+		"ln: %l/%L",
+		mode_status(),
 	}, " ")
 end
 
@@ -1621,7 +1653,7 @@ vim.keymap.set("n", "<leader>sc", function()
 end, { desc = "Search colorscheme" })
 vim.keymap.set("n", "<leader><space>", function()
     pick_files_fff()
-end, { desc = "Find file (fff)" })
+end, { desc = "Find file" })
 vim.keymap.set("n", "<leader>so", function()
     pick_vim_options()
 end, { desc = "Search option" })
@@ -1642,7 +1674,7 @@ vim.keymap.set("n", "<leader>,", function()
 end, { desc = "Buffers" })
 vim.keymap.set("n", "<leader>/", function()
     pick_grep_fff()
-end, { desc = "Grep (fff)" })
+end, { desc = "Grep" })
 vim.keymap.set("n", "<leader>sb", function()
     live_grep_current_buffer()
 end, { desc = "Search buffer" })
@@ -1664,7 +1696,7 @@ end, { desc = "Go to references" })
 
 if is_neovide then
     vim.o.guifont = "Liberation Mono:h14"
-    vim.g.neovide_scale_factor = 1.0
+    vim.g.neovide_scale_factor = 0.9
     vim.g.neovide_refresh_rate = 165
     vim.g.neovide_opacity = 1.0
     vim.g.neovide_normal_opacity = 1.0

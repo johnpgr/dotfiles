@@ -1542,10 +1542,10 @@ return {
 				columns = columns,
 				skip_confirm_for_simple_edits = true,
 				view_options = {
-					show_hidden = false,
-					is_always_hidden = function(name, _)
-						return name == ".." or name == "../"
-					end,
+					show_hidden = true,
+					-- is_always_hidden = function(name, _)
+					-- 	return name == ".." or name == "../"
+					-- end,
 				},
 				keymaps = {
 					["q"] = "actions.close",
