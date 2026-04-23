@@ -1616,51 +1616,57 @@ return {
 		build = ":TSUpdate",
 		config = function()
 			local nvim_treesitter = require("nvim-treesitter")
-			local nvim_treesitter_configs = require("nvim-treesitter.configs")
 			local treesitter_dir = vim.fs.normalize(vim.fn.stdpath("data") .. "/lazy/nvim-treesitter")
+			local treesitter_languages = {
+				"asm",
+				"astro",
+				"bash",
+				"c",
+				"cpp",
+				"css",
+				"dart",
+				"git_config",
+				"git_rebase",
+				"gitcommit",
+				"glsl",
+				"html",
+				"java",
+				"javascript",
+				"json",
+				"kotlin",
+				"lua",
+				"markdown",
+				"markdown_inline",
+				"odin",
+				"python",
+				"query",
+				"rust",
+				"sql",
+				"tsx",
+				"typescript",
+				"vim",
+				"vimdoc",
+				"zig",
+			}
 
 			if vim.fn.isdirectory(treesitter_dir) == 1 then
 				vim.opt.rtp:remove(treesitter_dir)
 				vim.opt.rtp:append(treesitter_dir)
 			end
 
-			-- Use pre-compiled binaries instead of building from source
-			require("nvim-treesitter.install").prefer_git = false
 			nvim_treesitter.setup()
-			---@diagnostic disable-next-line: missing-fields
-			nvim_treesitter_configs.setup({
-				ensure_installed = {
-					"asm",
-					"astro",
-					"bash",
-					"c",
-					"cpp",
-					"css",
-					"dart",
-					"git_config",
-					"git_rebase",
-					"gitcommit",
-					"glsl",
-					"html",
-					"java",
-					"javascript",
-					"json",
-					"kotlin",
-					"lua",
-					"markdown",
-					"markdown_inline",
-					"odin",
-					"python",
-					"query",
-					"rust",
-					"sql",
-					"tsx",
-					"typescript",
-					"vim",
-					"vimdoc",
-					"zig",
-				},
-			})
+			local installed_languages = {}
+			for _, lang in ipairs(nvim_treesitter.get_installed()) do
+				installed_languages[lang] = true
+			end
+
+			local missing_languages = vim.tbl_filter(function(lang)
+				return not installed_languages[lang]
+			end, treesitter_languages)
+
+			if #missing_languages > 0 then
+				nvim_treesitter.install(missing_languages)
+			end
 
 			local function is_large_buffer(bufnr)
 				local bufname = vim.api.nvim_buf_get_name(bufnr)
