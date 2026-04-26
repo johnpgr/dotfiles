@@ -1674,8 +1674,9 @@ return {
 
 			nvim_treesitter.setup()
 			local installed_languages = {}
-			for _, lang in ipairs(require("nvim-treesitter.info").installed_parsers()) do
-				installed_languages[lang] = true
+			local ext = vim.fn.has("win32") == 1 and "*.dll" or "*.so"
+			for _, file in ipairs(vim.api.nvim_get_runtime_file("parser/" .. ext, true)) do
+				installed_languages[vim.fn.fnamemodify(file, ":t:r")] = true
 			end
 
 			local missing_languages = vim.tbl_filter(function(lang)
@@ -1912,7 +1913,7 @@ return {
 	{
 		"ejrichards/mise.nvim",
 		lazy = false,
-		enabled = is_neovide,
+		enabled = is_neovide and not is_windows,
 		opts = {},
 	},
 	{

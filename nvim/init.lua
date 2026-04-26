@@ -1701,13 +1701,10 @@ vim.keymap.set("n", "gr", function()
 end, { desc = "Go to references" })
 
 if is_neovide then
-	vim.o.guifont = "FiraMono Nerd Font:h14"
-	-- vim.g.neovide_scale_factor = 0.9
+	vim.o.guifont = "FiraMono Nerd Font:h12"
 	vim.g.neovide_refresh_rate = 165
 	vim.g.neovide_opacity = 1.0
 	vim.g.neovide_normal_opacity = 1.0
-	vim.g.neovide_text_gamma = 1.0
-	vim.g.neovide_text_contrast = 0.1
 	vim.g.neovide_floating_shadow = false
 
 	vim.keymap.set("n", "<C-=>", function()
