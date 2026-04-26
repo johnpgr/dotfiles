@@ -10,6 +10,7 @@ local is_windows = vim.fn.has("win32") == 1
 return {
 	{ "rktjmp/lush.nvim", lazy = false },
 	{ "fenetikm/falcon", lazy = false },
+    { "embark-theme/vim", name = "embark-theme", lazy = false },
 	{
 		"https://github.com/sainnhe/everforest",
 		config = function()
@@ -373,6 +374,22 @@ return {
 		cmd = { "Compile", "Recompile" },
 		config = function()
 			local compile_mode = require("compile-mode")
+			local compile_mode_group = vim.api.nvim_create_augroup("CompileModeConfig", { clear = true })
+
+			vim.api.nvim_create_autocmd("FileType", {
+				group = compile_mode_group,
+				pattern = "compilation",
+				callback = function(args)
+					vim.bo[args.buf].buflisted = false
+				end,
+			})
+
+			for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+				if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].filetype == "compilation" then
+					vim.bo[buf].buflisted = false
+				end
+			end
+
 			vim.g.compile_mode = {
 				default_command = "",
 				input_word_completion = true,
@@ -577,6 +594,7 @@ return {
 					c = { "clang-format", stop_after_first = true, lsp_format = "fallback" },
 					cpp = { "clang-format", stop_after_first = true, lsp_format = "fallback" },
 					odin = { lsp_format = "fallback" },
+					zig = { lsp_format = "fallback" },
 				},
 			})
 		end,
@@ -1656,7 +1674,7 @@ return {
 
 			nvim_treesitter.setup()
 			local installed_languages = {}
-			for _, lang in ipairs(nvim_treesitter.get_installed()) do
+			for _, lang in ipairs(require("nvim-treesitter.info").installed_parsers()) do
 				installed_languages[lang] = true
 			end
 
@@ -1752,6 +1770,7 @@ return {
 	-- Folding
 	{
 		"kevinhwang91/nvim-ufo",
+        enabled = false,
 		dependencies = {
 			"kevinhwang91/promise-async",
 		},
@@ -1767,6 +1786,7 @@ return {
 	{ "kevinhwang91/promise-async", lazy = true },
 	{
 		"luukvbaal/statuscol.nvim",
+        enabled = false,
 		lazy = false,
 		config = function()
 			local builtin = require("statuscol.builtin")
@@ -1866,6 +1886,7 @@ return {
 	{ "dgagn/diagflow.nvim", opts = {}, event = "BufRead" },
 	{
 		"lukas-reineke/indent-blankline.nvim",
+        enabled = false,
 		event = "BufRead",
 		main = "ibl",
 		keys = {
@@ -1878,7 +1899,7 @@ return {
 		---@module "ibl"
 		---@type ibl.config
 		opts = {
-			indent = { char = "│", highlight = "Conceal" },
+			indent = { char = "│", highlight = "Comment" },
 			scope = { enabled = false },
 		},
 		config = function(_, opts)
@@ -2077,10 +2098,14 @@ return {
 				buf = "TabLine",
 			}
 
+			local function is_tabline_buffer(buf)
+				return vim.bo[buf.id].filetype ~= "compilation"
+			end
+
 			require("tabby").setup({
 				line = function(line)
 					return {
-						line.bufs().foreach(function(buf)
+						line.bufs().filter(is_tabline_buffer).foreach(function(buf)
 							local hl = buf.is_current() and theme.current_buf or theme.buf
 							local name = buf.name()
 							if buf.is_changed() then
@@ -2107,6 +2132,82 @@ return {
 					},
 				},
 			})
+		end,
+	},
+
+	-- Toggleterm
+	{
+		"akinsho/toggleterm.nvim",
+		version = "*",
+		keys = {
+			{ "<leader>tv", desc = "Toggle vertical terminal" },
+			{ "<leader>th", desc = "Toggle horizontal terminal" },
+			{ "<leader>tf", desc = "Toggle floating terminal" },
+			{ "<leader>tt", desc = "Toggle terminal (default)" },
+		},
+		config = function()
+			local toggleterm = require("toggleterm")
+			local Terminal = require("toggleterm.terminal").Terminal
+
+			toggleterm.setup({
+				size = function(term)
+					if term.direction == "horizontal" then
+						return 15
+					elseif term.direction == "vertical" then
+						return vim.o.columns * 0.4
+					end
+				end,
+				open_mapping = [[<leader>tt]],
+				hide_numbers = true,
+				shade_terminals = false,
+				start_in_insert = true,
+				insert_mappings = false,
+				terminal_mappings = true,
+				persist_size = true,
+				persist_mode = false,
+				direction = "horizontal",
+				close_on_exit = true,
+				shell = vim.o.shell,
+				float_opts = {
+					border = "single",
+					width = function()
+						return math.floor(vim.o.columns * 0.8)
+					end,
+					height = function()
+						return math.floor(vim.o.lines * 0.8)
+					end,
+				},
+			})
+
+			local vertical_term = Terminal:new({
+				direction = "vertical",
+			})
+
+			local horizontal_term = Terminal:new({
+				direction = "horizontal",
+			})
+
+			local float_term = Terminal:new({
+				direction = "float",
+			})
+
+			vim.keymap.set("n", "<leader>tv", function()
+				vertical_term:toggle()
+			end, { desc = "Toggle vertical terminal" })
+
+			vim.keymap.set("n", "<leader>th", function()
+				horizontal_term:toggle()
+			end, { desc = "Toggle horizontal terminal" })
+
+			vim.keymap.set("n", "<leader>tf", function()
+				float_term:toggle()
+			end, { desc = "Toggle floating terminal" })
+
+			-- Terminal mode navigation (consistent with window nav)
+			vim.keymap.set("t", "<C-h>", [[<Cmd>wincmd h<CR>]], { desc = "Focus left" })
+			vim.keymap.set("t", "<C-j>", [[<Cmd>wincmd j<CR>]], { desc = "Focus down" })
+			vim.keymap.set("t", "<C-k>", [[<Cmd>wincmd k<CR>]], { desc = "Focus up" })
+			vim.keymap.set("t", "<C-l>", [[<Cmd>wincmd l<CR>]], { desc = "Focus right" })
 		end,
 	},
 }
