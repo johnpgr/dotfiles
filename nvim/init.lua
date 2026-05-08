@@ -1065,9 +1065,25 @@ local function file_items_from_fff(result)
 	local out = {}
 
 	for _, item in ipairs(items) do
-		local text = item.relative_path or item.path or tostring(item)
-		local path = item.path or text
-		table.insert(out, { text = text, path = path })
+		local path
+		if type(item) == "table" then
+			path = item.path or item.relative_path or item.relativePath
+			if not path and type(item.file) == "table" then
+				path = item.file.path or item.file.relative_path or item.file.relativePath or item.file.name
+			elseif not path and type(item.file) == "string" then
+				path = item.file
+			end
+		else
+			path = tostring(item)
+		end
+
+		if path then
+			local text = path
+			if type(item) == "table" then
+				text = item.relative_path or item.relativePath or path
+			end
+			table.insert(out, { text = text, path = path })
+		end
 	end
 
 	return out
@@ -1078,17 +1094,48 @@ local function grep_items_from_fff(result)
 	local out = {}
 
 	for _, item in ipairs(items) do
-		local path = item.path or item.file or ""
-		local lnum = tonumber(item.line_number or item.lnum or item.line or 1) or 1
-		local col = tonumber(item.col or item.column or 1) or 1
-		local text = vim.trim(item.text or item.content or item.line_content or "")
-		local filename = vim.fn.fnamemodify(path, ":t")
-		table.insert(out, {
-			text = string.format("%s:%d:%d: %s", filename, lnum, col, text),
-			path = path,
-			lnum = lnum,
-			col = col,
-		})
+		if type(item) == "table" then
+			local path = item.path or item.relative_path or item.relativePath
+			if not path and type(item.file) == "table" then
+				path = item.file.path or item.file.relative_path or item.file.relativePath or item.file.name
+			elseif not path and type(item.file) == "string" then
+				path = item.file
+			end
+
+			if path then
+				local lnum = tonumber(item.line_number or item.lineNumber or item.lnum or item.line or 1) or 1
+				local col
+				if item.col ~= nil then
+					col = tonumber(item.col)
+					if col then
+						col = col + 1
+					end
+				else
+					col = tonumber(item.column or item.column_number or item.columnNumber)
+				end
+				if not col and type(item.match_ranges) == "table" and type(item.match_ranges[1]) == "table" then
+					col = tonumber(item.match_ranges[1][1])
+					if col then
+						col = col + 1
+					end
+				end
+				if not col and type(item.matchRanges) == "table" and type(item.matchRanges[1]) == "table" then
+					col = tonumber(item.matchRanges[1][1])
+					if col then
+						col = col + 1
+					end
+				end
+				col = col or 1
+
+				local text = vim.trim(item.text or item.content or item.line_content or item.lineContent or "")
+				table.insert(out, {
+					text = string.format("%s:%d:%d: %s", path, lnum, col, text),
+					path = path,
+					lnum = lnum,
+					col = col,
+				})
+			end
+		end
 	end
 
 	return out
