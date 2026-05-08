@@ -946,6 +946,59 @@ local function picker_window(label, window)
 	}, window or {})
 end
 
+local function picker_item_to_qf(item)
+	if type(item) ~= "table" then
+		return nil
+	end
+
+	local qf_item = {
+		lnum = item.lnum or 1,
+		col = item.col or 1,
+		text = item.text or item.path or item.filename or "",
+	}
+	if item.bufnr then
+		qf_item.bufnr = item.bufnr
+	elseif item.path then
+		qf_item.filename = item.path
+	elseif item.filename then
+		qf_item.filename = item.filename
+	else
+		return nil
+	end
+
+	return qf_item
+end
+
+local function add_picker_matches_to_qflist()
+	local matches = mini_pick().get_picker_matches()
+	local items = matches and matches.all or {}
+	local qf_items = {}
+
+	for _, item in ipairs(items) do
+		local qf_item = picker_item_to_qf(item)
+		if qf_item then
+			table.insert(qf_items, qf_item)
+		end
+	end
+
+	vim.fn.setqflist(qf_items, "r")
+	if #qf_items > 0 then
+		vim.schedule(function()
+			vim.cmd("copen")
+		end)
+	end
+	return true
+end
+
+local function picker_mappings(mappings)
+	return vim.tbl_deep_extend("force", mappings or {}, {
+		qflist = {
+			char = vim.api.nvim_replace_termcodes("<C-q>", true, true, true),
+			func = add_picker_matches_to_qflist,
+		},
+	})
+end
+
 local function pick_start(opts)
 	local choice = mini_pick().start({
 		source = {
@@ -957,7 +1010,7 @@ local function pick_start(opts)
 			choose = opts.choose,
 			choose_marked = opts.choose_marked,
 		},
-		mappings = opts.mappings,
+		mappings = picker_mappings(opts.mappings),
 		options = opts.options,
 		window = picker_window(opts.prompt, opts.window),
 	})
@@ -1445,8 +1498,19 @@ local function open_command_picker()
 end
 
 local function open_buffer_picker()
-	mini_pick().builtin.buffers(nil, {
-		window = picker_window("Buffers"),
+	local items = {}
+	local buffers_output = vim.api.nvim_exec("buffers", true)
+	for _, line in ipairs(vim.split(buffers_output, "\n")) do
+		local buf_str, name = line:match("^%s*(%d+)"), line:match('"(.*)"')
+		local bufnr = tonumber(buf_str)
+		if bufnr then
+			table.insert(items, { text = name, bufnr = bufnr })
+		end
+	end
+
+	pick_start({
+		items = items,
+		prompt = "Buffers",
 	})
 end
 
