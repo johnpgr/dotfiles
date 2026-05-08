@@ -1,4 +1,4 @@
-vim.g.emacs_tab = true
+vim.g.emacs_tab = false
 vim.g.treesitter_enabled = true
 vim.g.icons_enabled = true
 vim.g.c_syntax_for_h = true
@@ -115,19 +115,6 @@ local function apply_colorscheme_overrides()
 	local muted_color = (conceal_hl and conceal_hl.fg)
 	local accent_color = (hint_hl and hint_hl.fg) or (warn_hl and warn_hl.fg) or muted_color
 
-	vim.api.nvim_set_hl(0, "TabLineFill", {
-		fg = normal_hl.fg,
-		bg = cursorline_hl.bg,
-	})
-	vim.api.nvim_set_hl(0, "TabLine", {
-		fg = normal_hl.fg,
-		bg = cursorline_hl.bg,
-	})
-	vim.api.nvim_set_hl(0, "TabLineSel", {
-		fg = warn_hl.fg,
-		bg = cursorline_hl.bg,
-		bold = true,
-	})
 	vim.api.nvim_set_hl(
 		0,
 		"MatchParen",
@@ -147,6 +134,8 @@ local function apply_colorscheme_overrides()
 	vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal" })
 	vim.api.nvim_set_hl(0, "StatusLine", { link = "Normal" })
 	vim.api.nvim_set_hl(0, "StatusLineNC", { link = "Normal" })
+
+	vim.api.nvim_set_hl(0, "@function", { link = "@function.call" })
 
 	for _, group in ipairs({
 		"@number",
@@ -1000,7 +989,7 @@ local function pick_dynamic(opts)
 			items = {}
 		end
 
-		MiniPick.set_picker_items(items or {}, { querytick = querytick })
+		MiniPick.set_picker_items(items or {}, { querytick = querytick, do_match = false })
 	end
 
 	vim.api.nvim_create_autocmd("User", {
