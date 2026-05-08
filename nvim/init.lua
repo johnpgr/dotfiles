@@ -1082,6 +1082,7 @@ local function file_items_from_fff(result)
 			if type(item) == "table" then
 				text = item.relative_path or item.relativePath or path
 			end
+			text = vim.fn.fnamemodify(text, ":.")
 			table.insert(out, { text = text, path = path })
 		end
 	end
@@ -1128,8 +1129,9 @@ local function grep_items_from_fff(result)
 				col = col or 1
 
 				local text = vim.trim(item.text or item.content or item.line_content or item.lineContent or "")
+				local display_path = vim.fn.fnamemodify(path, ":.")
 				table.insert(out, {
-					text = string.format("%s:%d:%d: %s", path, lnum, col, text),
+					text = string.format("%s:%d:%d: %s", display_path, lnum, col, text),
 					path = path,
 					lnum = lnum,
 					col = col,
