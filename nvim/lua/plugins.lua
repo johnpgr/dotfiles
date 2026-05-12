@@ -1890,7 +1890,7 @@ return {
 	{ "dgagn/diagflow.nvim", opts = {}, event = "BufRead" },
 	{
 		"lukas-reineke/indent-blankline.nvim",
-        enabled = false,
+        enabled = true,
 		event = "BufRead",
 		main = "ibl",
 		keys = {
@@ -1903,7 +1903,7 @@ return {
 		---@module "ibl"
 		---@type ibl.config
 		opts = {
-			indent = { char = "│", highlight = "Comment" },
+			indent = { char = "│" },
 			scope = { enabled = false },
 		},
 		config = function(_, opts)

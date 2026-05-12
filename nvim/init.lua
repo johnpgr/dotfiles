@@ -127,6 +127,8 @@ local function apply_colorscheme_overrides()
 			underdashed = false,
 		})
 	)
+
+    -- Some manual fixing of color tokens
 	vim.api.nvim_set_hl(0, "Visual", { reverse = true })
 	vim.api.nvim_set_hl(0, "VisualNOS", { reverse = true })
 	vim.api.nvim_set_hl(0, "CursorLineFold", { link = "CursorLine" })
@@ -134,9 +136,14 @@ local function apply_colorscheme_overrides()
 	vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal" })
 	vim.api.nvim_set_hl(0, "StatusLine", { link = "Normal" })
 	vim.api.nvim_set_hl(0, "StatusLineNC", { link = "Normal" })
+	vim.api.nvim_set_hl(0, "@function.call", { link = "@function" })
+	vim.api.nvim_set_hl(0, "@function.method", { link = "@function" })
+	vim.api.nvim_set_hl(0, "@function.builtin", { link = "@function" })
+    vim.api.nvim_set_hl(0, "@keyword.function", { link = "@keyword" })
+    vim.api.nvim_set_hl(0, "NeoTreeNormal", { link = "Normal" })
+    vim.api.nvim_set_hl(0, "NeoTreeNormalNC", { link = "Normal" })
 
-	vim.api.nvim_set_hl(0, "@function", { link = "@function.call" })
-
+    -- Making treesitter usable
 	for _, group in ipairs({
 		"@number",
 		"@operator",
@@ -147,6 +154,8 @@ local function apply_colorscheme_overrides()
 		"@variable.parameter",
 		"@property",
 		"@constructor",
+        "@variable.member",
+        "Special",
 	}) do
 		vim.api.nvim_set_hl(0, group, { fg = normal_hl.fg })
 	end
