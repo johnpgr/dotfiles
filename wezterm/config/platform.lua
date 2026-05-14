@@ -5,25 +5,19 @@ local M = {}
 M.is_windows = wezterm.target_triple:find("windows") ~= nil
 
 function M.default_prog()
-	if M.is_windows then
-		return { "pwsh", "-NoLogo" }
-	end
+    if M.is_windows then
+        return { "pwsh", "-NoLogo" }
+    end
 
-	return { "zsh" }
+    return { "zsh" }
 end
 
-function M.configure_unix_domain(config)
-	if M.is_windows then
-		return
-	end
+function M.window_decorations()
+    if M.is_windows then
+        return "INTEGRATED_BUTTONS|RESIZE"
+    end
 
-	config.term = "wezterm"
-	config.unix_domains = {
-		{
-			name = "unix",
-		},
-	}
-	config.default_gui_startup_args = { "connect", "unix" }
+    return "TITLE|RESIZE"
 end
 
 return M
