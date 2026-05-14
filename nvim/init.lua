@@ -140,6 +140,7 @@ local function apply_colorscheme_overrides()
 	vim.api.nvim_set_hl(0, "@function.method", { link = "@function" })
 	vim.api.nvim_set_hl(0, "@function.builtin", { link = "@function" })
     vim.api.nvim_set_hl(0, "@keyword.function", { link = "@keyword" })
+    vim.api.nvim_set_hl(0, "@tag.builtin", { link = "@type.builtin" })
     vim.api.nvim_set_hl(0, "NeoTreeNormal", { link = "Normal" })
     vim.api.nvim_set_hl(0, "NeoTreeNormalNC", { link = "Normal" })
 
@@ -156,6 +157,8 @@ local function apply_colorscheme_overrides()
 		"@constructor",
         "@variable.member",
         "Special",
+        "SpecialChar",
+        "@tag.attribute",
 	}) do
 		vim.api.nvim_set_hl(0, group, { fg = normal_hl.fg })
 	end
