@@ -23,10 +23,10 @@ config.font = regular_font
 config.font_rules = theme.font_rules(regular_font)
 config.max_fps = 165
 config.default_prog = platform.default_prog()
-config.font_size = 12.0
+config.font_size = 10.0
 config.enable_tab_bar = true
-config.hide_tab_bar_if_only_one_tab = false
-config.use_fancy_tab_bar = true
+config.hide_tab_bar_if_only_one_tab = true
+config.use_fancy_tab_bar = false
 config.window_decorations = platform.window_decorations()
 config.freetype_interpreter_version = 40
 config.tab_max_width = 32
@@ -39,8 +39,9 @@ config.colors = theme.tab_bar_colors(theme_mode)
 config.scrollback_lines = 10000
 config.enable_wayland = true
 config.use_ime = false
+config.window_close_confirmation = "AlwaysPrompt"
 -- config.window_background_opacity = 0.5
-config.kde_window_background_blur = true
+-- config.kde_window_background_blur = true
 
 config.window_padding = {
 	left = 0,
@@ -70,6 +71,7 @@ config.keys = {
 	{ key = "9", mods = "CTRL|ALT", action = act.ActivateTab(8) },
 	{ key = "Tab", mods = "CTRL", action = act.ActivateTabRelative(1) },
 	{ key = "Tab", mods = "CTRL|SHIFT", action = act.ActivateTabRelative(-1) },
+	{ key = "z", mods = "ALT", action = act.TogglePaneZoomState },
 }
 
 smart_splits.apply_to_config(config, {

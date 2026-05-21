@@ -1,11 +1,11 @@
-vim.g.emacs_tab = false
+vim.g.emacs_tab = true
 vim.g.treesitter_enabled = true
-vim.g.icons_enabled = true
+vim.g.icons_enabled = false
 vim.g.c_syntax_for_h = true
 vim.g.mapleader = " "
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
-vim.o.cursorline = false
+vim.o.cursorline = true
 vim.o.number = false
 vim.o.relativenumber = false
 vim.o.confirm = true
@@ -106,7 +106,6 @@ indent_size = 2
 
 local function apply_colorscheme_overrides()
 	local normal_hl = vim.api.nvim_get_hl(0, { name = "Normal" })
-	local cursorline_hl = vim.api.nvim_get_hl(0, { name = "CursorLine" })
 	local conceal_hl = vim.api.nvim_get_hl(0, { name = "Conceal" })
 	local hint_hl = vim.api.nvim_get_hl(0, { name = "DiagnosticHint" })
 	local warn_hl = vim.api.nvim_get_hl(0, { name = "DiagnosticWarn" })
@@ -143,6 +142,13 @@ local function apply_colorscheme_overrides()
     vim.api.nvim_set_hl(0, "@tag.builtin", { link = "@type.builtin" })
     vim.api.nvim_set_hl(0, "NeoTreeNormal", { link = "Normal" })
     vim.api.nvim_set_hl(0, "NeoTreeNormalNC", { link = "Normal" })
+    if vim.g.colors_name == "quiet" then
+        vim.api.nvim_set_hl(0, "TabLineSel", { link = "Normal" })
+    end
+
+    if vim.g.colors_name == "photon" then
+        vim.api.nvim_set_hl(0, "Statement", { link = "Constant" })
+    end
 
     -- Making treesitter usable
 	for _, group in ipairs({
@@ -1099,7 +1105,7 @@ end
 local function show_plain_items(buf_id, items)
 	local lines = {}
 	for _, item in ipairs(items) do
-		table.insert(lines, item.text or tostring(item))
+		table.insert(lines, item.display or item.text or tostring(item))
 	end
 
 	vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
@@ -1196,7 +1202,8 @@ local function grep_items_from_fff(result)
 				local text = vim.trim(item.text or item.content or item.line_content or item.lineContent or "")
 				local display_path = vim.fn.fnamemodify(path, ":.")
 				table.insert(out, {
-					text = string.format("%s:%d:%d: %s", display_path, lnum, col, text),
+					text = text,
+					display = string.format("%s:%d:%d: %s", display_path, lnum, col, text),
 					path = path,
 					lnum = lnum,
 					col = col,
@@ -1815,7 +1822,7 @@ vim.keymap.set("n", "gr", function()
 end, { desc = "Go to references" })
 
 if is_neovide then
-	vim.o.guifont = "FiraMono Nerd Font:h12"
+	vim.o.guifont = "GoMono Nerd Font:h10"
 	vim.g.neovide_refresh_rate = 165
 	vim.g.neovide_opacity = 1.0
 	vim.g.neovide_normal_opacity = 1.0
