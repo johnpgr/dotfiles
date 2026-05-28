@@ -8,6 +8,8 @@ local is_neovide = vim.g.neovide ~= nil
 local is_windows = vim.fn.has("win32") == 1
 
 return {
+    { "alligator/accent.vim", lazy = false },
+    { "silentium-theme/silentium.nvim", lazy = false },
 	{ "rktjmp/lush.nvim", lazy = false },
 	{ "fenetikm/falcon", lazy = false },
 	{ "embark-theme/vim", name = "embark-theme", lazy = false },
@@ -1200,6 +1202,40 @@ return {
 			-- })
 
 			-- vim.lsp.config("vtsls", vtsls_config)
+			local global_node_modules = ""
+			if vim.fn.executable("npm") == 1 then
+				global_node_modules = vim.fn.system("npm root -g"):gsub("[\r\n]", "")
+			else
+				global_node_modules = vim.fn.has("win32") == 1
+					and (vim.fn.expand("$APPDATA") .. "/npm/node_modules")
+					or "/usr/local/lib/node_modules"
+			end
+
+			vim.lsp.config("ts_ls", {
+				init_options = {
+					plugins = {
+						{
+							name = "typescript-lit-html-plugin",
+							location = global_node_modules,
+						}
+					}
+				}
+			})
+
+			vim.lsp.config("wc_language_server", {
+				filetypes = {
+					"html",
+					"javascript",
+					"typescript",
+					"javascriptreact",
+					"typescriptreact",
+					"astro",
+					"vue",
+					"svelte",
+					"markdown",
+				}
+			})
+
 
 			vim.lsp.enable({
 				"lua_ls",
@@ -1207,7 +1243,7 @@ return {
 				"clangd",
 				"html",
 				"cssls",
-				"tailwindcss",
+				-- "tailwindcss",
 				"jsonls",
 				"pyright",
 				"zls",
@@ -1222,6 +1258,7 @@ return {
 				"asm_lsp",
 				"ts_ls",
 				"ruff",
+				"wc_language_server",
 			})
 
 			-- vim.api.nvim_create_autocmd("LspAttach", {
@@ -1674,9 +1711,10 @@ return {
 
 			nvim_treesitter.setup()
 			local installed_languages = {}
-			local ext = vim.fn.has("win32") == 1 and "*.dll" or "*.so"
-			for _, file in ipairs(vim.api.nvim_get_runtime_file("parser/" .. ext, true)) do
-				installed_languages[vim.fn.fnamemodify(file, ":t:r")] = true
+			for _, ext in ipairs({ "*.so", "*.dll" }) do
+				for _, file in ipairs(vim.api.nvim_get_runtime_file("parser/" .. ext, true)) do
+					installed_languages[vim.fn.fnamemodify(file, ":t:r")] = true
+				end
 			end
 
 			local missing_languages = vim.tbl_filter(function(lang)
@@ -1767,7 +1805,6 @@ return {
 			end
 		end,
 	},
-
 	-- Folding
 	{
 		"kevinhwang91/nvim-ufo",
@@ -1890,7 +1927,7 @@ return {
 	{ "dgagn/diagflow.nvim", opts = {}, event = "BufRead" },
 	{
 		"lukas-reineke/indent-blankline.nvim",
-		enabled = false,
+		enabled = true,
 		event = "BufRead",
 		main = "ibl",
 		keys = {

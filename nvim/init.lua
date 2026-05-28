@@ -1,11 +1,11 @@
-vim.g.emacs_tab = true
+vim.g.emacs_tab = false
 vim.g.treesitter_enabled = true
-vim.g.icons_enabled = false
+vim.g.icons_enabled = true
 vim.g.c_syntax_for_h = true
 vim.g.mapleader = " "
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
-vim.o.cursorline = true
+vim.o.cursorline = false
 vim.o.number = false
 vim.o.relativenumber = false
 vim.o.confirm = true
@@ -1822,7 +1822,7 @@ vim.keymap.set("n", "gr", function()
 end, { desc = "Go to references" })
 
 if is_neovide then
-	vim.o.guifont = "GoMono Nerd Font:h10"
+	-- vim.o.guifont = "LiterationMono Nerd Font:h10"
 	vim.g.neovide_refresh_rate = 165
 	vim.g.neovide_opacity = 1.0
 	vim.g.neovide_normal_opacity = 1.0
