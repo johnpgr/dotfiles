@@ -3,11 +3,11 @@ local wezterm = require("wezterm")
 local M = {}
 
 M.theme_mode_file = wezterm.home_dir .. "/.dotfiles/.theme_state"
-M.dark_color_scheme = "Afterglow"
+M.dark_color_scheme = "3024 (base16)"
 M.light_color_scheme = "3024 Day"
 
 function M.regular_font()
-	return wezterm.font("Liberation Mono", { weight = "Regular", italic = false })
+	return wezterm.font("Comic Code", { weight = "Regular", italic = false })
 end
 
 function M.font_rules(font)
@@ -113,7 +113,7 @@ function M.tab_bar_colors(mode)
 
 	return {
 		tab_bar = {
-			background = "#11151b",
+			background = "#202020",
 			active_tab = {
 				bg_color = "#1c222b",
 				fg_color = "#e9f1ff",

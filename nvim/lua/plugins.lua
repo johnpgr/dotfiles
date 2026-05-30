@@ -8,9 +8,13 @@ local is_neovide = vim.g.neovide ~= nil
 local is_windows = vim.fn.has("win32") == 1
 
 return {
+    { "farmergreg/vim-lastplace", lazy = false },
+    { "alligator/accent.vim", lazy = false },
+    { "silentium-theme/silentium.nvim", lazy = false },
 	{ "rktjmp/lush.nvim", lazy = false },
 	{ "fenetikm/falcon", lazy = false },
-    { "embark-theme/vim", name = "embark-theme", lazy = false },
+	{ "embark-theme/vim", name = "embark-theme", lazy = false },
+	{ "axvr/photon.vim", lazy = false },
 	{
 		"https://github.com/sainnhe/everforest",
 		config = function()
@@ -470,9 +474,10 @@ return {
 			local mypy_cache = {}
 
 			local function get_mypy_context(buf_path)
-				local root = vim.fs.root(buf_path, { ".venv", "pyproject.toml", "mypy.ini", ".mypy.ini", "setup.cfg", "setup.py" })
-					or vim.fs.root(buf_path, { ".git" })
-					or vim.fn.getcwd()
+				local root = vim.fs.root(
+					buf_path,
+					{ ".venv", "pyproject.toml", "mypy.ini", ".mypy.ini", "setup.cfg", "setup.py" }
+				) or vim.fs.root(buf_path, { ".git" }) or vim.fn.getcwd()
 
 				if mypy_cache[root] then
 					return mypy_cache[root]
@@ -511,10 +516,7 @@ return {
 					if out.code ~= 0 then
 						local diagnostics = {}
 						for line_from, col_from, line_to, col_to, severity, message in
-							string.gmatch(
-								out.stdout,
-								"(%d+):(%d+):(%d+):(%d+): (%a+): ([^\n]+)"
-							)
+							string.gmatch(out.stdout, "(%d+):(%d+):(%d+):(%d+): (%a+): ([^\n]+)")
 						do
 							table.insert(diagnostics, {
 								lnum = tonumber(line_from) - 1,
@@ -1112,7 +1114,7 @@ return {
 		dependencies = {
 			"mason-org/mason.nvim",
 			"folke/lazydev.nvim",
-			"yioneko/nvim-vtsls",
+			-- "yioneko/nvim-vtsls",
 		},
 		config = function()
 			local capabilities = vim.lsp.protocol.make_client_capabilities()
@@ -1196,19 +1198,53 @@ return {
 				end,
 			})
 
-			local vtsls_config = vim.tbl_deep_extend("force", require("vtsls").lspconfig, {
-				cmd = { vim.fs.joinpath(vim.fn.stdpath("data"), "mason", "bin", "vtsls"), "--stdio" },
+			-- local vtsls_config = vim.tbl_deep_extend("force", require("vtsls").lspconfig, {
+			-- 	cmd = { vim.fs.joinpath(vim.fn.stdpath("data"), "mason", "bin", "vtsls"), "--stdio" },
+			-- })
+
+			-- vim.lsp.config("vtsls", vtsls_config)
+			local global_node_modules = ""
+			if vim.fn.executable("npm") == 1 then
+				global_node_modules = vim.fn.system("npm root -g"):gsub("[\r\n]", "")
+			else
+				global_node_modules = vim.fn.has("win32") == 1
+					and (vim.fn.expand("$APPDATA") .. "/npm/node_modules")
+					or "/usr/local/lib/node_modules"
+			end
+
+			vim.lsp.config("ts_ls", {
+				init_options = {
+					plugins = {
+						{
+							name = "typescript-lit-html-plugin",
+							location = global_node_modules,
+						}
+					}
+				}
 			})
 
-			vim.lsp.config("vtsls", vtsls_config)
+			vim.lsp.config("wc_language_server", {
+				filetypes = {
+					"html",
+					"javascript",
+					"typescript",
+					"javascriptreact",
+					"typescriptreact",
+					"astro",
+					"vue",
+					"svelte",
+					"markdown",
+				}
+			})
+
 
 			vim.lsp.enable({
 				"lua_ls",
-				"vtsls",
+				-- "vtsls",
 				"clangd",
 				"html",
 				"cssls",
-                "tailwindcss",
+				-- "tailwindcss",
 				"jsonls",
 				"pyright",
 				"zls",
@@ -1221,60 +1257,62 @@ return {
 				"oxlint",
 				"ols",
 				"asm_lsp",
+				"ts_ls",
+				"ruff",
+				"wc_language_server",
 			})
 
-			vim.api.nvim_create_autocmd("LspAttach", {
-				callback = function(args)
-					local client = vim.lsp.get_client_by_id(args.data.client_id)
-					if not client or client.name ~= "vtsls" then
-						return
-					end
-
-					local items = {
-						{
-							name = "restart_tsserver",
-							desc = "Does not restart vtsls itself, but restarts the underlying tsserver.",
-						},
-						{
-							name = "open_tsserver_log",
-							desc = "It will open prompt if logging has not been enabled.",
-						},
-						{ name = "reload_projects", desc = "Reload tsserver projects for the workspace." },
-						{
-							name = "select_ts_version",
-							desc = "Select version of ts either from workspace or global.",
-						},
-						{ name = "goto_project_config", desc = "Open tsconfig.json." },
-						{ name = "goto_source_definition", desc = "Go to the source definition instead of typings." },
-						{ name = "file_references", desc = "Show references of the current file." },
-						{
-							name = "rename_file",
-							desc = "Rename the current file and update all the related paths in the project.",
-						},
-						{ name = "organize_imports", desc = "Organize imports in the current file." },
-						{ name = "sort_imports", desc = "Sort imports in the current file." },
-						{ name = "remove_unused_imports", desc = "Remove unused imports from the current file." },
-						{ name = "fix_all", desc = "Apply all available code fixes." },
-						{ name = "remove_unused", desc = "Remove unused variables and symbols." },
-						{ name = "add_missing_imports", desc = "Add missing imports for unresolved symbols." },
-						{ name = "source_actions", desc = "Pick applicable source actions (same as above)" },
-					}
-
-					vim.keymap.set("n", "<leader>lt", function()
-						vim.ui.select(items, {
-							prompt = "TypeScript LSP actions",
-							format_item = function(entry)
-								return string.format("%-24s %s", entry.name, entry.desc or "")
-							end,
-						}, function(selection)
-							if not selection or not selection.name then
-								return
-							end
-							vim.cmd("VtsExec " .. selection.name)
-						end)
-					end, { desc = "Typescript LSP actions (vtsls)", buffer = args.buf })
-				end,
-			})
+			-- vim.api.nvim_create_autocmd("LspAttach", {
+			-- 	callback = function(args)
+			-- 		local client = vim.lsp.get_client_by_id(args.data.client_id)
+			-- 		if not client or client.name ~= "vtsls" then
+			-- 			return
+			-- 		end
+			--
+			-- 		local items = {
+			-- 			{
+			-- 				name = "restart_tsserver",
+			-- 				desc = "Does not restart vtsls itself, but restarts the underlying tsserver.",
+			-- 			},
+			-- 			{
+			-- 				name = "open_tsserver_log",
+			-- 				desc = "It will open prompt if logging has not been enabled.",
+			-- 			},
+			-- 			{ name = "reload_projects", desc = "Reload tsserver projects for the workspace." },
+			-- 			{
+			-- 				name = "select_ts_version",
+			-- 				desc = "Select version of ts either from workspace or global.",
+			-- 			},
+			-- 			{ name = "goto_project_config", desc = "Open tsconfig.json." },
+			-- 			{ name = "goto_source_definition", desc = "Go to the source definition instead of typings." },
+			-- 			{ name = "file_references", desc = "Show references of the current file." },
+			-- 			{
+			-- 				name = "rename_file",
+			-- 				desc = "Rename the current file and update all the related paths in the project.",
+			-- 			},
+			-- 			{ name = "organize_imports", desc = "Organize imports in the current file." },
+			-- 			{ name = "sort_imports", desc = "Sort imports in the current file." },
+			-- 			{ name = "remove_unused_imports", desc = "Remove unused imports from the current file." },
+			-- 			{ name = "fix_all", desc = "Apply all available code fixes." },
+			-- 			{ name = "remove_unused", desc = "Remove unused variables and symbols." },
+			-- 			{ name = "add_missing_imports", desc = "Add missing imports for unresolved symbols." },
+			-- 			{ name = "source_actions", desc = "Pick applicable source actions (same as above)" },
+			-- 		}
+			-- 		vim.keymap.set("n", "<leader>lt", function()
+			-- 			vim.ui.select(items, {
+			-- 				prompt = "TypeScript LSP actions",
+			-- 				format_item = function(entry)
+			-- 					return string.format("%-24s %s", entry.name, entry.desc or "")
+			-- 				end,
+			-- 			}, function(selection)
+			-- 				if not selection or not selection.name then
+			-- 					return
+			-- 				end
+			-- 				vim.cmd("VtsExec " .. selection.name)
+			-- 			end)
+			-- 		end, { desc = "Typescript LSP actions (vtsls)", buffer = args.buf })
+			-- 	end,
+			-- })
 		end,
 	},
 
@@ -1301,7 +1339,7 @@ return {
 	},
 
 	{ "mfussenegger/nvim-jdtls", ft = "java" },
-	{ "yioneko/nvim-vtsls", lazy = true },
+	-- { "yioneko/nvim-vtsls", lazy = true },
 
 	-- Neo-tree
 	{
@@ -1674,9 +1712,10 @@ return {
 
 			nvim_treesitter.setup()
 			local installed_languages = {}
-			local ext = vim.fn.has("win32") == 1 and "*.dll" or "*.so"
-			for _, file in ipairs(vim.api.nvim_get_runtime_file("parser/" .. ext, true)) do
-				installed_languages[vim.fn.fnamemodify(file, ":t:r")] = true
+			for _, ext in ipairs({ "*.so", "*.dll" }) do
+				for _, file in ipairs(vim.api.nvim_get_runtime_file("parser/" .. ext, true)) do
+					installed_languages[vim.fn.fnamemodify(file, ":t:r")] = true
+				end
 			end
 
 			local missing_languages = vim.tbl_filter(function(lang)
@@ -1767,11 +1806,10 @@ return {
 			end
 		end,
 	},
-
 	-- Folding
 	{
 		"kevinhwang91/nvim-ufo",
-        enabled = false,
+		enabled = false,
 		dependencies = {
 			"kevinhwang91/promise-async",
 		},
@@ -1787,7 +1825,7 @@ return {
 	{ "kevinhwang91/promise-async", lazy = true },
 	{
 		"luukvbaal/statuscol.nvim",
-        enabled = false,
+		enabled = false,
 		lazy = false,
 		config = function()
 			local builtin = require("statuscol.builtin")
@@ -1890,7 +1928,7 @@ return {
 	{ "dgagn/diagflow.nvim", opts = {}, event = "BufRead" },
 	{
 		"lukas-reineke/indent-blankline.nvim",
-        enabled = true,
+		enabled = true,
 		event = "BufRead",
 		main = "ibl",
 		keys = {
@@ -1903,11 +1941,11 @@ return {
 		---@module "ibl"
 		---@type ibl.config
 		opts = {
+            enabled = false,
 			indent = { char = "│" },
 			scope = { enabled = false },
 		},
 		config = function(_, opts)
-			-- local hooks = require("ibl.hooks")
 			-- hooks.register(hooks.type.WHITESPACE, hooks.builtin.hide_first_space_indent_level)
 			-- hooks.register(hooks.type.WHITESPACE, hooks.builtin.hide_first_tab_indent_level)
 			require("ibl").setup(opts)

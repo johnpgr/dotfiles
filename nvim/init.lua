@@ -1,6 +1,6 @@
-vim.g.emacs_tab = false
+vim.g.emacs_tab = true
 vim.g.treesitter_enabled = true
-vim.g.icons_enabled = true
+vim.g.icons_enabled = false
 vim.g.c_syntax_for_h = true
 vim.g.mapleader = " "
 vim.g.loaded_netrw = 1
@@ -106,7 +106,6 @@ indent_size = 2
 
 local function apply_colorscheme_overrides()
 	local normal_hl = vim.api.nvim_get_hl(0, { name = "Normal" })
-	local cursorline_hl = vim.api.nvim_get_hl(0, { name = "CursorLine" })
 	local conceal_hl = vim.api.nvim_get_hl(0, { name = "Conceal" })
 	local hint_hl = vim.api.nvim_get_hl(0, { name = "DiagnosticHint" })
 	local warn_hl = vim.api.nvim_get_hl(0, { name = "DiagnosticWarn" })
@@ -143,6 +142,13 @@ local function apply_colorscheme_overrides()
     vim.api.nvim_set_hl(0, "@tag.builtin", { link = "@type.builtin" })
     vim.api.nvim_set_hl(0, "NeoTreeNormal", { link = "Normal" })
     vim.api.nvim_set_hl(0, "NeoTreeNormalNC", { link = "Normal" })
+    if vim.g.colors_name == "quiet" then
+        vim.api.nvim_set_hl(0, "TabLineSel", { link = "Normal" })
+    end
+
+    if vim.g.colors_name == "photon" then
+        vim.api.nvim_set_hl(0, "Statement", { link = "Constant" })
+    end
 
     -- Making treesitter usable
 	for _, group in ipairs({
@@ -1099,7 +1105,7 @@ end
 local function show_plain_items(buf_id, items)
 	local lines = {}
 	for _, item in ipairs(items) do
-		table.insert(lines, item.text or tostring(item))
+		table.insert(lines, item.display or item.text or tostring(item))
 	end
 
 	vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
@@ -1118,10 +1124,13 @@ local function choose_path_item(item)
 
 	vim.api.nvim_win_call(target_win, function()
 		vim.cmd("edit " .. vim.fn.fnameescape(item.path))
-		vim.api.nvim_win_set_cursor(0, {
-			item.lnum or 1,
-			math.max((item.col or 1) - 1, 0),
-		})
+
+		if item.lnum ~= nil or item.col ~= nil then
+			vim.api.nvim_win_set_cursor(0, {
+				item.lnum or 1,
+				math.max((item.col or 1) - 1, 0),
+			})
+		end
 	end)
 end
 
@@ -1196,7 +1205,8 @@ local function grep_items_from_fff(result)
 				local text = vim.trim(item.text or item.content or item.line_content or item.lineContent or "")
 				local display_path = vim.fn.fnamemodify(path, ":.")
 				table.insert(out, {
-					text = string.format("%s:%d:%d: %s", display_path, lnum, col, text),
+					text = text,
+					display = string.format("%s:%d:%d: %s", display_path, lnum, col, text),
 					path = path,
 					lnum = lnum,
 					col = col,
@@ -1461,31 +1471,6 @@ local function live_grep_current_buffer()
 			return items
 		end,
 	})
-end
-
-local function get_grep_string_query(opts)
-	opts = opts or {}
-
-	local word
-	local visual = vim.fn.mode() == "v"
-
-	if visual then
-		local saved_reg = vim.fn.getreg("v")
-		vim.cmd([[noautocmd sil norm! "vy]])
-		local selection = vim.fn.getreg("v")
-		vim.fn.setreg("v", saved_reg)
-		word = vim.F.if_nil(opts.search, selection)
-	else
-		word = vim.F.if_nil(opts.search, vim.fn.expand("<cword>"))
-	end
-
-	return tostring(word)
-end
-
-local function grep_string_with_fff(opts)
-	opts = opts or {}
-	local word = get_grep_string_query(opts)
-	pick_grep_fff(word, opts.use_regex and "regex" or "plain")
 end
 
 local function pick_help_tags()
@@ -1802,7 +1787,69 @@ vim.keymap.set("n", "<leader>sh", function()
 	pick_help_tags()
 end, { desc = "Search help" })
 vim.keymap.set({ "n", "v" }, "<leader>sw", function()
-	grep_string_with_fff()
+    ---@type string
+    local mode = vim.fn.mode()
+    vim.print("mode " .. mode)
+    ---@type string[]
+    local input = {""}
+
+    -- Normal mode
+    if mode == "n" then
+        vim.print("hello?")
+        input[0] = vim.fn.expand("<cword>")
+    end
+
+    -- Visual mode
+    if mode == "v" then
+        local _, startrow, startcol = unpack(vim.fn.getpos("v"))
+        local _, endrow, endcol = unpack(vim.fn.getpos("."))
+
+        -- This means the visual selection is backwards
+        if startrow < endrow or (startrow == endrow and startcol <= endcol) then
+            input = vim.api.nvim_buf_get_text(0, startrow - 1, startcol - 1, endrow - 1, endcol, {})
+        else
+            input = vim.api.nvim_buf_get_text(0, endrow - 1, endcol - 1, startrow - 1, startcol, {})
+        end
+
+    end
+
+    -- Visual line mode
+    if mode == "V" then
+        local _, startrow, startcol = unpack(vim.fn.getpos("v"))
+        local _, endrow, endcol = unpack(vim.fn.getpos("."))
+
+        -- This means the visual selection is backwards
+        if startrow < endrow or (startrow == endrow and startcol <= endcol) then
+            input = vim.api.nvim_buf_get_lines(0, startrow - 1, startcol - 1, endrow - 1, endcol, {})
+        else
+            input = vim.api.nvim_buf_get_lines(0, endrow - 1, endcol - 1, startrow - 1, startcol, {})
+        end
+    end
+
+    -- Visual block mode
+    if mode == "\22" then
+        local _, startrow, startcol = unpack(vim.fn.getpos("v"))
+        local _, endrow, endcol = unpack(vim.fn.getpos("."))
+
+        local lines = {}
+        if startrow > endrow then
+          startrow, endrow = endrow, startrow
+        end
+        if startcol > endcol then
+          startcol, endcol = endcol, startcol
+        end
+        for i = startrow, endrow do
+          table.insert(
+            lines,
+            vim.api.nvim_buf_get_text(0, i - 1, math.min(startcol - 1, endcol), i - 1, math.max(startcol - 1, endcol), {})[1]
+          )
+        end
+        input = lines
+    end
+
+    local query = table.concat(input, " ")
+    vim.print(query)
+	pick_grep_fff(query, "plain")
 end, { desc = "Search word with grep" })
 vim.keymap.set("n", "<leader>'", function()
 	mini_pick().builtin.resume()
@@ -1815,7 +1862,7 @@ vim.keymap.set("n", "gr", function()
 end, { desc = "Go to references" })
 
 if is_neovide then
-	vim.o.guifont = "FiraMono Nerd Font:h12"
+	-- vim.o.guifont = "LiterationMono Nerd Font:h10"
 	vim.g.neovide_refresh_rate = 165
 	vim.g.neovide_opacity = 1.0
 	vim.g.neovide_normal_opacity = 1.0
