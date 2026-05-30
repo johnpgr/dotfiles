@@ -9,7 +9,15 @@ local is_windows = vim.fn.has("win32") == 1
 
 return {
     { "farmergreg/vim-lastplace", lazy = false },
-    { "alligator/accent.vim", lazy = false },
+    { "alligator/accent.vim", lazy = false, config = function()
+            -- vim.g.accent_colour = 'yellow'
+            -- vim.g.accent_colour = 'orange'
+            -- vim.g.accent_colour = 'red'
+            -- vim.g.accent_colour = 'green'
+            vim.g.accent_colour = 'blue'
+            -- vim.g.accent_colour = 'magenta'
+            -- vim.g.accent_colour = 'cyan'
+    end },
     { "silentium-theme/silentium.nvim", lazy = false },
 	{ "rktjmp/lush.nvim", lazy = false },
 	{ "fenetikm/falcon", lazy = false },

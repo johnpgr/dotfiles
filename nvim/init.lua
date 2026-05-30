@@ -937,17 +937,28 @@ end
 
 local function set_picker_default_text(text)
 	if not text or text == "" then
-		return
+		return nil
 	end
 
 	local MiniPick = mini_pick()
-	vim.schedule(function()
-		if MiniPick.get_picker_opts() == nil then
-			return
-		end
+	local group = vim.api.nvim_create_augroup("MiniPickDefaultQuery" .. tostring(uv.hrtime()), { clear = true })
 
-		MiniPick.set_picker_query(split_query_text(text))
-	end)
+	vim.api.nvim_create_autocmd("User", {
+		group = group,
+		pattern = "MiniPickStart",
+		once = true,
+		callback = function()
+			vim.schedule(function()
+				if MiniPick.get_picker_opts() == nil then
+					return
+				end
+
+				MiniPick.set_picker_query(split_query_text(text))
+			end)
+		end,
+	})
+
+	return group
 end
 
 local function picker_prompt(label)
@@ -1018,6 +1029,7 @@ local function picker_mappings(mappings)
 end
 
 local function pick_start(opts)
+	local default_query_group = set_picker_default_text(opts.default_text)
 	local choice = mini_pick().start({
 		source = {
 			items = opts.items,
@@ -1033,7 +1045,10 @@ local function pick_start(opts)
 		window = picker_window(opts.prompt, opts.window),
 	})
 
-	set_picker_default_text(opts.default_text)
+	if default_query_group then
+		pcall(vim.api.nvim_del_augroup_by_id, default_query_group)
+	end
+
 	return choice
 end
 
@@ -1061,6 +1076,11 @@ local function pick_dynamic(opts)
 		end
 
 		MiniPick.set_picker_items(items or {}, { querytick = querytick, do_match = false })
+	end
+
+	opts.refresh = function()
+		last_query = nil
+		refresh_items()
 	end
 
 	vim.api.nvim_create_autocmd("User", {
@@ -1102,13 +1122,92 @@ local function show_path_items(buf_id, items, query)
 	mini_pick().default_show(buf_id, items, query, { show_icons = false })
 end
 
-local function show_plain_items(buf_id, items)
+local ns_id = vim.api.nvim_create_namespace("fff_pick_highlights")
+
+local function show_plain_items(buf_id, items, query)
 	local lines = {}
 	for _, item in ipairs(items) do
 		table.insert(lines, item.display or item.text or tostring(item))
 	end
 
 	vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
+
+	if not query or query == "" then
+		return
+	end
+
+	if type(query) == "table" then
+		query = table.concat(query)
+	end
+
+	if query == "" then
+		return
+	end
+
+	local MiniPick = mini_pick()
+	local picker_opts = MiniPick.get_picker_opts()
+	local mode = "plain"
+	if picker_opts and picker_opts.window and picker_opts.window.prompt_prefix then
+		local prefix = picker_opts.window.prompt_prefix
+		if prefix:find("fuzzy") then
+			mode = "fuzzy"
+		elseif prefix:find("regex") then
+			mode = "regex"
+		end
+	end
+
+	for line_idx, line in ipairs(lines) do
+		local _, prefix_end = line:find("^.-:%d+:%d+:")
+		prefix_end = prefix_end or 0
+
+		local matches = {}
+		if mode == "plain" then
+			local start_idx = prefix_end + 1
+			local line_lower = line:lower()
+			local query_lower = query:lower()
+			while true do
+				local s, e = line_lower:find(query_lower, start_idx, true)
+				if not s then break end
+				table.insert(matches, { s - 1, e })
+				start_idx = e + 1
+			end
+		elseif mode == "regex" then
+			local start_idx = prefix_end
+			while true do
+				local res = vim.fn.matchstrpos(line, query, start_idx)
+				local s, e = res[2], res[3]
+				if s == -1 then break end
+				if s == e then
+					start_idx = start_idx + 1
+				else
+					table.insert(matches, { s, e })
+					start_idx = e
+				end
+			end
+		elseif mode == "fuzzy" then
+			local start_idx = prefix_end + 1
+			local line_lower = line:lower()
+			local query_lower = query:lower()
+			local ok = true
+			for i = 1, #query do
+				local char = query_lower:sub(i, i)
+				local idx = line_lower:find(char, start_idx, true)
+				if not idx then
+					ok = false
+					break
+				end
+				table.insert(matches, { idx - 1, idx })
+				start_idx = idx + 1
+			end
+			if not ok then
+				matches = {}
+			end
+		end
+
+		for _, range in ipairs(matches) do
+			vim.api.nvim_buf_add_highlight(buf_id, ns_id, "MiniPickMatchRanges", line_idx - 1, range[1], range[2])
+		end
+	end
 end
 
 local function choose_path_item(item)
@@ -1245,6 +1344,14 @@ local function pick_files_fff()
 	})
 end
 
+---@alias GrepMode
+---| "plain" # Literal substring match. Fastest, treats regex chars literally.
+---| "regex" # Regex pattern match. Most expressive, can be slower.
+---| "fuzzy" # Approximate match. Great for typos/inexact terms.
+
+---Open grep picker powered by fff.grep.
+---@param default_text? string Initial query prefilled in the picker prompt.
+---@param grep_mode? GrepMode Search strategy used by fff.grep.search(). Defaults to "plain".
 local function pick_grep_fff(default_text, grep_mode)
 	local fuzzy = ensure_fff()
 	if not fuzzy then
@@ -1257,9 +1364,14 @@ local function pick_grep_fff(default_text, grep_mode)
 		vim.notify("fff.grep not available", vim.log.levels.ERROR)
 		return
 	end
-	grep_mode = grep_mode or "plain"
-	pick_dynamic({
-		prompt = "Grep",
+	local current_mode = grep_mode or "plain"
+	-- Practical defaults:
+	-- - plain: search exact text (best for current word/selection)
+	-- - regex: search by pattern (character classes, alternation, anchors, etc.)
+	-- - fuzzy: search approximate text (tolerates typos/inexact queries)
+	local dynamic_opts
+	dynamic_opts = {
+		prompt = "Grep (" .. current_mode .. ")",
 		show = show_plain_items,
 		choose = choose_path_item,
 		default_text = default_text,
@@ -1268,14 +1380,41 @@ local function pick_grep_fff(default_text, grep_mode)
 				return {}
 			end
 
-			local ok, result = pcall(grep.search, query, 0, 100, nil, grep_mode)
+			local ok, result = pcall(grep.search, query, 0, 100, nil, current_mode)
 			if not ok or not result then
 				return {}
 			end
 
 			return grep_items_from_fff(result)
 		end,
-	})
+		mappings = {
+			toggle_mode = {
+				char = vim.api.nvim_replace_termcodes("<C-g>", true, true, true),
+				func = function()
+					if current_mode == "plain" then
+						current_mode = "fuzzy"
+					elseif current_mode == "fuzzy" then
+						current_mode = "regex"
+					else
+						current_mode = "plain"
+					end
+
+					local MiniPick = mini_pick()
+					MiniPick.set_picker_opts({
+						window = {
+							prompt_prefix = "Grep (" .. current_mode .. ") ",
+						},
+					})
+
+					if dynamic_opts.refresh then
+						dynamic_opts.refresh()
+					end
+				end,
+			},
+		},
+	}
+
+	pick_dynamic(dynamic_opts)
 end
 
 local function list_colorschemes()
@@ -1789,14 +1928,12 @@ end, { desc = "Search help" })
 vim.keymap.set({ "n", "v" }, "<leader>sw", function()
     ---@type string
     local mode = vim.fn.mode()
-    vim.print("mode " .. mode)
     ---@type string[]
-    local input = {""}
+    local input = { "" }
 
     -- Normal mode
     if mode == "n" then
-        vim.print("hello?")
-        input[0] = vim.fn.expand("<cword>")
+        input = { vim.fn.expand("<cword>") }
     end
 
     -- Visual mode
@@ -1815,14 +1952,14 @@ vim.keymap.set({ "n", "v" }, "<leader>sw", function()
 
     -- Visual line mode
     if mode == "V" then
-        local _, startrow, startcol = unpack(vim.fn.getpos("v"))
-        local _, endrow, endcol = unpack(vim.fn.getpos("."))
+        local _, startrow, _ = unpack(vim.fn.getpos("v"))
+        local _, endrow, _ = unpack(vim.fn.getpos("."))
 
         -- This means the visual selection is backwards
-        if startrow < endrow or (startrow == endrow and startcol <= endcol) then
-            input = vim.api.nvim_buf_get_lines(0, startrow - 1, startcol - 1, endrow - 1, endcol, {})
+        if startrow > endrow then
+            input = vim.api.nvim_buf_get_lines(0, endrow - 1, startrow, true)
         else
-            input = vim.api.nvim_buf_get_lines(0, endrow - 1, endcol - 1, startrow - 1, startcol, {})
+            input = vim.api.nvim_buf_get_lines(0, startrow - 1, endrow, true)
         end
     end
 
@@ -1847,9 +1984,8 @@ vim.keymap.set({ "n", "v" }, "<leader>sw", function()
         input = lines
     end
 
-    local query = table.concat(input, " ")
-    vim.print(query)
-	pick_grep_fff(query, "plain")
+	local query = table.concat(input, " ")
+	pick_grep_fff(query)
 end, { desc = "Search word with grep" })
 vim.keymap.set("n", "<leader>'", function()
 	mini_pick().builtin.resume()
