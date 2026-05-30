@@ -8,6 +8,7 @@ local is_neovide = vim.g.neovide ~= nil
 local is_windows = vim.fn.has("win32") == 1
 
 return {
+    { "farmergreg/vim-lastplace", lazy = false },
     { "alligator/accent.vim", lazy = false },
     { "silentium-theme/silentium.nvim", lazy = false },
 	{ "rktjmp/lush.nvim", lazy = false },
@@ -1940,11 +1941,11 @@ return {
 		---@module "ibl"
 		---@type ibl.config
 		opts = {
+            enabled = false,
 			indent = { char = "│" },
 			scope = { enabled = false },
 		},
 		config = function(_, opts)
-			-- local hooks = require("ibl.hooks")
 			-- hooks.register(hooks.type.WHITESPACE, hooks.builtin.hide_first_space_indent_level)
 			-- hooks.register(hooks.type.WHITESPACE, hooks.builtin.hide_first_tab_indent_level)
 			require("ibl").setup(opts)

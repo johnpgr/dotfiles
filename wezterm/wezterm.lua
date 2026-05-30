@@ -18,12 +18,13 @@ local theme_mode = theme.read_theme_mode()
 
 wezterm.add_to_config_reload_watch_list(theme.theme_mode_file)
 
--- config.front_end = "WebGpu"
+config.front_end = "WebGpu"
 config.font = regular_font
 config.font_rules = theme.font_rules(regular_font)
 config.max_fps = 165
 config.default_prog = platform.default_prog()
-config.font_size = 10.0
+config.font_size = 12.0
+config.line_height = 1
 config.enable_tab_bar = true
 config.hide_tab_bar_if_only_one_tab = true
 config.use_fancy_tab_bar = false
