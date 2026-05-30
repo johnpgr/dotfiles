@@ -1485,7 +1485,7 @@ return {
 	-- Oil
 	{
 		"stevearc/oil.nvim",
-		cmd = "Oil",
+		lazy = false,
 		keys = {
 			{ "<leader>e", "<cmd>Oil<cr>", desc = "Explore" },
 		},
