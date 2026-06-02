@@ -29,7 +29,8 @@ return {
 			{
 				"<leader>gh",
 				function()
-					vim.cmd("Git log -- " .. vim.fn.expand("%"))
+					vim.cmd("0Gclog")
+					vim.cmd("copen")
 				end,
 				desc = "Git file history (Current)",
 			},

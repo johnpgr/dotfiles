@@ -99,6 +99,25 @@ local function apply_colorscheme_overrides()
 		vim.api.nvim_set_hl(0, "WinSeparator", { link = "NeoTreeIndentMarker" })
 		vim.api.nvim_set_hl(0, "Directory", { fg = "#8faabc" })
 	end
+
+	-- Customize diagnostic underlines to use undercurl
+	local diagnostic_colors = {
+		Error = err_hl and err_hl.fg,
+		Warn = warn_hl and warn_hl.fg,
+		Info = (conceal_hl and conceal_hl.fg) or (hint_hl and hint_hl.fg),
+		Hint = hint_hl and hint_hl.fg,
+	}
+
+	for _, diag in ipairs({ "Error", "Warn", "Info", "Hint" }) do
+		local name = "DiagnosticUnderline" .. diag
+		local hl = vim.api.nvim_get_hl(0, { name = name })
+		local color = diagnostic_colors[diag]
+		vim.api.nvim_set_hl(0, name, vim.tbl_extend("force", hl or {}, {
+			underline = false,
+			undercurl = true,
+			sp = hl.sp or color,
+		}))
+	end
 end
 
 vim.api.nvim_create_autocmd("ColorScheme", {
