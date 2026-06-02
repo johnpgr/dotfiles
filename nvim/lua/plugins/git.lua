@@ -51,7 +51,6 @@ return {
 				pattern = "gitcommit",
 				callback = function()
 					vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = true, silent = true })
-					vim.bo.buflisted = false
 				end,
 			})
 
@@ -59,7 +58,6 @@ return {
 				pattern = "git",
 				callback = function()
 					vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = true, silent = true })
-					vim.bo.buflisted = false
 				end,
 			})
 		end,
