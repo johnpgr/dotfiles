@@ -6,9 +6,7 @@ local is_windows = vim.fn.has("win32") == 1
 
 return {
 	-- Shared dependencies (loaded on demand)
-	{ "nvim-lua/plenary.nvim", lazy = true },
 	{ "nvim-tree/nvim-web-devicons", lazy = true },
-	{ "MunifTanjim/nui.nvim", lazy = true },
 
 	-- FFF (Fast File Finder)
 	{

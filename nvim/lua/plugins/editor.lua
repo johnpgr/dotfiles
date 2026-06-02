@@ -2,6 +2,9 @@
 -- text-case, abolish, dispatch, mini.bufremove, mini.align, mypy, dadbod, quicker
 
 return {
+    -- Lastplace (open files at last edit position)
+	{ "farmergreg/vim-lastplace", lazy = false },
+
 	-- Undotree
 	{
 		"mbbill/undotree",

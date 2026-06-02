@@ -35,10 +35,9 @@ function _G.get_oil_winbar()
 	else
 		result = vim.api.nvim_buf_get_name(bufnr)
 	end
-
 	if vim.o.foldcolumn == "0" then
 		return result
 	else
-		return "  " .. result
+		return " " .. result
 	end
 end
