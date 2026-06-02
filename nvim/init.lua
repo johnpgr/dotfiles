@@ -28,7 +28,7 @@ require("lazy").setup("plugins", {
 		enabled = false, -- Disable luarocks integration (image.nvim will use magick_cli instead)
 	},
 	install = {
-		colorscheme = { "default" },
+		colorscheme = { "evening" },
 	},
 	checker = {
 		enabled = false, -- Don't auto-check for updates
@@ -37,6 +37,7 @@ require("lazy").setup("plugins", {
 		enabled = true,
 		notify = false,
 	},
+
 	performance = {
 		rtp = {
 			disabled_plugins = {
