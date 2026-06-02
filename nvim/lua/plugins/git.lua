@@ -47,33 +47,7 @@ return {
 				end,
 			})
 
-			-- Auto-refresh Fugitive status buffers when the Git repository state changes
-			vim.api.nvim_create_autocmd("User", {
-				pattern = "FugitiveChanged",
-				callback = function()
-					for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-						if vim.api.nvim_buf_is_loaded(bufnr) and vim.bo[bufnr].filetype == "fugitive" then
-							vim.api.nvim_buf_call(bufnr, function()
-								pcall(vim.cmd, "edit")
-							end)
-						end
-					end
-				end,
-			})
 
-			-- Also refresh loaded Fugitive buffers when refocusing Neovim
-			vim.api.nvim_create_autocmd("FocusGained", {
-				pattern = "*",
-				callback = function()
-					for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-						if vim.api.nvim_buf_is_loaded(bufnr) and vim.bo[bufnr].filetype == "fugitive" then
-							vim.api.nvim_buf_call(bufnr, function()
-								pcall(vim.cmd, "edit")
-							end)
-						end
-					end
-				end,
-			})
 
 			vim.api.nvim_create_autocmd("FileType", {
 				pattern = "gitcommit",
