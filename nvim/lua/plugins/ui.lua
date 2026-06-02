@@ -261,7 +261,6 @@ return {
 				{ "<leader>t", group = "toggle" },
 				{ "<leader>i", group = "insert" },
 				{ "<leader>d", group = "debug" },
-				{ "<leader>c", group = "opencode" },
 			})
 		end,
 	},

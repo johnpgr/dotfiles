@@ -4,7 +4,7 @@ return {
 	-- Blink.cmp
 	{
 		"saghen/blink.cmp",
-		version = "v1.10.1",
+		version = "v1.10.2",
 		event = "InsertEnter",
 		dependencies = {
 			"L3MON4D3/LuaSnip",
@@ -57,21 +57,9 @@ return {
 				end
 			end
 
-			local function accept_copilot_suggestion()
-				local ok, copilot_suggestion = pcall(require, "copilot.suggestion")
-				if not ok or not copilot_suggestion.is_visible() then
-					return false
-				end
-				copilot_suggestion.accept()
-				return true
-			end
-
 			local function tab_action(cmp)
 				if vim.g.emacs_tab == true then
 					return emacs_tab(cmp)
-				end
-				if accept_copilot_suggestion() then
-					return true
 				end
 				if require("blink.cmp").is_visible() then
 					return cmp.accept()
@@ -157,7 +145,6 @@ return {
 					},
 					per_filetype = {
 						sql = { "snippets", "dadbod", "buffer" },
-						["copilot-chat"] = { "snippets" },
 						DressingInput = { "buffer", "path" },
 					},
 				},

@@ -1,9 +1,6 @@
 -- Custom statusline
 
-local ignored_ls = {
-	"opencode",
-	"copilot",
-}
+local ignored_ls = {}
 
 local function lsp_status()
 	local attached_clients = vim.lsp.get_clients({ bufnr = 0 })
