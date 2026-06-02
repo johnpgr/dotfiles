@@ -17,6 +17,7 @@ return {
 
 	{
 		"tpope/vim-fugitive",
+		lazy = false,
 		cmd = { "Git", "G", "Gdiffsplit", "Gvdiffsplit", "Gclog" },
 		keys = {
 			{ "<M-g>", "<cmd>Git<cr>", desc = "Git status" },
@@ -46,21 +47,38 @@ return {
 				end,
 			})
 
+			-- Auto-refresh Fugitive status buffer after commit buffer is closed
+			vim.api.nvim_create_autocmd("BufUnload", {
+				pattern = "*COMMIT_EDITMSG",
+				callback = function()
+					vim.defer_fn(function()
+						for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+							if vim.api.nvim_buf_is_loaded(bufnr) and vim.bo[bufnr].filetype == "fugitive" then
+								vim.api.nvim_buf_call(bufnr, function()
+									pcall(vim.cmd, "checktime")
+									pcall(vim.cmd, "edit")
+								end)
+							end
+						end
+					end, 200)
+				end,
+			})
+
 			vim.api.nvim_create_autocmd("FileType", {
 				pattern = "gitcommit",
 				callback = function()
 					vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = true, silent = true })
 					vim.bo.buflisted = false
-                end
-            })
+				end,
+			})
 
 			vim.api.nvim_create_autocmd("FileType", {
 				pattern = "git",
 				callback = function()
 					vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = true, silent = true })
 					vim.bo.buflisted = false
-                end
-            })
+				end,
+			})
 		end,
 	},
 }
