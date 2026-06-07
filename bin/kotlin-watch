@@ -1,0 +1,85 @@
+#!/usr/bin/env fish
+
+set -g program_name kotlin-watch
+
+function usage
+    printf 'usage: %s path/to/file.kt [main.class.Name]\n' $program_name >&2
+    exit 2
+end
+
+if test (count $argv) -lt 1; or test (count $argv) -gt 2
+    usage
+end
+
+if not command -q kotlin
+    printf '%s: kotlin is required\n' $program_name >&2
+    exit 1
+end
+
+set -l src $argv[1]
+if not path is -f -- $src
+    printf '%s: file not found: %s\n' $program_name $src >&2
+    exit 1
+end
+
+if test (path extension -- $src) != ".kt"
+    printf '%s: expected a .kt file: %s\n' $program_name $src >&2
+    exit 1
+end
+
+set -l stem (path basename -E -- $src)
+set -l out_dir ".out/$stem"
+
+if test (count $argv) -eq 2
+    set main_class $argv[2]
+else
+    set -l package
+    while read -l line
+        if string match -rq '^[[:space:]]*package[[:space:]]+[A-Za-z_][A-Za-z0-9_.]*' -- $line
+            set package (string replace -r '^[[:space:]]*package[[:space:]]+([A-Za-z_][A-Za-z0-9_.]*).*' '$1' -- $line)
+            break
+        end
+    end < $src
+
+    set -l first (string upper -- (string sub -l 1 -- $stem))
+    set -l rest (string sub -s 2 -- $stem)
+    set -l class_name "$first$rest"Kt
+
+    if test -n "$package"
+        set main_class "$package.$class_name"
+    else
+        set main_class "$class_name"
+    end
+end
+
+function bytecode_fingerprint --argument-names out_dir
+    set -l files $out_dir/**/*.class
+    if test (count $files) -eq 0
+        return 1
+    end
+
+    for file in (path sort -- $files)
+        printf '%s:%s\n' $file (path mtime -- $file)
+    end
+end
+
+printf 'watching %s for %s\n' $out_dir $main_class >&2
+printf 'compile in Neovim with :compiler kotlin | :make\n' >&2
+
+set -l last_fingerprint
+
+while true
+    set -l fingerprint (bytecode_fingerprint $out_dir)
+    if test $status -ne 0
+        sleep 0.2
+        continue
+    end
+
+    if test "$fingerprint" != "$last_fingerprint"
+        set last_fingerprint "$fingerprint"
+        clear
+        kotlin -cp $out_dir $main_class
+    end
+
+    sleep 0.2
+end

@@ -30,7 +30,13 @@ return {
 				".git",
 			}
 
+			local kotlin_lsp_cmd = vim.fn.stdpath("data") .. "/mason/bin/intellij-server"
+			if vim.fn.executable(kotlin_lsp_cmd) ~= 1 then
+				kotlin_lsp_cmd = "intellij-server"
+			end
+
 			vim.lsp.config("kotlin_lsp", {
+				cmd = { "faketime", "2026-06-04", kotlin_lsp_cmd, "--stdio" },
 				root_dir = function(bufnr, on_dir)
 					local fname = vim.api.nvim_buf_get_name(bufnr)
 					if fname == "" then
