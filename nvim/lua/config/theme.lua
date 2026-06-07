@@ -18,7 +18,7 @@ local sync_theme_state
 -- Colorscheme highlight overrides
 -- --------------------------------------------------------------------------
 
-local function link_blink_popup_menu_colors()
+local function link_completion_colors()
 	local links = {
 		Pmenu = "StatusLine",
 		PmenuKind = "StatusLine",
@@ -30,17 +30,6 @@ local function link_blink_popup_menu_colors()
 		PmenuExtraSel = "WildMenu",
 		PmenuMatchSel = "WildMenu",
 		PmenuThumb = "WildMenu",
-		BlinkCmpMenu = "StatusLine",
-		BlinkCmpMenuBorder = "StatusLine",
-		BlinkCmpMenuSelection = "WildMenu",
-		BlinkCmpLabel = "StatusLine",
-		BlinkCmpLabelMatch = "StatusLine",
-		BlinkCmpLabelDetail = "StatusLine",
-		BlinkCmpLabelDescription = "StatusLine",
-		BlinkCmpSource = "StatusLine",
-		BlinkCmpKind = "StatusLine",
-		BlinkCmpScrollBarGutter = "StatusLine",
-		BlinkCmpScrollBarThumb = "WildMenu",
 	}
 
 	for group, target in pairs(links) do
@@ -77,7 +66,8 @@ local function apply_colorscheme_overrides()
 	vim.api.nvim_set_hl(0, "CursorLineFold", { link = "CursorLine" })
 	vim.api.nvim_set_hl(0, "WinSeparator", { link = "Normal" })
 	vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal" })
-	link_blink_popup_menu_colors()
+	link_completion_colors()
+	vim.api.nvim_set_hl(0, "CompletionGhost", { fg = muted_color, ctermfg = 8, bg = "none" })
 	vim.api.nvim_set_hl(0, "StatusLine", { bg = "none", fg = normal_hl.fg })
 	vim.api.nvim_set_hl(0, "StatusLineNC", { bg = "none", fg = normal_hl.fg })
 	vim.api.nvim_set_hl(0, "@function.call", { link = "@function" })

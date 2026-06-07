@@ -121,11 +121,9 @@ return {
 		"tpope/vim-dadbod",
 		cmd = { "DB", "DBUI", "DBUIAddConnection" },
 		dependencies = {
-			"kristijanhusak/vim-dadbod-completion",
 			"kristijanhusak/vim-dadbod-ui",
 		},
 	},
-	{ "kristijanhusak/vim-dadbod-completion", lazy = true },
 	{
 		"kristijanhusak/vim-dadbod-ui",
 		cmd = { "DBUI", "DBUIAddConnection", "DBUIToggle" },
