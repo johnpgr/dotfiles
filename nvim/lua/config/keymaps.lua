@@ -72,6 +72,78 @@ vim.keymap.set("v", "<", "<gv", { desc = "Decrease indent" })
 vim.keymap.set("v", ">", ">gv", { desc = "Increase indent" })
 vim.keymap.set("n", "K", vim.lsp.buf.hover, { desc = "Hover" })
 
+---@param count number
+local function transpose_words(count)
+	if count == 0 then
+		return
+	end
+
+	local direction = count > 0 and 1 or -1
+
+	for _ = 1, math.abs(count) do
+		local line = vim.api.nvim_get_current_line()
+		local mode = vim.api.nvim_get_mode().mode
+		local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+		local boundary = col
+		local spans = {}
+
+		for start_col, end_col in line:gmatch("()[%w_]+()") do
+			spans[#spans + 1] = {
+				start_col = start_col - 1,
+				end_col = end_col - 1,
+			}
+		end
+
+		local current_index
+		for index, span in ipairs(spans) do
+			if span.start_col <= boundary and boundary <= span.end_col then
+				current_index = index
+				break
+			end
+		end
+
+		if not current_index then
+			return
+		end
+
+		local target_index = current_index + direction
+		local current = spans[current_index]
+		local target = spans[target_index]
+
+		if not target then
+			return
+		end
+
+		local first = direction > 0 and current or target
+		local second = direction > 0 and target or current
+		local before = line:sub(1, first.start_col)
+		local first_word = line:sub(first.start_col + 1, first.end_col)
+		local middle = line:sub(first.end_col + 1, second.start_col)
+		local second_word = line:sub(second.start_col + 1, second.end_col)
+		local after = line:sub(second.end_col + 1)
+		local moved_start_col = direction > 0 and (#before + #second_word + #middle) or #before
+		local moved_word = direction > 0 and first_word or second_word
+		local new_col = moved_start_col + #moved_word
+
+		vim.api.nvim_set_current_line(before .. second_word .. middle .. first_word .. after)
+
+		if mode:sub(1, 1) == "i" then
+			vim.api.nvim_win_set_cursor(0, { row, new_col })
+		else
+			vim.api.nvim_win_set_cursor(0, { row, math.max(new_col - 1, 0) })
+		end
+	end
+end
+
+vim.keymap.set({ "n", "i" }, "<M-,>", function()
+	transpose_words(-1)
+end, { desc = "Transpose words backward" })
+
+vim.keymap.set({ "n", "i" }, "<M-.>", function()
+	transpose_words(1)
+end, { desc = "Transpose words forward" })
+
+
 -- --------------------------------------------------------------------------
 -- Toggle keymaps
 -- --------------------------------------------------------------------------

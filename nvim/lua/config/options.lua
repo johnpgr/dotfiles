@@ -32,7 +32,7 @@ vim.o.updatetime = 200
 vim.o.undofile = true
 vim.o.exrc = true
 vim.o.secure = true
-vim.o.cmdheight = 0
+vim.o.cmdheight = 1
 vim.o.spelllang = "en,pt_br"
 vim.opt.clipboard = "unnamedplus"
 vim.opt.diffopt:append("linematch:60")
@@ -53,7 +53,7 @@ if vim.fn.has("win32") == 1 then
 	if vim.fn.executable("bash") == 1 then
 		vim.opt.shell = "bash"
 		vim.opt.shellcmdflag = "-c"
-		vim.opt.shellquote = ""
+        vim.opt.shellquote = ""
 		vim.opt.shellxquote = ""
 		vim.opt.shellpipe = "2>&1 | tee"
 		vim.opt.shellredir = ">%s 2>&1"

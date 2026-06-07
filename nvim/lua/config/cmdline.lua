@@ -20,6 +20,16 @@ vim.keymap.set("c", "<Down>", function()
 	return vim.fn.wildmenumode() == 1 and [[<C-E><Down>]] or [[<Down>]]
 end, { expr = true })
 
+vim.api.nvim_create_autocmd("CmdwinEnter", {
+	callback = function(event)
+		vim.keymap.set("n", "q", "<cmd>quit<cr>", {
+			buffer = event.buf,
+			desc = "Close command-line window",
+			silent = true,
+		})
+	end,
+})
+
 -- Smaller popup during search (8 lines), restored on leave
 vim.api.nvim_create_autocmd("CmdlineEnter", {
 	pattern = { "/", "?" },
