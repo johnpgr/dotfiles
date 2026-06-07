@@ -11,12 +11,28 @@ local fff_state = {
 -- fff backend
 -- --------------------------------------------------------------------------
 
-local function ensure_fff()
+local function is_home_dir(path)
+	local home = uv.os_homedir()
+	if not path or not home then
+		return false
+	end
+
+	local real_path = uv.fs_realpath(path) or vim.fn.fnamemodify(path, ":p"):gsub("/+$", "")
+	local real_home = uv.fs_realpath(home) or vim.fn.fnamemodify(home, ":p"):gsub("/+$", "")
+	return real_path == real_home
+end
+
+local function ensure_fff(base_path)
 	if fff_state.initialized then
 		return fff_state.fuzzy
 	end
 
 	pcall(vim.cmd.packadd, "fff.nvim")
+
+	local cwd = vim.fn.getcwd()
+	local target_path = base_path or cwd
+	if is_home_dir(target_path) then return nil end
+	vim.g.fff = vim.tbl_deep_extend("force", vim.g.fff or {}, { base_path = target_path, lazy_sync = true })
 
 	local ok, fuzzy = pcall(require, "fff.fuzzy")
 	if not ok then
@@ -25,14 +41,16 @@ local function ensure_fff()
 
 	local core_ok, core = pcall(require, "fff.core")
 	if core_ok and type(core.ensure_initialized) == "function" then
-		pcall(core.ensure_initialized)
+		local init_ok = pcall(core.ensure_initialized)
+		if not init_ok then
+			return nil
+		end
 	else
-		pcall(fuzzy.init_db)
-		pcall(fuzzy.scan_files)
+		return nil
 	end
 
 	fff_state.fuzzy = fuzzy
-	fff_state.base_path = vim.fn.getcwd()
+	fff_state.base_path = target_path
 	fff_state.initialized = true
 
 	local group = vim.api.nvim_create_augroup("fff_pick", { clear = true })
@@ -51,6 +69,10 @@ local function ensure_fff()
 		group = group,
 		callback = function()
 			local cwd = vim.fn.getcwd()
+			if is_home_dir(cwd) then
+				return
+			end
+
 			if cwd ~= fff_state.base_path then
 				pcall(fuzzy.restart_index_in_path, cwd)
 				fff_state.base_path = cwd
@@ -198,6 +220,7 @@ local function pick_dynamic(opts)
 	local MiniPick = mini_pick()
 	local group = vim.api.nvim_create_augroup("MiniPickDynamic" .. tostring(uv.hrtime()), { clear = true })
 	local last_query = nil
+	local did_start = false
 
 	local function refresh_items()
 		if MiniPick.get_picker_opts() == nil then
@@ -234,6 +257,15 @@ local function pick_dynamic(opts)
 					opts.on_close()
 				end
 				pcall(vim.api.nvim_del_augroup_by_id, group)
+				return
+			end
+
+			if ev.match == "MiniPickStart" and not did_start then
+				did_start = true
+				refresh_items()
+				if opts.on_start then
+					opts.on_start(opts.refresh)
+				end
 				return
 			end
 
@@ -475,11 +507,55 @@ end
 -- Picker functions
 -- --------------------------------------------------------------------------
 
+local function pick_files_mini(cwd, prompt)
+	mini_pick().builtin.files(nil, {
+		source = {
+			cwd = cwd,
+			name = prompt or "Files",
+		},
+		window = picker_window(prompt or "Files"),
+	})
+end
+
+local function pick_grep_mini(default_text, grep_mode, live)
+	if live == nil then
+		live = true
+	end
+
+	local method = grep_mode == "plain" and "plain" or "regex"
+	local opts = {
+		source = {
+			name = "Grep (" .. method .. ")",
+		},
+		window = picker_window("Grep (" .. method .. ")"),
+	}
+
+	if not live then
+		return mini_pick().builtin.grep({ pattern = default_text, method = method }, opts)
+	end
+
+	local default_query_group = set_picker_default_text(default_text)
+	mini_pick().builtin.grep_live({ method = method }, {
+		source = opts.source,
+		window = opts.window,
+	})
+
+	if default_query_group then
+		pcall(vim.api.nvim_del_augroup_by_id, default_query_group)
+	end
+end
+
+local function refresh_after_fff_scan(fuzzy, refresh)
+	vim.defer_fn(function()
+		pcall(fuzzy.wait_for_initial_scan, 1000)
+		refresh()
+	end, 10)
+end
+
 local function pick_files_fff()
 	local fuzzy = ensure_fff()
 	if not fuzzy then
-		vim.notify("fff backend not available", vim.log.levels.ERROR)
-		return
+		return pick_files_mini(vim.fn.getcwd(), "Files")
 	end
 
 	local current_file = vim.api.nvim_buf_get_name(0)
@@ -499,6 +575,9 @@ local function pick_files_fff()
 
 			return file_items_from_fff(result)
 		end,
+		on_start = function(refresh)
+			refresh_after_fff_scan(fuzzy, refresh)
+		end,
 	})
 end
 
@@ -510,23 +589,50 @@ end
 ---Open grep picker powered by fff.grep.
 ---@param default_text? string Initial query prefilled in the picker prompt.
 ---@param grep_mode? GrepMode Search strategy used by fff.grep.search(). Defaults to "plain".
-local function pick_grep_fff(default_text, grep_mode)
+---@param live? boolean When false, collect the query with normal Vim input before opening the picker. Defaults to true.
+local function pick_grep_fff(default_text, grep_mode, live)
+	if live == nil then
+		live = true
+	end
+
 	local fuzzy = ensure_fff()
 	if not fuzzy then
-		vim.notify("fff backend not available", vim.log.levels.ERROR)
-		return
+		return pick_grep_mini(default_text, grep_mode, live)
 	end
 
 	local grep_ok, grep = pcall(require, "fff.grep")
 	if not grep_ok then
-		vim.notify("fff.grep not available", vim.log.levels.ERROR)
-		return
+		return pick_grep_mini(default_text, grep_mode, live)
 	end
 	local current_mode = grep_mode or "plain"
 	-- Practical defaults:
 	-- - plain: search exact text (best for current word/selection)
 	-- - regex: search by pattern (character classes, alternation, anchors, etc.)
 	-- - fuzzy: search approximate text (tolerates typos/inexact queries)
+	if not live then
+		local query = vim.fn.input("Grep (" .. current_mode .. ") > ", default_text or "")
+		if not query or query == "" then
+			return
+		end
+
+		pcall(fuzzy.wait_for_initial_scan, 1000)
+		local ok, result = pcall(grep.search, query, 0, 100, nil, current_mode)
+		local items = ok and result and grep_items_from_fff(result) or {}
+		if #items == 0 then
+			vim.notify("No grep results", vim.log.levels.INFO)
+			return
+		end
+
+		return pick_start({
+			items = items,
+			name = "Grep (" .. current_mode .. ")",
+			prompt = "Grep (" .. current_mode .. ")",
+			show = show_plain_items,
+			choose = choose_path_item,
+			options = { use_cache = false },
+		})
+	end
+
 	local dynamic_opts
 	dynamic_opts = {
 		prompt = "Grep (" .. current_mode .. ")",
@@ -547,7 +653,7 @@ local function pick_grep_fff(default_text, grep_mode)
 		end,
 		mappings = {
 			toggle_mode = {
-				char = vim.api.nvim_replace_termcodes("<C-g>", true, true, true),
+				char = vim.api.nvim_replace_termcodes("<C-e>", true, true, true),
 				func = function()
 					if current_mode == "plain" then
 						current_mode = "fuzzy"
@@ -889,10 +995,9 @@ local function open_reference_picker()
 end
 
 local function pick_files_fff_in_dir(dir, prompt)
-	local fuzzy = ensure_fff()
+	local fuzzy = ensure_fff(dir)
 	if not fuzzy then
-		vim.notify("fff backend not available", vim.log.levels.ERROR)
-		return
+		return pick_files_mini(dir, prompt)
 	end
 
 	local original_path = fff_state.base_path
@@ -918,6 +1023,9 @@ local function pick_files_fff_in_dir(dir, prompt)
 				pcall(fuzzy.restart_index_in_path, original_path)
 				fff_state.base_path = original_path
 			end
+		end,
+		on_start = function(refresh)
+			refresh_after_fff_scan(fuzzy, refresh)
 		end,
 	})
 end
@@ -970,9 +1078,13 @@ vim.keymap.set("n", "<leader>,", function()
 	open_buffer_picker()
 end, { desc = "Buffers" })
 
-vim.keymap.set("n", "<leader>/", function()
-	pick_grep_fff()
+vim.keymap.set("n", "<leader>?", function()
+	pick_grep_fff("", "plain", false)
 end, { desc = "Grep" })
+
+vim.keymap.set("n", "<leader>/", function()
+	pick_grep_fff("", "plain", true)
+end, { desc = "Live Grep" })
 
 vim.keymap.set("n", "<leader>sb", function()
 	live_grep_current_buffer()

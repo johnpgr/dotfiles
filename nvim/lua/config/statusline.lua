@@ -79,4 +79,3 @@ function _G.statusline()
 end
 
 vim.o.statusline = "%{%v:lua._G.statusline()%}"
-vim.o.showtabline = 2

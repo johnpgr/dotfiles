@@ -1,4 +1,4 @@
--- Editor tools: compile-mode, conform, undotree, visual-multi,
+-- Editor tools: conform, undotree, visual-multi,
 -- text-case, abolish, dispatch, mini.bufremove, mini.align, mypy, dadbod, quicker
 
 return {
@@ -77,98 +77,7 @@ return {
 		end,
 	},
 
-	-- Compile Mode
-	{
-		"ej-shafran/compile-mode.nvim",
-		version = "^5.0.0",
-		dependencies = { "m00qek/baleia.nvim" },
-		cmd = { "Compile", "Recompile" },
-		config = function()
-			local compile_mode = require("compile-mode")
-			local compile_mode_group = vim.api.nvim_create_augroup("CompileModeConfig", { clear = true })
 
-			vim.api.nvim_create_autocmd("FileType", {
-				group = compile_mode_group,
-				pattern = "compilation",
-				callback = function(args)
-					vim.bo[args.buf].buflisted = false
-				end,
-			})
-
-			for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-				if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].filetype == "compilation" then
-					vim.bo[buf].buflisted = false
-				end
-			end
-
-			vim.g.compile_mode = {
-				default_command = "",
-				input_word_completion = true,
-				baleia_setup = true,
-				bang_expansion = true,
-				error_regexp_table = {
-					nodejs = {
-						regex = "^\\s\\+at .\\+ (\\(.\\+\\):\\([1-9][0-9]*\\):\\([1-9][0-9]*\\))$",
-						filename = 1,
-						row = 2,
-						col = 3,
-						priority = 2,
-					},
-					typescript = {
-						regex = "^\\(.\\+\\)(\\([1-9][0-9]*\\),\\([1-9][0-9]*\\)): error TS[1-9][0-9]*:",
-						filename = 1,
-						row = 2,
-						col = 3,
-					},
-					typescript_new = {
-						regex = "^\\(.\\+\\):\\([1-9][0-9]*\\):\\([1-9][0-9]*\\) - error TS[1-9][0-9]*:",
-						filename = 1,
-						row = 2,
-						col = 3,
-					},
-					gradlew = {
-						regex = "^e:\\s\\+file://\\(.\\+\\):\\(\\d\\+\\):\\(\\d\\+\\) ",
-						filename = 1,
-						row = 2,
-						col = 3,
-					},
-					ls_lint = {
-						regex = "\\v^\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2} (.+) failed for rules: .+$",
-						filename = 1,
-					},
-					sass = {
-						regex = "\\s\\+\\(.\\+\\) \\(\\d\\+\\):\\(\\d\\+\\)  .*$",
-						filename = 1,
-						row = 2,
-						col = 3,
-						type = compile_mode.level.WARNING,
-					},
-					kotlin = {
-						regex = "^\\%(e\\|w\\): file://\\(.*\\):\\(\\d\\+\\):\\(\\d\\+\\) ",
-						filename = 1,
-						row = 2,
-						col = 3,
-					},
-					rust = {
-						regex = "^\\s*-->\\s\\+\\(.\\+\\):\\([1-9][0-9]*\\):\\([1-9][0-9]*\\)$",
-						filename = 1,
-						row = 2,
-						col = 3,
-						priority = 2,
-					},
-					odin = {
-						regex = "^\\(.\\+\\)(\\([1-9][0-9]*\\):\\([1-9][0-9]*\\)) Error:",
-						filename = 1,
-						row = 2,
-						col = 3,
-					},
-				},
-			}
-		end,
-	},
-
-	-- Baleia (ANSI colors for compile-mode)
-	{ "m00qek/baleia.nvim", version = "v1.3.0", lazy = true },
 
 	-- Conform (formatting)
 	{

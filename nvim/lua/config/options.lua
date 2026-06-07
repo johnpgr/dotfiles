@@ -1,8 +1,7 @@
 -- Global flags
 vim.g.emacs_tab = true
-vim.g.treesitter_enabled = true
+vim.g.treesitter_enabled = false
 vim.g.icons_enabled = false
-vim.g.c_syntax_for_h = true
 vim.g.mapleader = " "
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
@@ -25,25 +24,18 @@ vim.o.splitbelow = true
 vim.o.splitright = true
 vim.o.signcolumn = "no"
 vim.o.foldcolumn = "1"
--- vim.o.foldlevel = 99
--- vim.o.foldmethod = "expr"
--- vim.o.foldexpr = "v:lua.vim.treesitter.foldexpr()"
--- vim.o.foldlevelstart = 99
--- vim.o.foldenable = true
-vim.o.mouse = "nv"
 vim.o.breakindent = true
 vim.o.smartindent = true
 vim.o.autoindent = true
-vim.o.termguicolors = true
+vim.o.termguicolors = false
 vim.o.updatetime = 200
 vim.o.undofile = true
 vim.o.exrc = true
 vim.o.secure = true
-vim.o.cmdheight = 1
+vim.o.cmdheight = 0
 vim.o.spelllang = "en,pt_br"
 vim.opt.clipboard = "unnamedplus"
 vim.opt.diffopt:append("linematch:60")
-vim.treesitter.language.register("c", "cpp")
 vim.o.fillchars = [[eob: ,fold: ,foldopen:,foldsep: ,foldclose:]]
 
 require("vim._core.ui2").enable({})

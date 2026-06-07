@@ -18,41 +18,75 @@ local sync_theme_state
 -- Colorscheme highlight overrides
 -- --------------------------------------------------------------------------
 
+local function link_blink_popup_menu_colors()
+	local links = {
+		Pmenu = "StatusLine",
+		PmenuKind = "StatusLine",
+		PmenuExtra = "StatusLine",
+		PmenuMatch = "StatusLine",
+		PmenuSbar = "StatusLine",
+		PmenuSel = "WildMenu",
+		PmenuKindSel = "WildMenu",
+		PmenuExtraSel = "WildMenu",
+		PmenuMatchSel = "WildMenu",
+		PmenuThumb = "WildMenu",
+		BlinkCmpMenu = "StatusLine",
+		BlinkCmpMenuBorder = "StatusLine",
+		BlinkCmpMenuSelection = "WildMenu",
+		BlinkCmpLabel = "StatusLine",
+		BlinkCmpLabelMatch = "StatusLine",
+		BlinkCmpLabelDetail = "StatusLine",
+		BlinkCmpLabelDescription = "StatusLine",
+		BlinkCmpSource = "StatusLine",
+		BlinkCmpKind = "StatusLine",
+		BlinkCmpScrollBarGutter = "StatusLine",
+		BlinkCmpScrollBarThumb = "WildMenu",
+	}
+
+	for group, target in pairs(links) do
+		vim.api.nvim_set_hl(0, group, { link = target })
+	end
+end
+
 local function apply_colorscheme_overrides()
 	local normal_hl = vim.api.nvim_get_hl(0, { name = "Normal" })
 	local conceal_hl = vim.api.nvim_get_hl(0, { name = "Conceal" })
 	local hint_hl = vim.api.nvim_get_hl(0, { name = "DiagnosticHint" })
 	local warn_hl = vim.api.nvim_get_hl(0, { name = "DiagnosticWarn" })
 	local err_hl = vim.api.nvim_get_hl(0, { name = "DiagnosticError" })
-	local matchparen_hl = vim.api.nvim_get_hl(0, { name = "MatchParen" })
+	-- local matchparen_hl = vim.api.nvim_get_hl(0, { name = "MatchParen" })
 	local muted_color = (conceal_hl and conceal_hl.fg)
-	local accent_color = (hint_hl and hint_hl.fg) or (warn_hl and warn_hl.fg) or muted_color
+	-- local accent_color = (hint_hl and hint_hl.fg) or (warn_hl and warn_hl.fg) or muted_color
 
-	vim.api.nvim_set_hl(
-		0,
-		"MatchParen",
-		vim.tbl_extend("force", matchparen_hl or {}, {
-			fg = (err_hl and err_hl.fg) or accent_color,
-			underline = false,
-			undercurl = false,
-			underdouble = false,
-			underdotted = false,
-			underdashed = false,
-		})
-	)
+	-- vim.api.nvim_set_hl(
+	-- 	0,
+	-- 	"MatchParen",
+	-- 	vim.tbl_extend("force", matchparen_hl or {}, {
+	-- 		fg = (err_hl and err_hl.fg) or accent_color,
+	-- 		underline = false,
+	-- 		undercurl = false,
+	-- 		underdouble = false,
+	-- 		underdotted = false,
+	-- 		underdashed = false,
+	-- 	})
+	-- )
 
 	-- Some manual fixing of color tokens
 	vim.api.nvim_set_hl(0, "Visual", { reverse = true })
 	vim.api.nvim_set_hl(0, "VisualNOS", { reverse = true })
 	vim.api.nvim_set_hl(0, "CursorLineFold", { link = "CursorLine" })
-	vim.api.nvim_set_hl(0, "WinSeparator", { link = "Conceal" })
+	vim.api.nvim_set_hl(0, "WinSeparator", { link = "Normal" })
 	vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal" })
-	vim.api.nvim_set_hl(0, "StatusLine", { bg = "#1f15ab", fg = normal_hl.fg })
-	vim.api.nvim_set_hl(0, "StatusLineNC", { link = "StatusLine" })
+	link_blink_popup_menu_colors()
+	vim.api.nvim_set_hl(0, "StatusLine", { bg = "none", fg = normal_hl.fg })
+	vim.api.nvim_set_hl(0, "StatusLineNC", { bg = "none", fg = normal_hl.fg })
 	vim.api.nvim_set_hl(0, "@function.call", { link = "@function" })
 	vim.api.nvim_set_hl(0, "@function.method", { link = "@function" })
 	vim.api.nvim_set_hl(0, "@function.builtin", { link = "@function" })
 	vim.api.nvim_set_hl(0, "@keyword.function", { link = "@keyword" })
+	vim.api.nvim_set_hl(0, "@type.builtin.odin", { link = "Type" })
+	vim.api.nvim_set_hl(0, "@constant.builtin.odin", { link = "Type" })
+	vim.api.nvim_set_hl(0, "@module.odin", { link = "@variable.odin" })
 	vim.api.nvim_set_hl(0, "@tag.builtin", { link = "@type.builtin" })
 	vim.api.nvim_set_hl(0, "NeoTreeNormal", { link = "Normal" })
 	vim.api.nvim_set_hl(0, "NeoTreeNormalNC", { link = "Normal" })
@@ -112,11 +146,15 @@ local function apply_colorscheme_overrides()
 		local name = "DiagnosticUnderline" .. diag
 		local hl = vim.api.nvim_get_hl(0, { name = name })
 		local color = diagnostic_colors[diag]
-		vim.api.nvim_set_hl(0, name, vim.tbl_extend("force", hl or {}, {
-			underline = false,
-			undercurl = true,
-			sp = hl.sp or color,
-		}))
+		vim.api.nvim_set_hl(
+			0,
+			name,
+			vim.tbl_extend("force", hl or {}, {
+				underline = false,
+				undercurl = true,
+				sp = hl.sp or color,
+			})
+		)
 	end
 end
 

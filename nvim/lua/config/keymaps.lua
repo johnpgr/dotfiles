@@ -48,8 +48,6 @@ vim.keymap.set("n", "]t", "<cmd>tabnext<cr>", { desc = "Tab next" })
 vim.keymap.set("n", "[t", "<cmd>tabprev<cr>", { desc = "Tab prev" })
 vim.keymap.set("n", "<C-S-t>", "<cmd>tabnew<cr>", { desc = "New tab" })
 vim.keymap.set("n", "<C-S-w>", "<cmd>tabclose<cr>", { desc = "Close tab" })
-vim.keymap.set("n", "<Tab>", "<cmd>bnext<cr>", { desc = "Buffer next" })
-vim.keymap.set("n", "<S-Tab>", "<cmd>bprev<cr>", { desc = "Buffer prev" })
 vim.keymap.set("n", "<Esc>", "<cmd>noh<cr>", { desc = "Clear highlights" })
 vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 vim.keymap.set("n", "<leader>I", "<cmd>Inspect<cr>", { desc = "Inspect" })
@@ -114,6 +112,17 @@ vim.keymap.set("n", "<leader>tc", function()
 		vim.o.colorcolumn = ""
 	end
 end, { desc = "Color column" })
+
+vim.keymap.set("n", "<leader>td", function()
+	if vim.diagnostic.is_enabled() then
+		vim.diagnostic.enable(false)
+		vim.notify("Diagnostics disabled", vim.log.levels.INFO)
+	else
+		vim.diagnostic.enable(true)
+		vim.notify("Diagnostics enabled", vim.log.levels.INFO)
+	end
+end, { desc = "Diagnostics" })
+
 
 -- --------------------------------------------------------------------------
 -- Yank keymaps
@@ -231,38 +240,14 @@ vim.keymap.set("n", "[q", function()
 end, { desc = "Previous quickfix item" })
 
 -- --------------------------------------------------------------------------
--- Compile-mode keymaps
+-- Compilation / Dispatch keymaps
 -- --------------------------------------------------------------------------
 
-vim.keymap.set("n", "]e", function()
-	require("compile-mode").next_error()
-end, { desc = "Next error" })
+vim.keymap.set("n", "]e", "]q", { remap = true, desc = "Next error" })
+vim.keymap.set("n", "[e", "[q", { remap = true, desc = "Previous error" })
 
-vim.keymap.set("n", "[e", function()
-	require("compile-mode").prev_error()
-end, { desc = "Previous error" })
-
-vim.keymap.set("n", "<leader>m", function()
-	if vim.bo.filetype == "oil" then
-		vim.g.compilation_directory = require("oil").get_current_dir()
-	end
-	require("compile-mode").compile()
-end, { desc = "Compile" })
-
-vim.keymap.set("n", "<leader>M", function()
-	if vim.bo.filetype == "oil" then
-		vim.g.compilation_directory = require("oil").get_current_dir()
-	end
-	require("compile-mode").compile({
-		smods = {
-			vertical = true,
-		},
-	})
-end, { desc = "Compile (vertical)" })
-
-vim.keymap.set("n", "<leader>r", function()
-	require("compile-mode").recompile()
-end, { desc = "Recompile" })
+vim.keymap.set("n", "<leader>m", "<cmd>Make<cr>", { desc = "Compile" })
+vim.keymap.set("n", "<leader>b", ":Dispatch ", { desc = "Dispatch" })
 
 -- --------------------------------------------------------------------------
 -- Git / hunk keymaps (requires gitsigns)

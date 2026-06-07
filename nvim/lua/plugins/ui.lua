@@ -1,4 +1,4 @@
--- UI plugins: neo-tree, oil, smart-splits, tabby, toggleterm,
+-- UI plugins: neo-tree, oil, smart-splits, toggleterm,
 -- which-key, transparent, indent-blankline, diagflow, image.nvim, cord
 
 local term = os.getenv("TERM")
@@ -205,7 +205,7 @@ return {
 				columns = columns,
 				skip_confirm_for_simple_edits = true,
 				view_options = {
-					show_hidden = true,
+					show_hidden = false,
 					-- is_always_hidden = function(name, _)
 					-- 	return name == ".." or name == "../"
 					-- end,
@@ -352,54 +352,6 @@ return {
 		event = "VeryLazy",
 		config = function()
 			require("cord").setup({})
-		end,
-	},
-
-	-- Tabby (tabline with buffers)
-	{
-		"nanozuki/tabby.nvim",
-		lazy = false,
-		config = function()
-			local theme = {
-				fill = "TabLineFill",
-				current_buf = "TabLineSel",
-				buf = "TabLine",
-			}
-
-			local function is_tabline_buffer(buf)
-				return vim.bo[buf.id].filetype ~= "compilation"
-			end
-
-			require("tabby").setup({
-				line = function(line)
-					return {
-						line.bufs().filter(is_tabline_buffer).foreach(function(buf)
-							local hl = buf.is_current() and theme.current_buf or theme.buf
-							local name = buf.name()
-							if buf.is_changed() then
-								name = name .. "[+]"
-							end
-							return {
-								line.sep(" ", hl, theme.fill),
-								buf.is_current() and "*" or " ",
-								name,
-								line.sep(" ", hl, theme.fill),
-								hl = hl,
-								margin = " ",
-							}
-						end),
-						hl = theme.fill,
-					}
-				end,
-				option = {
-					buf_name = {
-						mode = "tail",
-						name_fallback = function()
-							return "[No Name]"
-						end,
-					},
-				},
-			})
 		end,
 	},
 
