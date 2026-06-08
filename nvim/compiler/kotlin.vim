@@ -12,6 +12,6 @@ endif
 
 CompilerSet errorformat=%f:%l:%c:\ %t%*[^:]:\ %m,%f:%l:%c:\ %m,%-G%.%#
 
-" Compile only the current file to JVM class files. This avoids runnable JAR
-" packaging and -include-runtime, which dominate compile time for small files.
-let &l:makeprg = "mkdir -p .out/%:t:r:S && kotlinc %:p:S -d .out/%:t:r:S"
+" Compile the current file using the contest JVM limits while keeping class
+" output in .out/<file-stem> for kotlin-watch.
+let &l:makeprg = "mkdir -p .out/%:t:r:S && kotlinc -J-Xms1024m -J-Xmx1024m -J-Xss100m -include-runtime %:p:S -d .out/%:t:r:S"

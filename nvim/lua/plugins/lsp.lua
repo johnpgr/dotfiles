@@ -27,7 +27,6 @@ return {
 				"build.gradle",
 				"pom.xml",
 				"workspace.json",
-				".git",
 			}
 
 			local kotlin_lsp_cmd = vim.fn.stdpath("data") .. "/mason/bin/intellij-server"

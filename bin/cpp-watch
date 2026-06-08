@@ -1,0 +1,127 @@
+#!/usr/bin/env fish
+
+set -g program_name cpp-watch
+
+function usage
+    printf 'usage: %s path/to/file.cpp [-- program args...]\n' $program_name >&2
+    exit 2
+end
+
+set -l watch_args
+set -g cpp_watch_program_args
+set -l after_delimiter false
+
+for arg in $argv
+    if test "$after_delimiter" = false; and test "$arg" = "--"
+        set after_delimiter true
+        continue
+    end
+
+    if test "$after_delimiter" = true
+        set -a cpp_watch_program_args "$arg"
+    else
+        set -a watch_args "$arg"
+    end
+end
+
+if test (count $watch_args) -gt 0
+    switch $watch_args[1]
+        case -h --help
+            usage
+    end
+end
+
+if test (count $watch_args) -ne 1
+    usage
+end
+
+set -l stdin_file
+if not isatty stdin
+    set -l resolved_stdin (path resolve /proc/self/fd/0 2>/dev/null)
+    if test -n "$resolved_stdin"; and path is -f -- $resolved_stdin
+        set stdin_file $resolved_stdin
+    else
+        set -g cpp_watch_stdin_temp (mktemp -t cpp-watch-stdin.XXXXXX)
+        cat > $cpp_watch_stdin_temp
+        set stdin_file $cpp_watch_stdin_temp
+    end
+end
+
+set -l src $watch_args[1]
+if not path is -f -- $src
+    printf '%s: file not found: %s\n' $program_name $src >&2
+    exit 1
+end
+
+set -l extension (path extension -- $src)
+switch $extension
+    case .cc .cpp .cxx .C
+    case '*'
+        printf '%s: expected a C++ source file: %s\n' $program_name $src >&2
+        exit 1
+end
+
+set -l stem (path basename -E -- $src)
+set -l out_dir ".out/$stem"
+set -l binary "$out_dir/$stem"
+
+function file_fingerprint --argument-names file
+    if command -q stat
+        stat -c '%n:%y:%s' -- $file | string replace -a ' ' '_'
+    else
+        printf '%s:%s\n' $file (path mtime -- $file)
+    end
+end
+
+function binary_fingerprint --argument-names binary stdin_file
+    if not path is -f -- $binary
+        return 1
+    end
+
+    file_fingerprint $binary
+
+    if test -n "$stdin_file"
+        file_fingerprint $stdin_file
+    end
+end
+
+function run_cpp --argument-names binary stdin_file
+    if test -n "$stdin_file"
+        $binary $cpp_watch_program_args < $stdin_file
+    else
+        $binary $cpp_watch_program_args
+    end
+end
+
+function cleanup_stdin_temp --on-event fish_exit
+    if set -q cpp_watch_stdin_temp
+        rm -f -- $cpp_watch_stdin_temp
+    end
+end
+
+printf 'watching %s\n' $binary >&2
+printf 'compile in Neovim with :compiler cpp | :make\n' >&2
+if test -n "$stdin_file"
+    printf 'replaying stdin from %s\n' $stdin_file >&2
+end
+if test (count $cpp_watch_program_args) -gt 0
+    printf 'program args: %s\n' (string join ' ' -- $cpp_watch_program_args) >&2
+end
+
+set -l last_fingerprint
+
+while true
+    set -l fingerprint (binary_fingerprint $binary $stdin_file)
+    if test $status -ne 0
+        sleep 0.2
+        continue
+    end
+
+    if test "$fingerprint" != "$last_fingerprint"
+        set last_fingerprint "$fingerprint"
+        clear
+        run_cpp $binary $stdin_file
+    end
+
+    sleep 0.2
+end
