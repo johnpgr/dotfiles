@@ -94,19 +94,19 @@ return {
 				["x"] = "DiagnosticSignOk",
 			}
 			local columns = {
-				-- {
-				--     "permissions",
-				--     highlight = function(permission_str)
-				--         local hls = {}
-				--         for i = 1, #permission_str do
-				--             local char = permission_str:sub(i, i)
-				--             table.insert(hls, { permission_hlgroups[char], i - 1, i })
-				--         end
-				--         return hls
-				--     end,
-				-- },
-				-- { "size",  highlight = "Special" },
-				-- { "mtime", highlight = "Number" },
+				{
+				    "permissions",
+				    highlight = function(permission_str)
+				        local hls = {}
+				        for i = 1, #permission_str do
+				            local char = permission_str:sub(i, i)
+				            table.insert(hls, { permission_hlgroups[char], i - 1, i })
+				        end
+				        return hls
+				    end,
+				},
+				{ "size",  highlight = "Special" },
+				{ "mtime", highlight = "Number" },
 			}
 
 			if vim.g.icons_enabled then

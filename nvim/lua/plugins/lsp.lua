@@ -35,7 +35,7 @@ return {
 			end
 
 			vim.lsp.config("kotlin_lsp", {
-				cmd = { "faketime", "2026-06-04", kotlin_lsp_cmd, "--stdio" },
+				cmd = { kotlin_lsp_cmd, "--stdio" },
 				root_dir = function(bufnr, on_dir)
 					local fname = vim.api.nvim_buf_get_name(bufnr)
 					if fname == "" then
@@ -132,6 +132,7 @@ return {
 
 			vim.lsp.enable({
 				"lua_ls",
+                -- "jdtls",
 				-- "vtsls",
 				"clangd",
 				"html",

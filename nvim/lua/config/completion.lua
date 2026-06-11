@@ -1,45 +1,22 @@
--- Native Neovim completion
+-- Completion: mini.completion for LSP popup menu + ghost text on Tab
+
+local M = {}
 
 local min_prefix_length = 1
 local ghost_delay_ms = 200
-local ghost_namespace = vim.api.nvim_create_namespace("native-completion-ghost")
+local ghost_namespace = vim.api.nvim_create_namespace("completion-ghost")
 local ghost_timer = vim.uv.new_timer()
 local ghost_request = 0
 local ghost = nil
 local ghost_lsp_cancel = nil
-local inline_completion_buffers = {}
 
 vim.o.autocomplete = false
 vim.o.autocompletedelay = ghost_delay_ms
-vim.o.complete = "o,."
-vim.o.completeopt = "menuone,noinsert,noselect,nosort,fuzzy,popup"
+vim.o.complete = ".,w,b,u"
+vim.o.completeopt = "menuone,noinsert,noselect,nosort,popup"
 vim.o.infercase = true
-vim.o.pummaxwidth = 80
-
-local lsp_completion = require("vim.lsp.completion")
-
-local function feedkeys(keys)
-	vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(keys, true, false, true), "n", false)
-end
-
-local function is_lsp_item(item)
-	return vim.tbl_get(item, "user_data", "nvim", "lsp", "client_id") ~= nil
-end
-
-local function lsp_first_cmp(a, b)
-	local a_lsp, b_lsp = is_lsp_item(a), is_lsp_item(b)
-	if a_lsp ~= b_lsp then
-		return a_lsp
-	end
-
-	local score_a = a._fuzzy_score or 0
-	local score_b = b._fuzzy_score or 0
-	if score_a ~= score_b then
-		return score_a > score_b
-	end
-
-	return (a.word or "") < (b.word or "")
-end
+-- Keep the pum narrow so mini.completion's info window has room beside it.
+vim.o.pummaxwidth = 60
 
 local function current_prefix()
 	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
@@ -54,6 +31,89 @@ local function current_prefix()
 		prefix = prefix,
 		start_col = col - #prefix,
 	}
+end
+
+local function word_starts_with(word, prefix)
+	if vim.o.ignorecase then
+		return word:lower():sub(1, #prefix) == prefix:lower()
+	end
+
+	return word:sub(1, #prefix) == prefix
+end
+
+local function effective_base(base)
+	if type(base) == "string" and base ~= "" then
+		local keyword = vim.fn.matchstr(base, [[\k*$]])
+		if keyword ~= "" then
+			return keyword
+		end
+		return base
+	end
+
+	return current_prefix().prefix
+end
+
+local function prefix_filter_items(items, base)
+	base = effective_base(base)
+	if base == "" then
+		return {}
+	end
+
+	local filtered = vim.tbl_filter(function(item)
+		return word_starts_with(item.filterText or item.label, base)
+	end, items)
+
+	table.sort(filtered, function(a, b)
+		return (a.sortText or a.label) < (b.sortText or b.label)
+	end)
+
+	return filtered
+end
+
+local function lsp_insert_text(item)
+	local text = (item.textEdit and item.textEdit.newText) or item.insertText or item.filterText or item.label
+	if not text or text == "" then
+		return ""
+	end
+
+	return text:match("^([^\n\r]*)") or text
+end
+
+local function ghost_suffix(prefix, item)
+	local text = lsp_insert_text(item)
+	if text == "" then
+		return ""
+	end
+	if word_starts_with(text, prefix) then
+		return text:sub(#prefix + 1)
+	end
+
+	return text
+end
+
+local function flatten_lsp_items(responses, clients)
+	local all_items = {}
+
+	for _, client in ipairs(clients) do
+		local result = responses[client.id]
+		if not result then
+			goto continue
+		end
+
+		local items = result.items or result
+		if type(items) ~= "table" then
+			goto continue
+		end
+
+		for _, item in ipairs(items) do
+			item.client_id = client.id
+			table.insert(all_items, item)
+		end
+
+		::continue::
+	end
+
+	return all_items
 end
 
 local function clear_ghost()
@@ -71,18 +131,11 @@ local function cancel_lsp_ghost()
 	end
 end
 
-local function disable_inline_completion(bufnr)
-	if inline_completion_buffers[bufnr] then
-		vim.lsp.inline_completion.enable(false, { bufnr = bufnr })
-	end
-end
-
-local function reset_ghost_completion()
+local function reset_ghost()
 	ghost_timer:stop()
 	ghost_request = ghost_request + 1
 	cancel_lsp_ghost()
 	clear_ghost()
-	disable_inline_completion(vim.api.nvim_get_current_buf())
 end
 
 local function keyword_matches(line)
@@ -101,14 +154,6 @@ local function keyword_matches(line)
 	end
 end
 
-local function word_starts_with(word, prefix)
-	if vim.o.ignorecase then
-		return word:lower():sub(1, #prefix) == prefix:lower()
-	end
-
-	return word:sub(1, #prefix) == prefix
-end
-
 local function find_buffer_completion(prefix, bufnr)
 	local seen = {}
 
@@ -124,13 +169,7 @@ local function find_buffer_completion(prefix, bufnr)
 	end
 end
 
-local function show_buffer_ghost(context)
-	local word = find_buffer_completion(context.prefix, context.bufnr)
-	if not word then
-		return
-	end
-
-	local suffix = word:sub(#context.prefix + 1)
+local function set_ghost(context, suffix)
 	if suffix == "" then
 		return
 	end
@@ -151,21 +190,13 @@ local function show_buffer_ghost(context)
 	}
 end
 
-local function set_ghost(context, suffix)
-	vim.api.nvim_buf_set_extmark(context.bufnr, ghost_namespace, context.row, context.col, {
-		virt_text = { { suffix, "CompletionGhost" } },
-		virt_text_pos = "inline",
-		hl_mode = "replace",
-		priority = 100,
-	})
+local function show_buffer_ghost(context)
+	local word = find_buffer_completion(context.prefix, context.bufnr)
+	if not word then
+		return
+	end
 
-	ghost = {
-		bufnr = context.bufnr,
-		row = context.row,
-		col = context.col,
-		prefix = context.prefix,
-		text = suffix,
-	}
+	set_ghost(context, word:sub(#context.prefix + 1))
 end
 
 local function show_lsp_ghost(context, request)
@@ -202,42 +233,17 @@ local function show_lsp_ghost(context, request)
 			return
 		end
 
-		local line = vim.api.nvim_buf_get_lines(context.bufnr, context.row, context.row + 1, false)[1] or ""
-		local lsp_matches = {}
+		local items = prefix_filter_items(flatten_lsp_items(responses, clients), latest_context.prefix)
 
-		for _, client in ipairs(clients) do
-			local result = responses[client.id]
-			if result and #(result.items or result) > 0 then
-				local client_matches = lsp_completion._convert_results(
-					line,
-					context.row,
-					context.col,
-					client.id,
-					context.start_col,
-					nil,
-					result,
-					client.offset_encoding
-				)
-				vim.list_extend(lsp_matches, client_matches)
+		for _, item in ipairs(items) do
+			local suffix = ghost_suffix(latest_context.prefix, item)
+			if suffix ~= "" then
+				set_ghost(latest_context, suffix)
+				return
 			end
 		end
 
-		if #lsp_matches > 1 then
-			table.sort(lsp_matches, lsp_first_cmp)
-		end
-
-		for _, item in ipairs(lsp_matches) do
-			local word = item.word or item.abbr or ""
-			if word ~= context.prefix and word_starts_with(word, context.prefix) then
-				local suffix = word:sub(#context.prefix + 1)
-				if suffix ~= "" then
-					set_ghost(context, suffix)
-					return
-				end
-			end
-		end
-
-		show_buffer_ghost(context)
+		show_buffer_ghost(latest_context)
 	end
 
 	for _, client in ipairs(clients) do
@@ -266,114 +272,6 @@ local function show_lsp_ghost(context, request)
 	end
 end
 
-local function lsp_completion_clients(bufnr)
-	return vim.lsp.get_clients({ bufnr = bufnr, method = vim.lsp.protocol.Methods.textDocument_completion })
-end
-
-local function lsp_has_completion_items(result)
-	if not result then
-		return false
-	end
-
-	return #(result.items or result) > 0
-end
-
-local function trigger_buffer_completion()
-	local bufnr = vim.api.nvim_get_current_buf()
-	local complete = vim.bo.complete
-
-	vim.bo.complete = "."
-	feedkeys("<C-e><C-n>")
-	vim.defer_fn(function()
-		if vim.api.nvim_buf_is_loaded(bufnr) then
-			vim.bo[bufnr].complete = complete
-		end
-	end, 50)
-end
-
-local function with_lsp_only_completion(callback)
-	local bufnr = vim.api.nvim_get_current_buf()
-	local complete = vim.bo.complete
-
-	vim.bo.complete = "o"
-	callback()
-	vim.defer_fn(function()
-		if vim.api.nvim_buf_is_loaded(bufnr) then
-			vim.bo[bufnr].complete = complete
-		end
-	end, 50)
-end
-
-local function trigger_lsp_completion()
-	with_lsp_only_completion(function()
-		feedkeys("<C-e><C-x><C-o>")
-	end)
-end
-
-local manual_completion_request = 0
-
-local function trigger_manual_completion()
-	reset_ghost_completion()
-
-	if vim.fn.pumvisible() == 1 then
-		feedkeys("<C-n>")
-		return
-	end
-
-	local request = manual_completion_request + 1
-	manual_completion_request = request
-
-	local bufnr = vim.api.nvim_get_current_buf()
-	local win = vim.api.nvim_get_current_win()
-	local row, col = unpack(vim.api.nvim_win_get_cursor(win))
-	local clients = lsp_completion_clients(bufnr)
-	if #clients == 0 then
-		trigger_buffer_completion()
-		return
-	end
-
-	local remaining = #clients
-	local has_lsp_items = false
-
-	local function finish()
-		remaining = remaining - 1
-		if remaining > 0 then
-			return
-		end
-
-		if manual_completion_request ~= request or not vim.api.nvim_get_mode().mode:find("^i") then
-			return
-		end
-
-		local current_row, current_col = unpack(vim.api.nvim_win_get_cursor(win))
-		if current_row ~= row or current_col ~= col then
-			return
-		end
-
-		if has_lsp_items then
-			trigger_lsp_completion()
-		else
-			trigger_buffer_completion()
-		end
-	end
-
-	for _, client in ipairs(clients) do
-		local params = vim.lsp.util.make_position_params(win, client.offset_encoding)
-		params.context = { triggerKind = vim.lsp.protocol.CompletionTriggerKind.Invoked }
-
-		local ok = client:request("textDocument/completion", params, function(_, result)
-			if lsp_has_completion_items(result) then
-				has_lsp_items = true
-			end
-			finish()
-		end, bufnr)
-
-		if not ok then
-			finish()
-		end
-	end
-end
-
 local function valid_ghost()
 	if not ghost or ghost.bufnr ~= vim.api.nvim_get_current_buf() then
 		return nil
@@ -389,7 +287,6 @@ end
 
 local function schedule_ghost()
 	clear_ghost()
-	disable_inline_completion(vim.api.nvim_get_current_buf())
 	ghost_request = ghost_request + 1
 
 	local request = ghost_request
@@ -418,78 +315,121 @@ local function schedule_ghost()
 	end))
 end
 
-local group = vim.api.nvim_create_augroup("native-completion", { clear = true })
+local function trigger_manual_completion()
+	reset_ghost()
+	MiniCompletion.complete_twostage(true, true)
+end
 
-vim.api.nvim_create_autocmd({ "TextChangedI", "CursorMovedI" }, {
-	group = group,
-	callback = schedule_ghost,
-})
-
-vim.api.nvim_create_autocmd({ "InsertEnter", "InsertLeave", "CompleteChanged", "CompleteDone" }, {
-	group = group,
-	callback = reset_ghost_completion,
-})
-
-vim.api.nvim_create_autocmd("LspAttach", {
-	group = vim.api.nvim_create_augroup("native-lsp-completion", { clear = true }),
-	callback = function(args)
-		local client = vim.lsp.get_client_by_id(args.data.client_id)
-		if not client then
-			return
+local function setup_keymaps()
+	vim.keymap.set("i", "<Tab>", function()
+		if vim.fn.pumvisible() == 1 then
+			return "<C-y>"
 		end
 
-		if client:supports_method(vim.lsp.protocol.Methods.textDocument_completion, args.buf) then
-			vim.lsp.completion.enable(true, client.id, args.buf)
+		local ghost_text = valid_ghost()
+		if ghost_text then
+			clear_ghost()
+			return ghost_text
 		end
 
-		if client:supports_method(vim.lsp.protocol.Methods.textDocument_inlineCompletion, args.buf) then
-			inline_completion_buffers[args.buf] = true
-			vim.lsp.inline_completion.enable(false, { bufnr = args.buf, client_id = client.id })
+		return "<Tab>"
+	end, { expr = true, replace_keycodes = true, desc = "Accept completion or insert tab" })
+
+	vim.keymap.set("i", "<S-Tab>", function()
+		if vim.fn.pumvisible() == 1 then
+			return "<C-p>"
 		end
-	end,
-})
 
-vim.keymap.set("i", "<Tab>", function()
-	if vim.fn.pumvisible() == 1 then
-		return "<C-y>"
-	end
+		return "<S-Tab>"
+	end, { expr = true, replace_keycodes = true, desc = "Previous completion item" })
 
-	if vim.lsp.inline_completion.get({ bufnr = 0 }) then
+	vim.keymap.set("i", "<C-n>", function()
+		if vim.fn.pumvisible() == 1 then
+			return "<C-n>"
+		end
+
+		trigger_manual_completion()
 		return ""
+	end, { expr = true, replace_keycodes = true, desc = "Show completion menu or next item" })
+
+	vim.keymap.set("i", "<C-Space>", trigger_manual_completion, { desc = "Show completion menu" })
+
+	vim.keymap.set("i", "<CR>", function()
+		if vim.fn.pumvisible() == 1 then
+			return "<C-y>"
+		end
+
+		return "<CR>"
+	end, { expr = true, replace_keycodes = true, desc = "Accept completion or newline" })
+end
+
+local function setup_autocmds()
+	local group = vim.api.nvim_create_augroup("completion-ghost", { clear = true })
+
+	vim.api.nvim_create_autocmd({ "TextChangedI", "CursorMovedI" }, {
+		group = group,
+		callback = schedule_ghost,
+	})
+
+	vim.api.nvim_create_autocmd({ "InsertEnter", "InsertLeave", "CompleteChanged", "CompleteDone" }, {
+		group = group,
+		callback = reset_ghost,
+	})
+
+	vim.api.nvim_create_autocmd("LspAttach", {
+		group = vim.api.nvim_create_augroup("completion-lsp", { clear = true }),
+		callback = function(args)
+			local client = vim.lsp.get_client_by_id(args.data.client_id)
+			if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_completion, args.buf) then
+				vim.bo[args.buf].omnifunc = "v:lua.MiniCompletion.completefunc_lsp"
+			end
+		end,
+	})
+end
+
+function M.setup()
+	require("mini.completion").setup({
+		-- Never auto-open the popup; only show on explicit trigger.
+		delay = {
+			completion = 10 ^ 7,
+			info = 100,
+			signature = 50,
+		},
+		window = {
+			info = { height = 20, width = 72, border = "single" },
+			signature = { height = 10, width = 72, border = "single" },
+		},
+		lsp_completion = {
+			source_func = "omnifunc",
+			auto_setup = false,
+			process_items = function(items, base)
+				local filtered = prefix_filter_items(items, base)
+				return MiniCompletion.default_process_items(filtered, effective_base(base), { filtersort = "none" })
+			end,
+		},
+		fallback_action = "<C-n>",
+		mappings = {
+			force_twostep = "",
+			force_fallback = "",
+			scroll_down = "<C-f>",
+			scroll_up = "<C-b>",
+		},
+	})
+
+	setup_keymaps()
+	setup_autocmds()
+
+	for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+		if vim.api.nvim_buf_is_loaded(bufnr) and vim.bo[bufnr].buftype == "" then
+			local clients = vim.lsp.get_clients({
+				bufnr = bufnr,
+				method = vim.lsp.protocol.Methods.textDocument_completion,
+			})
+			if #clients > 0 then
+				vim.bo[bufnr].omnifunc = "v:lua.MiniCompletion.completefunc_lsp"
+			end
+		end
 	end
+end
 
-	local ghost_text = valid_ghost()
-	if ghost_text then
-		clear_ghost()
-		return ghost_text
-	end
-
-	return "<Tab>"
-end, { expr = true, replace_keycodes = true, desc = "Accept completion or insert tab" })
-
-vim.keymap.set("i", "<S-Tab>", function()
-	if vim.fn.pumvisible() == 1 then
-		return "<C-p>"
-	end
-
-	return "<S-Tab>"
-end, { expr = true, replace_keycodes = true, desc = "Previous completion item" })
-
-vim.keymap.set("i", "<C-n>", function()
-	if vim.fn.pumvisible() == 1 then
-		return "<C-n>"
-	end
-
-	trigger_manual_completion()
-	return ""
-end, { expr = true, replace_keycodes = true, desc = "Show completion menu or next item" })
-
-vim.keymap.set("i", "<C-Space>", trigger_manual_completion, { desc = "Show completion menu" })
-
-vim.keymap.set("i", "<CR>", function()
-	if vim.fn.pumvisible() == 1 then
-		return "<C-y>"
-	end
-
-	return "<CR>"
-end, { expr = true, replace_keycodes = true, desc = "Accept completion or newline" })
+return M

@@ -33,10 +33,11 @@ vim.o.undofile = true
 vim.o.exrc = true
 vim.o.secure = true
 vim.o.cmdheight = 1
+vim.o.laststatus = 3
 vim.o.spelllang = "en,pt_br"
 vim.opt.clipboard = "unnamedplus"
 vim.opt.diffopt:append("linematch:60")
-vim.o.fillchars = [[eob: ,fold: ,foldopen:,foldsep: ,foldclose:]]
+vim.o.fillchars = [[eob: ,fold: ,foldopen:,foldsep: ,foldclose:,vert:│,horiz:─,horizup:─,horizdown:─]]
 
 require("vim._core.ui2").enable({})
 

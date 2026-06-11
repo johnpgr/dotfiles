@@ -1,9 +1,17 @@
--- Custom statusline
+-- Custom statusline (global; laststatus=3 sets g:statusline_winid)
 
 local ignored_ls = {}
 
+local function statusline_winid()
+	return vim.g.statusline_winid or vim.api.nvim_get_current_win()
+end
+
+local function statusline_bufnr()
+	return vim.api.nvim_win_get_buf(statusline_winid())
+end
+
 local function lsp_status()
-	local attached_clients = vim.lsp.get_clients({ bufnr = 0 })
+	local attached_clients = vim.lsp.get_clients({ bufnr = statusline_bufnr() })
 	if #attached_clients == 0 then
 		return ""
 	end
@@ -27,7 +35,7 @@ local function tab_status()
 end
 
 local function file_status()
-	local path = vim.api.nvim_buf_get_name(0)
+	local path = vim.api.nvim_buf_get_name(statusline_bufnr())
 	if path == "" then
 		return "[No Name]"
 	end
@@ -36,7 +44,9 @@ local function file_status()
 end
 
 local function file_encoding_status()
-	local encoding = vim.bo.fenc ~= "" and vim.bo.fenc or vim.o.enc
+	local bufnr = statusline_bufnr()
+	local fenc = vim.api.nvim_get_option_value("fileencoding", { buf = bufnr })
+	local encoding = fenc ~= "" and fenc or vim.o.enc
 	return string.lower(encoding)
 end
 

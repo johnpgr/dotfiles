@@ -43,6 +43,15 @@ return {
 	-- Dispatch
 	{ "tpope/vim-dispatch", cmd = { "Dispatch", "Make", "Focus", "Start" } },
 
+	-- Mini Completion (LSP popup menu; ghost text lives in config.completion)
+	{
+		"nvim-mini/mini.completion",
+		lazy = false,
+		config = function()
+			require("config.completion").setup()
+		end,
+	},
+
 	-- Mini Bufremove
 	{
 		"nvim-mini/mini.bufremove",
