@@ -139,7 +139,36 @@ local function picker_window(label, window)
 	}, window or {})
 end
 
+local function path_string(value)
+	if type(value) ~= "string" or value == "" then
+		return nil
+	end
+
+	-- Ripgrep/null-separated mini.pick items embed location after the first NUL.
+	return value:match("^([^\0]+)") or value
+end
+
 local function picker_item_to_qf(item)
+	if type(item) == "string" then
+		local from, lnum, col, rest = item:match("()%z(%d+)%z?(%d*)%z?(.*)$")
+		local path_str = item:sub(1, (from or 0) - 1)
+		if path_str == "" then
+			return nil
+		end
+
+		local path = vim.fn.fnamemodify(path_str, ":p")
+		if vim.fn.filereadable(path) ~= 1 and vim.fn.isdirectory(path) ~= 1 then
+			return nil
+		end
+
+		return {
+			filename = path,
+			lnum = tonumber(lnum) or 1,
+			col = tonumber(col) or 1,
+			text = rest or "",
+		}
+	end
+
 	if type(item) ~= "table" then
 		return nil
 	end
@@ -147,26 +176,31 @@ local function picker_item_to_qf(item)
 	local qf_item = {
 		lnum = item.lnum or 1,
 		col = item.col or 1,
-		text = item.text or item.path or item.filename or "",
+		text = item.text or path_string(item.path) or path_string(item.filename) or "",
 	}
 	if item.bufnr then
 		qf_item.bufnr = item.bufnr
-	elseif item.path then
-		qf_item.filename = item.path
-	elseif item.filename then
-		qf_item.filename = item.filename
 	else
-		return nil
+		local path_str = path_string(item.path) or path_string(item.filename)
+		if not path_str then
+			return nil
+		end
+		qf_item.filename = vim.fn.fnamemodify(path_str, ":p")
 	end
 
 	return qf_item
 end
 
 local function add_picker_matches_to_qflist()
-	local matches = mini_pick().get_picker_matches()
-	local items = matches and matches.all or {}
-	local qf_items = {}
+	local MiniPick = mini_pick()
+	local matches = MiniPick.get_picker_matches()
+	local items = matches and matches.all
+	if not items or #items == 0 then
+		vim.notify("No matches to send to quickfix", vim.log.levels.INFO)
+		return
+	end
 
+	local qf_items = {}
 	for _, item in ipairs(items) do
 		local qf_item = picker_item_to_qf(item)
 		if qf_item then
@@ -174,22 +208,34 @@ local function add_picker_matches_to_qflist()
 		end
 	end
 
-	vim.fn.setqflist(qf_items, "r")
-	if #qf_items > 0 then
-		vim.schedule(function()
-			vim.cmd("copen")
-		end)
+	if #qf_items == 0 then
+		vim.notify("No quickfix-compatible matches", vim.log.levels.WARN)
+		return
 	end
+
+	local source_name = MiniPick.get_picker_opts().source.name
+	local prompt = table.concat(MiniPick.get_picker_query() or {})
+	local title = source_name .. (prompt == "" and "" or (" : " .. prompt))
+	vim.fn.setqflist({}, " ", { items = qf_items, title = title, nr = "$" })
+	vim.schedule(function()
+		vim.cmd("copen")
+	end)
 	return true
 end
 
 local function picker_mappings(mappings)
 	return vim.tbl_deep_extend("force", mappings or {}, {
 		qflist = {
-			char = vim.api.nvim_replace_termcodes("<C-q>", true, true, true),
+			char = "<C-q>",
 			func = add_picker_matches_to_qflist,
 		},
 	})
+end
+
+local function with_picker_mappings(opts)
+	opts = opts or {}
+	opts.mappings = picker_mappings(opts.mappings)
+	return opts
 end
 
 local function pick_start(opts)
@@ -508,13 +554,13 @@ end
 -- --------------------------------------------------------------------------
 
 local function pick_files_mini(cwd, prompt)
-	mini_pick().builtin.files(nil, {
+	mini_pick().builtin.files(nil, with_picker_mappings({
 		source = {
 			cwd = cwd,
 			name = prompt or "Files",
 		},
 		window = picker_window(prompt or "Files"),
-	})
+	}))
 end
 
 local function pick_grep_mini(default_text, grep_mode, live)
@@ -531,14 +577,14 @@ local function pick_grep_mini(default_text, grep_mode, live)
 	}
 
 	if not live then
-		return mini_pick().builtin.grep({ pattern = default_text, method = method }, opts)
+		return mini_pick().builtin.grep({ pattern = default_text, method = method }, with_picker_mappings(opts))
 	end
 
 	local default_query_group = set_picker_default_text(default_text)
-	mini_pick().builtin.grep_live({ method = method }, {
+	mini_pick().builtin.grep_live({ method = method }, with_picker_mappings({
 		source = opts.source,
 		window = opts.window,
-	})
+	}))
 
 	if default_query_group then
 		pcall(vim.api.nvim_del_augroup_by_id, default_query_group)
@@ -653,7 +699,7 @@ local function pick_grep_fff(default_text, grep_mode, live)
 		end,
 		mappings = {
 			toggle_mode = {
-				char = vim.api.nvim_replace_termcodes("<C-e>", true, true, true),
+				char = "<C-e>",
 				func = function()
 					if current_mode == "plain" then
 						current_mode = "fuzzy"
@@ -878,9 +924,9 @@ local function live_grep_current_buffer()
 end
 
 local function pick_help_tags()
-	mini_pick().builtin.help(nil, {
+	mini_pick().builtin.help(nil, with_picker_mappings({
 		window = picker_window("Help"),
-	})
+	}))
 end
 
 local function open_command_picker()
@@ -1167,3 +1213,16 @@ end, { desc = "Go to definitions" })
 vim.keymap.set("n", "gr", function()
 	open_reference_picker()
 end, { desc = "Go to references" })
+
+-- Register <C-q> globally for all mini.pick pickers (including builtins and resume).
+vim.api.nvim_create_autocmd("User", {
+	pattern = "LazyLoad",
+	callback = function(ev)
+		if ev.data ~= "mini.pick" then
+			return
+		end
+
+		local pick = require("mini.pick")
+		pick.config.mappings = picker_mappings(pick.config.mappings)
+	end,
+})
