@@ -148,7 +148,7 @@ return {
 		ft = "qf",
 		keys = {
 			{
-				"<leader>q",
+				"<leader>c",
 				function()
 					require("quicker").toggle()
 				end,

@@ -8,8 +8,21 @@ vim.g.loaded_netrwPlugin = 1
 
 -- Editor options
 vim.o.cursorline = false
-vim.o.number = false
+vim.o.number = true
 vim.o.relativenumber = false
+function _G.dotfiles_statuscolumn_lnum()
+	local winid = vim.g.statusline_winid or vim.api.nvim_get_current_win()
+	local number = vim.api.nvim_get_option_value("number", { win = winid })
+	if vim.v.virtnum ~= 0 or not number then
+		return ""
+	end
+
+	local relativenumber = vim.api.nvim_get_option_value("relativenumber", { win = winid })
+	local lnum = relativenumber and vim.v.relnum ~= 0 and vim.v.relnum or vim.v.lnum
+	return lnum .. " "
+end
+
+vim.o.statuscolumn = "%C%s%=%{v:lua.dotfiles_statuscolumn_lnum()}"
 vim.o.confirm = true
 vim.o.wrap = false
 vim.o.inccommand = "split"
@@ -23,7 +36,7 @@ vim.o.list = false
 vim.o.splitbelow = true
 vim.o.splitright = true
 vim.o.signcolumn = "no"
-vim.o.foldcolumn = "1"
+vim.o.foldcolumn = "0"
 vim.o.breakindent = true
 vim.o.smartindent = true
 vim.o.autoindent = true

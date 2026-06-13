@@ -44,6 +44,8 @@ return {
 					vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = true, silent = true })
 					vim.keymap.set("n", "<Tab>", "=", { buffer = true, remap = true })
 					vim.bo.buflisted = false
+					vim.wo.number = false
+					vim.wo.relativenumber = false
 				end,
 			})
 

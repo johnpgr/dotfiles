@@ -61,6 +61,8 @@ local function apply_colorscheme_overrides()
 	-- )
 
 	-- Some manual fixing of color tokens
+    vim.api.nvim_set_hl(0, "LineNr", { ctermfg = 8 })
+    vim.api.nvim_set_hl(0, "Comment", { ctermfg = 8 })
 	vim.api.nvim_set_hl(0, "Visual", { reverse = true })
 	vim.api.nvim_set_hl(0, "VisualNOS", { reverse = true })
 	vim.api.nvim_set_hl(0, "CursorLineFold", { link = "CursorLine" })
