@@ -320,9 +320,6 @@ end, { desc = "Previous quickfix item" })
 vim.keymap.set("n", "]e", "]q", { remap = true, desc = "Next error" })
 vim.keymap.set("n", "[e", "[q", { remap = true, desc = "Previous error" })
 
-vim.keymap.set("n", "<leader>m", "<cmd>Make<cr>", { desc = "Compile" })
-vim.keymap.set("n", "<leader>b", ":Dispatch ", { desc = "Dispatch" })
-
 -- --------------------------------------------------------------------------
 -- Git / hunk keymaps (requires gitsigns)
 -- --------------------------------------------------------------------------

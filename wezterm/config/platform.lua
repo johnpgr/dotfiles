@@ -9,7 +9,7 @@ function M.default_prog()
         return { "pwsh", "-NoLogo" }
     end
 
-    return { "zsh" }
+    return { "bash" }
 end
 
 function M.window_decorations()

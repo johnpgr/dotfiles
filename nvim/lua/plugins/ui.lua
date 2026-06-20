@@ -83,6 +83,7 @@ return {
 	{
 		"stevearc/oil.nvim",
 		lazy = false,
+		dependencies = { "nvim-mini/mini.icons" },
 		keys = {
 			{ "<leader>e", "<cmd>Oil<cr>", desc = "Explore" },
 		},

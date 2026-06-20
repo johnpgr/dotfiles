@@ -10,21 +10,27 @@ package.path = table.concat({
 local config = wezterm.config_builder()
 local act = wezterm.action
 local smart_splits = wezterm.plugin.require("https://github.com/mrjones2014/smart-splits.nvim")
+local font_picker = require("config.font_picker")
+local open_in_nvim = require("config.open_in_nvim")
 local platform = require("config.platform")
 local theme = require("config.theme")
+local theme_picker = require("config.theme_picker")
 
 local regular_font = theme.regular_font()
 local theme_mode = theme.read_theme_mode()
 
 wezterm.add_to_config_reload_watch_list(theme.theme_mode_file)
+wezterm.add_to_config_reload_watch_list(theme.font_family_file)
+wezterm.add_to_config_reload_watch_list(theme.dark_color_scheme_file)
+wezterm.add_to_config_reload_watch_list(theme.light_color_scheme_file)
 
-config.front_end = "WebGpu"
+-- config.front_end = "WebGpu"
 config.font = regular_font
 config.font_rules = theme.font_rules(regular_font)
+config.harfbuzz_features = { "calt=0", "clig=0", "liga=0" }
 config.max_fps = 165
 config.default_prog = platform.default_prog()
-config.font_size = 12.0
-config.line_height = 1
+config.font_size = 10.0
 config.enable_tab_bar = true
 config.hide_tab_bar_if_only_one_tab = true
 config.use_fancy_tab_bar = false
@@ -73,6 +79,8 @@ config.keys = {
 	{ key = "Tab", mods = "CTRL", action = act.ActivateTabRelative(1) },
 	{ key = "Tab", mods = "CTRL|SHIFT", action = act.ActivateTabRelative(-1) },
 	{ key = "z", mods = "ALT", action = act.TogglePaneZoomState },
+	{ key = "F", mods = "ALT|SHIFT", action = font_picker.action() },
+	{ key = "T", mods = "ALT|SHIFT", action = theme_picker.action() },
 }
 
 smart_splits.apply_to_config(config, {
@@ -82,5 +90,8 @@ smart_splits.apply_to_config(config, {
 		resize = "META",
 	},
 })
+
+open_in_nvim.apply_to_config(config)
+theme_picker.apply_to_config(config)
 
 return config

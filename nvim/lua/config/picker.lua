@@ -591,6 +591,15 @@ local function pick_grep_mini(default_text, grep_mode, live)
 	end
 end
 
+local function pick_todo_comments(pattern)
+	mini_pick().builtin.grep({ pattern = pattern, method = "regex" }, with_picker_mappings({
+		source = {
+			name = "TODO comments",
+		},
+		window = picker_window("TODO comments"),
+	}))
+end
+
 local function refresh_after_fff_scan(fuzzy, refresh)
 	vim.defer_fn(function()
 		pcall(fuzzy.wait_for_initial_scan, 1000)
@@ -1088,6 +1097,9 @@ end
 -- Picker keymaps
 -- --------------------------------------------------------------------------
 
+local todo_pattern =
+	[[\b(TODO|FIXME|NOTE):]]
+
 vim.keymap.set("n", "<M-x>", function()
 	open_command_picker()
 end, { desc = "commands" })
@@ -1135,6 +1147,10 @@ end, { desc = "Live Grep" })
 vim.keymap.set("n", "<leader>sb", function()
 	live_grep_current_buffer()
 end, { desc = "Search buffer" })
+
+vim.keymap.set("n", "<leader>ct", function()
+	pick_todo_comments(todo_pattern)
+end, { desc = "TODO comments" })
 
 vim.keymap.set("n", "<leader>sh", function()
 	pick_help_tags()

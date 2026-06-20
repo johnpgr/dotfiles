@@ -1,7 +1,7 @@
 -- Global flags
 vim.g.emacs_tab = true
 vim.g.treesitter_enabled = false
-vim.g.icons_enabled = false
+vim.g.icons_enabled = true
 vim.g.mapleader = " "
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1

@@ -1,0 +1,1 @@
+../../../../dev/kitty-compile-jump-nvim/nvim/advertise-server.lua

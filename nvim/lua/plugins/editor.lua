@@ -40,13 +40,11 @@ return {
 	-- Abolish
 	{ "tpope/vim-abolish", event = "VeryLazy" },
 
-	-- Dispatch
-	{ "tpope/vim-dispatch", cmd = { "Dispatch", "Make", "Focus", "Start" } },
-
-	-- Mini Completion (LSP popup menu; ghost text lives in config.completion)
+	-- Mini Completion (LSP popup menu)
 	{
 		"nvim-mini/mini.completion",
 		lazy = false,
+		dependencies = { "nvim-mini/mini.icons" },
 		config = function()
 			require("config.completion").setup()
 		end,

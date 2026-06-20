@@ -18,23 +18,142 @@ local sync_theme_state
 -- Colorscheme highlight overrides
 -- --------------------------------------------------------------------------
 
-local function link_completion_colors()
-	local links = {
-		Pmenu = "StatusLine",
-		PmenuKind = "StatusLine",
-		PmenuExtra = "StatusLine",
-		PmenuMatch = "StatusLine",
-		PmenuSbar = "StatusLine",
-		PmenuSel = "WildMenu",
-		PmenuKindSel = "WildMenu",
-		PmenuExtraSel = "WildMenu",
-		PmenuMatchSel = "WildMenu",
-		PmenuThumb = "WildMenu",
-	}
+local function copy_hl(name, src, overrides)
+	local hl = vim.api.nvim_get_hl(0, { name = src, link = false })
+	vim.api.nvim_set_hl(0, name, vim.tbl_extend("force", {
+		fg = hl.fg,
+		bg = hl.bg,
+		ctermfg = hl.ctermfg,
+		ctermbg = hl.ctermbg,
+		bold = hl.bold,
+		italic = hl.italic,
+		underline = hl.underline,
+		reverse = false,
+	}, overrides or {}))
+end
 
-	for group, target in pairs(links) do
-		vim.api.nvim_set_hl(0, group, { link = target })
+local function link_completion_colors()
+	-- Copy menu colors but never reverse; reverse on Pmenu turns kind icon fg into bg.
+	copy_hl("Pmenu", "StatusLine")
+	copy_hl("PmenuKind", "StatusLine")
+	copy_hl("PmenuExtra", "StatusLine")
+	copy_hl("PmenuMatch", "StatusLine")
+	copy_hl("PmenuSbar", "StatusLine")
+	copy_hl("PmenuSel", "WildMenu")
+	copy_hl("PmenuKindSel", "WildMenu")
+	copy_hl("PmenuExtraSel", "WildMenu")
+	copy_hl("PmenuMatchSel", "WildMenu")
+	copy_hl("PmenuThumb", "WildMenu")
+end
+
+local DEFAULT_CURSORLINE_BG = 6710886 -- #666666, vim's default CursorLine guibg
+local FALLBACK_CURSORLINE_CTERMBG = { dark = 235, light = 252 }
+
+local function rgb_luminance(c)
+	local r = math.floor(c / 65536) % 256
+	local g = math.floor(c / 256) % 256
+	local b = c % 256
+	return 0.2126 * r + 0.7152 * g + 0.0722 * b
+end
+
+local function rgb_to_gray_cterm(c)
+	local idx = math.floor(232 + (rgb_luminance(c) / 255) * 23 + 0.5)
+	return math.max(232, math.min(255, idx))
+end
+
+local function blend_rgb(bg, fg, ratio)
+	local br = math.floor(bg / 65536) % 256
+	local bg_ = math.floor(bg / 256) % 256
+	local bb = bg % 256
+	local fr = math.floor(fg / 65536) % 256
+	local fg_ = math.floor(fg / 256) % 256
+	local fb = fg % 256
+	local r = math.floor(br * (1 - ratio) + fr * ratio + 0.5)
+	local g = math.floor(bg_ * (1 - ratio) + fg_ * ratio + 0.5)
+	local b = math.floor(bb * (1 - ratio) + fb * ratio + 0.5)
+	return r * 65536 + g * 256 + b
+end
+
+local function normal_cterm_base(normal_hl)
+	if normal_hl.ctermbg and normal_hl.ctermbg >= 0 then
+		return normal_hl.ctermbg
 	end
+	if normal_hl.bg then
+		return rgb_to_gray_cterm(normal_hl.bg)
+	end
+	for _, name in ipairs({ "StatusLineNC", "TabLineFill", "NormalFloat" }) do
+		local hl = vim.api.nvim_get_hl(0, { name = name })
+		if hl.ctermbg and hl.ctermbg >= 0 then
+			return hl.ctermbg
+		end
+		if hl.bg then
+			return rgb_to_gray_cterm(hl.bg)
+		end
+	end
+	return nil
+end
+
+local function apply_cursorline_highlights()
+	local normal_hl = vim.api.nvim_get_hl(0, { name = "Normal" })
+	local cursorline_hl = vim.api.nvim_get_hl(0, { name = "CursorLine" })
+	local cursorline_nr_hl = vim.api.nvim_get_hl(0, { name = "CursorLineNr" })
+
+	local bg = cursorline_hl.bg
+	local ctermbg = cursorline_hl.ctermbg
+
+	if not ctermbg or ctermbg < 0 then
+		local base = normal_cterm_base(normal_hl)
+		if base then
+			local step = vim.o.background == "dark" and 1 or -1
+			ctermbg = math.max(0, math.min(255, base + step))
+		else
+			ctermbg = FALLBACK_CURSORLINE_CTERMBG[vim.o.background]
+				or FALLBACK_CURSORLINE_CTERMBG.dark
+		end
+	end
+
+	if not bg or bg == DEFAULT_CURSORLINE_BG then
+		if normal_hl.bg and normal_hl.fg then
+			local ratio = vim.o.background == "dark" and 0.06 or 0.04
+			bg = blend_rgb(normal_hl.bg, normal_hl.fg, ratio)
+		end
+	end
+
+	local cursorline = {
+		underline = false,
+		cterm = { underline = false },
+	}
+	if bg then
+		cursorline.bg = bg
+	end
+	if ctermbg then
+		cursorline.ctermbg = ctermbg
+	end
+
+	vim.api.nvim_set_hl(0, "CursorLine", cursorline)
+
+	local cursorline_nr = {
+		underline = false,
+		cterm = { underline = false },
+	}
+	if bg then
+		cursorline_nr.bg = bg
+	end
+	if ctermbg then
+		cursorline_nr.ctermbg = ctermbg
+	end
+	if cursorline_nr_hl.fg then
+		cursorline_nr.fg = cursorline_nr_hl.fg
+	end
+	if cursorline_nr_hl.ctermfg then
+		cursorline_nr.ctermfg = cursorline_nr_hl.ctermfg
+	end
+	if cursorline_nr_hl.bold then
+		cursorline_nr.bold = cursorline_nr_hl.bold
+	end
+
+	vim.api.nvim_set_hl(0, "CursorLineNr", cursorline_nr)
+	vim.api.nvim_set_hl(0, "CursorLineFold", { link = "CursorLine" })
 end
 
 local function apply_colorscheme_overrides()
@@ -61,17 +180,15 @@ local function apply_colorscheme_overrides()
 	-- )
 
 	-- Some manual fixing of color tokens
-    vim.api.nvim_set_hl(0, "LineNr", { ctermfg = 8 })
-    vim.api.nvim_set_hl(0, "Comment", { ctermfg = 8 })
+    -- vim.api.nvim_set_hl(0, "LineNr", { ctermfg = 8 })
+    -- vim.api.nvim_set_hl(0, "Comment", { ctermfg = 8 })
 	vim.api.nvim_set_hl(0, "Visual", { reverse = true })
 	vim.api.nvim_set_hl(0, "VisualNOS", { reverse = true })
-	vim.api.nvim_set_hl(0, "CursorLineFold", { link = "CursorLine" })
 	vim.api.nvim_set_hl(0, "WinSeparator", { link = "Normal" })
 	vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal" })
 	link_completion_colors()
-	vim.api.nvim_set_hl(0, "CompletionGhost", { fg = muted_color, ctermfg = 8, bg = "none" })
-	vim.api.nvim_set_hl(0, "StatusLine", { bg = "none", fg = normal_hl.fg })
-	vim.api.nvim_set_hl(0, "StatusLineNC", { bg = "none", fg = normal_hl.fg })
+	-- vim.api.nvim_set_hl(0, "StatusLine", { bg = "none", fg = normal_hl.fg })
+	-- vim.api.nvim_set_hl(0, "StatusLineNC", { bg = "none", fg = normal_hl.fg })
 	vim.api.nvim_set_hl(0, "@function.call", { link = "@function" })
 	vim.api.nvim_set_hl(0, "@function.method", { link = "@function" })
 	vim.api.nvim_set_hl(0, "@function.builtin", { link = "@function" })
@@ -126,6 +243,8 @@ local function apply_colorscheme_overrides()
 		vim.api.nvim_set_hl(0, "Directory", { fg = "#8faabc" })
 	end
 
+	apply_cursorline_highlights()
+
 	-- Customize diagnostic underlines to use undercurl
 	local diagnostic_colors = {
 		Error = err_hl and err_hl.fg,
@@ -138,15 +257,15 @@ local function apply_colorscheme_overrides()
 		local name = "DiagnosticUnderline" .. diag
 		local hl = vim.api.nvim_get_hl(0, { name = name })
 		local color = diagnostic_colors[diag]
-		vim.api.nvim_set_hl(
-			0,
-			name,
-			vim.tbl_extend("force", hl or {}, {
+		vim.api.nvim_set_hl(0, name, {
+			sp = (hl and hl.sp) or color,
+			underline = false,
+			undercurl = true,
+			cterm = {
 				underline = false,
 				undercurl = true,
-				sp = hl.sp or color,
-			})
-		)
+			},
+		})
 	end
 end
 

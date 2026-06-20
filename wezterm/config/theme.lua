@@ -1,13 +1,22 @@
 local wezterm = require("wezterm")
+local prompt = require("config.prompt")
 
 local M = {}
 
 M.theme_mode_file = wezterm.home_dir .. "/.dotfiles/.theme_state"
-M.dark_color_scheme = "3024 (base16)"
-M.light_color_scheme = "3024 Day"
+M.font_family_file = wezterm.home_dir .. "/.dotfiles/.wezterm_font"
+M.dark_color_scheme_file = wezterm.home_dir .. "/.dotfiles/.wezterm_dark_theme"
+M.light_color_scheme_file = wezterm.home_dir .. "/.dotfiles/.wezterm_light_theme"
+M.default_dark_color_scheme = "GruvboxDarkHard"
+M.default_light_color_scheme = "Alabaster"
+M.default_font_family = "BerkeleyMono Nerd Font"
+
+function M.read_font_family()
+	return prompt.read_file(M.font_family_file, M.default_font_family)
+end
 
 function M.regular_font()
-	return wezterm.font("Comic Code", { weight = "Regular", italic = false })
+	return wezterm.font(M.read_font_family(), { weight = "Regular", italic = false })
 end
 
 function M.font_rules(font)
@@ -36,18 +45,7 @@ function M.font_rules(font)
 end
 
 function M.read_theme_mode()
-	local file, err = io.open(M.theme_mode_file, "r")
-	if not file then
-		if err and not err:match("No such file") then
-			wezterm.log_warn("unable to read theme state: " .. err)
-		end
-		return "dark"
-	end
-
-	local mode = file:read("*all")
-	file:close()
-	mode = mode and mode:match("^%s*(.-)%s*$") or ""
-
+	local mode = prompt.read_file(M.theme_mode_file, "dark")
 	if mode == "light" then
 		return "light"
 	end
@@ -55,12 +53,20 @@ function M.read_theme_mode()
 	return "dark"
 end
 
+function M.read_dark_color_scheme()
+	return prompt.read_file(M.dark_color_scheme_file, M.default_dark_color_scheme)
+end
+
+function M.read_light_color_scheme()
+	return prompt.read_file(M.light_color_scheme_file, M.default_light_color_scheme)
+end
+
 function M.color_scheme(mode)
 	if mode == "light" then
-		return M.light_color_scheme
+		return M.read_light_color_scheme()
 	end
 
-	return M.dark_color_scheme
+	return M.read_dark_color_scheme()
 end
 
 function M.window_frame(mode, font)

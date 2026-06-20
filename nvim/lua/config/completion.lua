@@ -1,435 +1,247 @@
--- Completion: mini.completion for LSP popup menu + ghost text on Tab
+-- Completion: mini.completion (LSP popup menu with auto-open delay)
 
 local M = {}
 
-local min_prefix_length = 1
-local ghost_delay_ms = 200
-local ghost_namespace = vim.api.nvim_create_namespace("completion-ghost")
-local ghost_timer = vim.uv.new_timer()
-local ghost_request = 0
-local ghost = nil
-local ghost_lsp_cancel = nil
+-- Delay (ms) before the completion popup auto-opens while typing.
+local COMPLETION_DELAY_MS = 500
+-- Max visible rows in the completion popup.
+local PUM_MAX_HEIGHT = 20
+-- Max width in characters; keeps the info window beside the menu.
+local PUM_MAX_WIDTH = 60
+-- Open immediately after these characters (member access, etc.), like VS Code.
+local SCOPED_TRIGGER_CHARS = {
+	["."] = true,
+	[":"] = true,
+}
 
-vim.o.autocomplete = false
-vim.o.autocompletedelay = ghost_delay_ms
-vim.o.complete = ".,w,b,u"
-vim.o.completeopt = "menuone,noinsert,noselect,nosort,popup"
-vim.o.infercase = true
--- Keep the pum narrow so mini.completion's info window has room beside it.
-vim.o.pummaxwidth = 60
+-- Built lazily on first use; avoids work at module-load time.
+local kind_name_by_id
 
-local function current_prefix()
-	local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-	local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1] or ""
-	local before_cursor = line:sub(1, col)
-	local prefix = vim.fn.matchstr(before_cursor, [[\k*$]])
+-- Caches: icon/hl per kind-id (hot path) and derived hlgroup per source-hl.
+local kind_icon_cache = {} -- [kind_id] = { icon, hl }
+local kind_hl_cache = {} -- [mini_icons_hl] = derived_hlgroup_name
 
-	return {
-		bufnr = vim.api.nvim_get_current_buf(),
-		row = row - 1,
-		col = col,
-		prefix = prefix,
-		start_col = col - #prefix,
-	}
+local function reset_caches()
+	kind_icon_cache = {}
+	kind_hl_cache = {}
 end
 
-local function word_starts_with(word, prefix)
-	if vim.o.ignorecase then
-		return word:lower():sub(1, #prefix) == prefix:lower()
-	end
-
-	return word:sub(1, #prefix) == prefix
-end
-
-local function effective_base(base)
-	if type(base) == "string" and base ~= "" then
-		local keyword = vim.fn.matchstr(base, [[\k*$]])
-		if keyword ~= "" then
-			return keyword
-		end
-		return base
-	end
-
-	return current_prefix().prefix
-end
-
-local function prefix_filter_items(items, base)
-	base = effective_base(base)
-	if base == "" then
-		return {}
-	end
-
-	local filtered = vim.tbl_filter(function(item)
-		return word_starts_with(item.filterText or item.label, base)
-	end, items)
-
-	table.sort(filtered, function(a, b)
-		return (a.sortText or a.label) < (b.sortText or b.label)
-	end)
-
-	return filtered
-end
-
-local function lsp_insert_text(item)
-	local text = (item.textEdit and item.textEdit.newText) or item.insertText or item.filterText or item.label
-	if not text or text == "" then
-		return ""
-	end
-
-	return text:match("^([^\n\r]*)") or text
-end
-
-local function ghost_suffix(prefix, item)
-	local text = lsp_insert_text(item)
-	if text == "" then
-		return ""
-	end
-	if word_starts_with(text, prefix) then
-		return text:sub(#prefix + 1)
-	end
-
-	return text
-end
-
-local function flatten_lsp_items(responses, clients)
-	local all_items = {}
-
-	for _, client in ipairs(clients) do
-		local result = responses[client.id]
-		if not result then
-			goto continue
-		end
-
-		local items = result.items or result
-		if type(items) ~= "table" then
-			goto continue
-		end
-
-		for _, item in ipairs(items) do
-			item.client_id = client.id
-			table.insert(all_items, item)
-		end
-
-		::continue::
-	end
-
-	return all_items
-end
-
-local function clear_ghost()
-	local bufnr = ghost and ghost.bufnr or vim.api.nvim_get_current_buf()
-	if vim.api.nvim_buf_is_loaded(bufnr) then
-		vim.api.nvim_buf_clear_namespace(bufnr, ghost_namespace, 0, -1)
-	end
-	ghost = nil
-end
-
-local function cancel_lsp_ghost()
-	if ghost_lsp_cancel then
-		ghost_lsp_cancel()
-		ghost_lsp_cancel = nil
-	end
-end
-
-local function reset_ghost()
-	ghost_timer:stop()
-	ghost_request = ghost_request + 1
-	cancel_lsp_ghost()
-	clear_ghost()
-end
-
-local function keyword_matches(line)
-	local pos = 0
-
-	return function()
-		local start_col = vim.fn.match(line, [[\k\+]], pos)
-		if start_col < 0 then
-			return nil
-		end
-
-		local end_col = vim.fn.matchend(line, [[\k\+]], start_col)
-		pos = end_col
-
-		return line:sub(start_col + 1, end_col)
-	end
-end
-
-local function find_buffer_completion(prefix, bufnr)
-	local seen = {}
-
-	if vim.api.nvim_buf_is_loaded(bufnr) then
-		for _, line in ipairs(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
-			for word in keyword_matches(line) do
-				if not seen[word] and word ~= prefix and word_starts_with(word, prefix) then
-					seen[word] = true
-					return word
-				end
-			end
-		end
-	end
-end
-
-local function set_ghost(context, suffix)
-	if suffix == "" then
+local function ensure_kind_names()
+	if kind_name_by_id then
 		return
 	end
+	kind_name_by_id = {}
+	for name, id in pairs(vim.lsp.protocol.CompletionItemKind) do
+		if type(name) == "string" and type(id) == "number" then
+			kind_name_by_id[id] = name
+		end
+	end
+end
 
-	vim.api.nvim_buf_set_extmark(context.bufnr, ghost_namespace, context.row, context.col, {
-		virt_text = { { suffix, "CompletionGhost" } },
-		virt_text_pos = "inline",
-		hl_mode = "replace",
-		priority = 100,
+local function resolve_hl_attrs(hl_name)
+	-- link=false already resolves the chain; no recursion needed.
+	return vim.api.nvim_get_hl(0, { name = hl_name, link = false })
+end
+
+local function kind_icon_hlgroup(mini_icons_hl)
+	local cached = kind_hl_cache[mini_icons_hl]
+	if cached then
+		return cached
+	end
+
+	local src = resolve_hl_attrs(mini_icons_hl)
+	local dst_hl = "DotfilesPmenuKindIcon_" .. mini_icons_hl
+
+	vim.api.nvim_set_hl(0, dst_hl, {
+		fg = src.fg,
+		ctermfg = src.ctermfg,
+		bg = "NONE",
+		ctermbg = "NONE",
+		reverse = false,
+		force = true,
 	})
 
-	ghost = {
-		bufnr = context.bufnr,
-		row = context.row,
-		col = context.col,
-		prefix = context.prefix,
-		text = suffix,
-	}
+	kind_hl_cache[mini_icons_hl] = dst_hl
+	return dst_hl
 end
 
-local function show_buffer_ghost(context)
-	local word = find_buffer_completion(context.prefix, context.bufnr)
-	if not word then
+local function hide_kind_column()
+	for i = 1, #vim.lsp.protocol.CompletionItemKind do
+		vim.lsp.protocol.CompletionItemKind[i] = ""
+	end
+end
+
+--- Resolve icon + hl for a CompletionItemKind id, cached per kind.
+local function get_kind_icon_hl(kind_id)
+	local cached = kind_icon_cache[kind_id]
+	if cached then
+		return cached[1], cached[2]
+	end
+	ensure_kind_names()
+	local kind_name = kind_name_by_id[kind_id] or "Unknown"
+	local icon, hl = MiniIcons.get("lsp", kind_name)
+	kind_icon_cache[kind_id] = { icon, hl }
+	return icon, hl
+end
+
+local function colorize_by_kind(items)
+	if _G.MiniIcons == nil then
+		return items
+	end
+
+	for _, item in ipairs(items) do
+		local icon, hl = get_kind_icon_hl(item.kind)
+		local name = item.label
+		local details = item.labelDetails or {}
+		local signature = details.detail
+		local description = details.description
+
+		-- Icon in the left column (abbr), colored per kind; name stays neutral in menu.
+		item.label = icon
+		item.labelDetails = {
+			detail = signature and signature ~= "" and (name .. " " .. signature) or name,
+			description = description,
+		}
+
+		if item.abbr_hlgroup ~= "MiniCompletionDeprecated" then
+			item.abbr_hlgroup = kind_icon_hlgroup(hl)
+		end
+		item.kind_hlgroup = nil
+	end
+
+	return items
+end
+
+local function process_items(items, base)
+	items = MiniCompletion.default_process_items(items, base)
+	return colorize_by_kind(items)
+end
+
+local function get_mini_completion_h()
+	for i = 1, math.huge do
+		local name, value = debug.getupvalue(MiniCompletion.completefunc_lsp, i)
+		if name == nil then
+			return
+		end
+		if name == "H" then
+			return value
+		end
+	end
+end
+
+--- Apply both internal monkey-patches using a single `debug.getupvalue` scan.
+local function apply_mini_completion_patches()
+	local h = get_mini_completion_h()
+	if h == nil then
 		return
 	end
 
-	set_ghost(context, word:sub(#context.prefix + 1))
-end
-
-local function show_lsp_ghost(context, request)
-	cancel_lsp_ghost()
-
-	local clients = vim.lsp.get_clients({ bufnr = context.bufnr, method = vim.lsp.protocol.Methods.textDocument_completion })
-	if #clients == 0 then
-		show_buffer_ghost(context)
-		return
-	end
-
-	local responses = {}
-	local remaining = #clients
-	local request_ids = {}
-
-	local function finish()
-		remaining = remaining - 1
-		if remaining > 0 then
-			return
-		end
-
-		ghost_lsp_cancel = nil
-		if request ~= ghost_request or vim.api.nvim_get_mode().mode ~= "i" then
-			return
-		end
-
-		local latest_context = current_prefix()
-		if
-			latest_context.bufnr ~= context.bufnr
-			or latest_context.row ~= context.row
-			or latest_context.col ~= context.col
-			or latest_context.prefix ~= context.prefix
-		then
-			return
-		end
-
-		local items = prefix_filter_items(flatten_lsp_items(responses, clients), latest_context.prefix)
-
-		for _, item in ipairs(items) do
-			local suffix = ghost_suffix(latest_context.prefix, item)
-			if suffix ~= "" then
-				set_ghost(latest_context, suffix)
-				return
+	-- 1. Hide the "S " snippet prefix from the menu column.
+	local original_to_items = h.lsp_completion_response_items_to_complete_items
+	h.lsp_completion_response_items_to_complete_items = function(items)
+		local candidates = original_to_items(items)
+		for _, candidate in ipairs(candidates) do
+			if type(candidate.menu) == "string" then
+				candidate.menu = candidate.menu:gsub("^S ", "")
 			end
 		end
-
-		show_buffer_ghost(latest_context)
+		return candidates
 	end
 
-	for _, client in ipairs(clients) do
-		local params = vim.lsp.util.make_position_params(0, client.offset_encoding)
-		params.context = { triggerKind = vim.lsp.protocol.CompletionTriggerKind.Invoked }
-
-		local ok, request_id = client:request("textDocument/completion", params, function(_, result)
-			responses[client.id] = result
-			finish()
-		end, context.bufnr)
-
-		if ok then
-			request_ids[client.id] = request_id
-		else
-			finish()
-		end
+	-- 2. VS Code-style: debounce normal typing, open immediately on scoped triggers.
+	local function is_scoped_trigger(char)
+		return char ~= nil and (SCOPED_TRIGGER_CHARS[char] or h.is_lsp_trigger(char, "completion"))
 	end
 
-	ghost_lsp_cancel = function()
-		for client_id, request_id in pairs(request_ids) do
-			local client = vim.lsp.get_client_by_id(client_id)
-			if client then
-				client:cancel_request(request_id)
-			end
-		end
-	end
-end
-
-local function valid_ghost()
-	if not ghost or ghost.bufnr ~= vim.api.nvim_get_current_buf() then
-		return nil
-	end
-
-	local context = current_prefix()
-	if context.row ~= ghost.row or context.col ~= ghost.col or context.prefix ~= ghost.prefix then
-		return nil
-	end
-
-	return ghost.text
-end
-
-local function schedule_ghost()
-	clear_ghost()
-	ghost_request = ghost_request + 1
-
-	local request = ghost_request
-	local context = current_prefix()
-	if vim.fn.strchars(context.prefix) < min_prefix_length or vim.fn.pumvisible() == 1 then
-		return
-	end
-
-	ghost_timer:stop()
-	ghost_timer:start(ghost_delay_ms, 0, vim.schedule_wrap(function()
-		if request ~= ghost_request or vim.api.nvim_get_mode().mode ~= "i" then
+	-- Fork of mini.completion's H.auto_completion; timer is userdata and can't be patched.
+	h.auto_completion = function()
+		if h.is_disabled() then
 			return
 		end
 
-		local latest_context = current_prefix()
-		if
-			latest_context.bufnr ~= context.bufnr
-			or latest_context.row ~= context.row
-			or latest_context.col ~= context.col
-			or latest_context.prefix ~= context.prefix
-		then
-			return
+		h.completion.timer:stop()
+
+		local is_incomplete = h.completion.lsp.is_incomplete
+		local is_trigger = is_scoped_trigger(vim.v.char)
+		local force = is_trigger or is_incomplete
+		if force then
+			h.stop_completion(false, is_incomplete)
+		elseif h.pumvisible() then
+			return h.stop_completion(true, false, true)
+		elseif not h.is_char_keyword(vim.v.char) then
+			return h.stop_completion(false)
 		end
 
-		show_lsp_ghost(latest_context, request)
-	end))
-end
+		h.completion.fallback, h.completion.force = not force, force
+		h.completion.text_changed_id = h.text_changed_id + 1
 
-local function trigger_manual_completion()
-	reset_ghost()
-	MiniCompletion.complete_twostage(true, true)
+		if h.completion.source == "lsp" then
+			return h.trigger_fallback()
+		end
+
+		local trigger_kind_name = is_trigger and "TriggerCharacter"
+			or (is_incomplete and "TriggerForIncompleteCompletions" or "Invoked")
+		local trigger_kind = vim.lsp.protocol.CompletionTriggerKind[trigger_kind_name]
+		local trigger_char = trigger_kind_name == "TriggerCharacter" and vim.v.char or nil
+		h.completion.lsp.context = { triggerKind = trigger_kind, triggerCharacter = trigger_char }
+
+		local delay = (is_incomplete or is_trigger) and 0 or h.get_config().delay.completion
+		h.completion.timer:start(delay, 0, vim.schedule_wrap(h.trigger_twostep))
+	end
+
+	-- setup() registers InsertCharPre with the old function reference; replace it.
+	for _, autocmd in ipairs(vim.api.nvim_get_autocmds({ group = "MiniCompletion", event = "InsertCharPre" })) do
+		vim.api.nvim_del_autocmd(autocmd.id)
+	end
+	vim.api.nvim_create_autocmd("InsertCharPre", {
+		group = "MiniCompletion",
+		pattern = "*",
+		callback = h.auto_completion,
+		desc = "Auto show completion",
+	})
 end
 
 local function setup_keymaps()
 	vim.keymap.set("i", "<Tab>", function()
-		if vim.fn.pumvisible() == 1 then
-			return "<C-y>"
-		end
-
-		local ghost_text = valid_ghost()
-		if ghost_text then
-			clear_ghost()
-			return ghost_text
-		end
-
-		return "<Tab>"
+		return vim.fn.pumvisible() == 1 and "<C-y>" or "<Tab>"
 	end, { expr = true, replace_keycodes = true, desc = "Accept completion or insert tab" })
 
 	vim.keymap.set("i", "<S-Tab>", function()
-		if vim.fn.pumvisible() == 1 then
-			return "<C-p>"
-		end
-
-		return "<S-Tab>"
+		return vim.fn.pumvisible() == 1 and "<C-p>" or "<S-Tab>"
 	end, { expr = true, replace_keycodes = true, desc = "Previous completion item" })
 
-	vim.keymap.set("i", "<C-n>", function()
-		if vim.fn.pumvisible() == 1 then
-			return "<C-n>"
-		end
-
-		trigger_manual_completion()
-		return ""
-	end, { expr = true, replace_keycodes = true, desc = "Show completion menu or next item" })
-
-	vim.keymap.set("i", "<C-Space>", trigger_manual_completion, { desc = "Show completion menu" })
-
 	vim.keymap.set("i", "<CR>", function()
-		if vim.fn.pumvisible() == 1 then
-			return "<C-y>"
-		end
-
-		return "<CR>"
+		return vim.fn.pumvisible() == 1 and "<C-y>" or "<CR>"
 	end, { expr = true, replace_keycodes = true, desc = "Accept completion or newline" })
 end
 
-local function setup_autocmds()
-	local group = vim.api.nvim_create_augroup("completion-ghost", { clear = true })
-
-	vim.api.nvim_create_autocmd({ "TextChangedI", "CursorMovedI" }, {
-		group = group,
-		callback = schedule_ghost,
-	})
-
-	vim.api.nvim_create_autocmd({ "InsertEnter", "InsertLeave", "CompleteChanged", "CompleteDone" }, {
-		group = group,
-		callback = reset_ghost,
-	})
-
-	vim.api.nvim_create_autocmd("LspAttach", {
-		group = vim.api.nvim_create_augroup("completion-lsp", { clear = true }),
-		callback = function(args)
-			local client = vim.lsp.get_client_by_id(args.data.client_id)
-			if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_completion, args.buf) then
-				vim.bo[args.buf].omnifunc = "v:lua.MiniCompletion.completefunc_lsp"
-			end
-		end,
-	})
-end
-
 function M.setup()
+	hide_kind_column()
+	vim.o.pumheight = PUM_MAX_HEIGHT
+	vim.o.pummaxwidth = PUM_MAX_WIDTH
+
+	reset_caches()
+	vim.api.nvim_create_autocmd("ColorScheme", {
+		group = vim.api.nvim_create_augroup("dotfiles-completion", { clear = true }),
+		callback = reset_caches,
+	})
+
 	require("mini.completion").setup({
-		-- Never auto-open the popup; only show on explicit trigger.
 		delay = {
-			completion = 10 ^ 7,
+			completion = COMPLETION_DELAY_MS,
 			info = 100,
 			signature = 50,
 		},
-		window = {
-			info = { height = 20, width = 72, border = "single" },
-			signature = { height = 10, width = 72, border = "single" },
-		},
 		lsp_completion = {
-			source_func = "omnifunc",
-			auto_setup = false,
-			process_items = function(items, base)
-				local filtered = prefix_filter_items(items, base)
-				return MiniCompletion.default_process_items(filtered, effective_base(base), { filtersort = "none" })
-			end,
+			process_items = process_items,
 		},
-		fallback_action = "<C-n>",
 		mappings = {
-			force_twostep = "",
-			force_fallback = "",
-			scroll_down = "<C-f>",
-			scroll_up = "<C-b>",
+			force_twostep = "<C-Space>",
 		},
 	})
 
+	apply_mini_completion_patches()
 	setup_keymaps()
-	setup_autocmds()
-
-	for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-		if vim.api.nvim_buf_is_loaded(bufnr) and vim.bo[bufnr].buftype == "" then
-			local clients = vim.lsp.get_clients({
-				bufnr = bufnr,
-				method = vim.lsp.protocol.Methods.textDocument_completion,
-			})
-			if #clients > 0 then
-				vim.bo[bufnr].omnifunc = "v:lua.MiniCompletion.completefunc_lsp"
-			end
-		end
-	end
 end
 
 return M

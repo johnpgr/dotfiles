@@ -5,8 +5,19 @@ local is_neovide = vim.g.neovide ~= nil
 local is_windows = vim.fn.has("win32") == 1
 
 return {
-	-- Shared dependencies (loaded on demand)
-	{ "nvim-tree/nvim-web-devicons", lazy = true },
+	-- Icons (LSP completion kinds + devicons API for oil.nvim)
+	{
+		"nvim-mini/mini.icons",
+		lazy = false,
+		config = function()
+			require("mini.icons").setup({
+				lsp = {
+					["function"] = { glyph = "󰆧" },
+				},
+			})
+			MiniIcons.mock_nvim_web_devicons()
+		end,
+	},
 
 	-- FFF (Fast File Finder)
 	{

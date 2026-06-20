@@ -1,7 +1,6 @@
 -- Neovim configuration entry point
 -- Options must be set before lazy.nvim so mapleader etc. are available
 require("config.options")
-require("config.completion")
 
 -- fff.nvim currently crashes when its native indexer is initialized with
 -- $HOME as the base path. Keep its plugin file from eager-initializing on
