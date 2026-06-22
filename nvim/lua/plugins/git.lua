@@ -58,7 +58,7 @@ return {
 				auto_show_console = false,
 				integrations = {
 					diffview = true,
-					mini_pick = true,
+					mini_pick = false,
 					telescope = false,
 					fzf_lua = false,
 					snacks = false,
