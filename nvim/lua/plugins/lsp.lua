@@ -179,7 +179,6 @@ return {
 		end,
 	},
 
-	{ "mfussenegger/nvim-jdtls", ft = "java" },
 	-- { "yioneko/nvim-vtsls", lazy = true },
 
 	-- Mypy (Python type checking)

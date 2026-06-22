@@ -1,4 +1,7 @@
--- Git: gitsigns, fugitive
+-- Git: gitsigns, neogit, diffview
+
+local term = os.getenv("TERM")
+local is_kitty = term == "xterm-kitty" or term == "xterm-ghostty" or term == "wezterm"
 
 return {
 	{
@@ -16,51 +19,77 @@ return {
 	},
 
 	{
-		"tpope/vim-fugitive",
-		lazy = false,
-		cmd = { "Git", "G", "Gdiffsplit", "Gvdiffsplit", "Gclog" },
+		"NeogitOrg/neogit",
+		dependencies = { "sindrets/diffview.nvim", "nvim-mini/mini.pick" },
+		cmd = { "Neogit", "NeogitLogCurrent" },
 		keys = {
-			{ "<M-g>", "<cmd>Git<cr>", desc = "Git status" },
-			{ "<leader>gg", "<cmd>Git<cr>", desc = "Git status" },
-			{ "<leader>gc", "<cmd>Git commit<cr>", desc = "Git commit" },
-			{ "<leader>gb", "<cmd>Git branch<cr>", desc = "Git branch" },
-			{ "<leader>gl", "<cmd>Git log<cr>", desc = "Git log" },
-			{ "<leader>gd", "<cmd>Gvdiffsplit<cr>", desc = "Git diff split" },
-			{ "<leader>gD", ":Gdiffsplit ", desc = "Git diff split (Revision)" },
+			{
+				"<M-g>",
+				function()
+					require("neogit").open({ kind = "split" })
+				end,
+				desc = "Git status",
+			},
+			{
+				"<leader>gg",
+				function()
+					require("neogit").open({ kind = "split" })
+				end,
+				desc = "Git status",
+			},
+			{
+				"<leader>gc",
+				function()
+					require("neogit.buffers.commit_view").new("HEAD"):open("replace")
+				end,
+				desc = "Git commit",
+			},
+			{ "<leader>gb", "<cmd>Neogit branch<cr>", desc = "Git branch" },
+			{ "<leader>gL", "<cmd>NeogitLogCurrent<cr>", desc = "Git log" },
+		},
+		config = function()
+			require("neogit").setup({
+				graph_style = is_kitty and "kitty" or "ascii",
+				commit_editor = {
+					kind = "vsplit",
+					show_staged_diff = false,
+				},
+				console_timeout = 5000,
+				auto_show_console = false,
+				integrations = {
+					diffview = true,
+					mini_pick = true,
+					telescope = false,
+					fzf_lua = false,
+					snacks = false,
+				},
+			})
+		end,
+	},
+
+	{
+		"sindrets/diffview.nvim",
+		cmd = { "DiffviewOpen", "DiffviewFileHistory" },
+		keys = {
+			{ "<leader>gD", ":DiffviewOpen ", desc = "Git DiffView" },
 			{
 				"<leader>gh",
 				function()
-					vim.cmd("0Gclog")
-					vim.cmd("copen")
+					vim.cmd("DiffviewFileHistory " .. vim.fn.expand("%"))
 				end,
 				desc = "Git file history (Current)",
 			},
-			{ "<leader>gH", "<cmd>Git log<cr>", desc = "Git file history (All)" },
+			{ "<leader>gH", "<cmd>DiffviewFileHistory<cr>", desc = "Git file history (All)" },
 		},
 		config = function()
-			vim.api.nvim_create_autocmd("FileType", {
-				pattern = "fugitive",
-				callback = function()
-					vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = true, silent = true })
-					vim.keymap.set("n", "<Tab>", "=", { buffer = true, remap = true })
-					vim.bo.buflisted = false
-					vim.wo.number = false
-					vim.wo.relativenumber = false
-				end,
-			})
-
-			vim.api.nvim_create_autocmd("FileType", {
-				pattern = "gitcommit",
-				callback = function()
-					vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = true, silent = true })
-				end,
-			})
-
-			vim.api.nvim_create_autocmd("FileType", {
-				pattern = "git",
-				callback = function()
-					vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = true, silent = true })
-				end,
+			require("diffview").setup({
+				view = {
+					merge_tool = {
+						layout = "diff3_mixed",
+						disable_diagnostics = true,
+						winbar_info = true,
+					},
+				},
 			})
 		end,
 	},

@@ -1,18 +1,14 @@
--- Editor tools: conform, undotree, visual-multi,
--- text-case, abolish, dispatch, mini.bufremove, mini.align, mypy, dadbod, quicker
+-- Editor tools: conform, visual-multi, text-case, abolish,
+-- mini.bufremove, mini.align, mypy, quicker
+
+vim.keymap.set("n", "<leader>tu", function()
+	vim.cmd.packadd("nvim.undotree")
+	vim.cmd.Undotree()
+end, { desc = "Undotree" })
 
 return {
-    -- Lastplace (open files at last edit position)
+	-- Lastplace (open files at last edit position)
 	{ "farmergreg/vim-lastplace", lazy = false },
-
-	-- Undotree
-	{
-		"mbbill/undotree",
-		cmd = "UndotreeToggle",
-		keys = {
-			{ "<leader>tu", "<cmd>UndotreeToggle<cr>", desc = "Undotree" },
-		},
-	},
 
 	-- Visual Multi (multiple cursors)
 	{
@@ -83,9 +79,6 @@ return {
 			})
 		end,
 	},
-
-
-
 	-- Conform (formatting)
 	{
 		"stevearc/conform.nvim",
@@ -121,23 +114,6 @@ return {
 				},
 			})
 		end,
-	},
-
-	-- Dadbod (Database)
-	{
-		"tpope/vim-dadbod",
-		cmd = { "DB", "DBUI", "DBUIAddConnection" },
-		dependencies = {
-			"kristijanhusak/vim-dadbod-ui",
-		},
-	},
-	{
-		"kristijanhusak/vim-dadbod-ui",
-		cmd = { "DBUI", "DBUIAddConnection", "DBUIToggle" },
-		keys = {
-			{ "<leader>ub", desc = "DBUI" },
-			{ "<leader>ua", "<cmd>DBUIAddConnection<cr>", desc = "Add new connection" },
-		},
 	},
 
 	-- Quicker (quickfix improvements)

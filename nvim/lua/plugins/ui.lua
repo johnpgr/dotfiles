@@ -257,15 +257,14 @@ return {
 				{ "<leader>f", group = "file" },
 				{ "<leader>s", group = "search" },
 				{ "<leader>g", group = "git" },
-				{ "<leader>gl", group = "list" },
-				{ "<leader>h", group = "hunk" },
-				{ "<leader>l", group = "lsp" },
-				{ "<leader>t", group = "toggle" },
-				{ "<leader>i", group = "insert" },
-				{ "<leader>d", group = "debug" },
-			})
-		end,
-	},
+					{ "<leader>gl", group = "list" },
+					{ "<leader>h", group = "hunk" },
+					{ "<leader>l", group = "lsp" },
+					{ "<leader>t", group = "toggle" },
+					{ "<leader>i", group = "insert" },
+				})
+			end,
+		},
 
 	-- Transparent
 	{
@@ -345,15 +344,6 @@ return {
 				},
 				hijack_file_patterns = { "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp", "*.avif", "*.bmp" },
 			})
-		end,
-	},
-
-	-- Cord (Discord presence)
-	{
-		"vyfor/cord.nvim",
-		event = "VeryLazy",
-		config = function()
-			require("cord").setup({})
 		end,
 	},
 

@@ -25,6 +25,7 @@ wezterm.add_to_config_reload_watch_list(theme.dark_color_scheme_file)
 wezterm.add_to_config_reload_watch_list(theme.light_color_scheme_file)
 
 -- config.front_end = "WebGpu"
+config.term = "wezterm"
 config.font = regular_font
 config.font_rules = theme.font_rules(regular_font)
 config.harfbuzz_features = { "calt=0", "clig=0", "liga=0" }
