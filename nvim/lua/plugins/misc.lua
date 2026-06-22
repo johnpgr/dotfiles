@@ -48,39 +48,6 @@ return {
 		end,
 	},
 
-	-- Scope (scope buffers per tab)
-	{
-		"tiagovla/scope.nvim",
-		lazy = false,
-		config = function()
-			require("scope").setup({})
-
-			local scope_session_group = vim.api.nvim_create_augroup("ScopeSession", { clear = true })
-			vim.api.nvim_create_autocmd("User", {
-				pattern = "SessionSavePre",
-				group = scope_session_group,
-				callback = function()
-					vim.cmd("ScopeSaveState")
-				end,
-			})
-			vim.api.nvim_create_autocmd("User", {
-				pattern = "SessionLoadPost",
-				group = scope_session_group,
-				callback = function()
-					vim.cmd("ScopeLoadState")
-				end,
-			})
-		end,
-	},
-
-	-- Mise (tool version manager integration, Neovide only)
-	{
-		"ejrichards/mise.nvim",
-		lazy = false,
-		enabled = is_neovide and not is_windows,
-		opts = {},
-	},
-
 	-- Neovim Project (project switching, Neovide only)
 	{
 		"coffebar/neovim-project",

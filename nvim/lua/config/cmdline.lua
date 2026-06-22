@@ -9,7 +9,7 @@ vim.api.nvim_create_autocmd("CmdlineChanged", {
 })
 
 vim.opt.wildmode = "noselect:lastused,full"
-vim.opt.wildoptions = "pum"
+vim.opt.wildoptions = ""
 
 -- Keep <Up>/<Down> for history when the wildmenu is not active
 vim.keymap.set("c", "<Up>", function()
