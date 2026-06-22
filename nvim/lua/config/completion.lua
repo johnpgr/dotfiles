@@ -26,6 +26,108 @@ local function reset_caches()
 	kind_hl_cache = {}
 end
 
+local function resolve_hl_attrs(hl_name)
+	-- link=false already resolves the chain; no recursion needed.
+	return vim.api.nvim_get_hl(0, { name = hl_name, link = false })
+end
+
+local function rgb_luminance(c)
+	if not c then
+		return nil
+	end
+	local r = math.floor(c / 65536) % 256
+	local g = math.floor(c / 256) % 256
+	local b = c % 256
+	return 0.2126 * r + 0.7152 * g + 0.0722 * b
+end
+
+local function contrast_ratio(fg, bg)
+	local fg_lum = rgb_luminance(fg)
+	local bg_lum = rgb_luminance(bg)
+	if not fg_lum or not bg_lum then
+		return nil
+	end
+	local lighter = math.max(fg_lum, bg_lum)
+	local darker = math.min(fg_lum, bg_lum)
+	return (lighter + 0.05) / (darker + 0.05)
+end
+
+local function scale_rgb(fg, factor)
+	local r = math.floor(fg / 65536) % 256
+	local g = math.floor(fg / 256) % 256
+	local b = fg % 256
+	return math.floor(r * factor + 0.5) * 65536 + math.floor(g * factor + 0.5) * 256 + math.floor(b * factor + 0.5)
+end
+
+local function effective_popup_bg()
+	local pum = resolve_hl_attrs("Pmenu")
+	if pum.bg then
+		return pum.bg
+	end
+	return resolve_hl_attrs("Normal").bg
+end
+
+-- Light themes often map icon groups to pale Diagnostic* colors that match the
+-- popup background (especially when Pmenu bg is inherited/transparent).
+local function ensure_popup_icon_fg(fg, ctermfg, mini_icons_hl)
+	local normal = resolve_hl_attrs("Normal")
+	local popup_bg = effective_popup_bg()
+	local fallback_fg = normal.fg
+	local fallback_ctermfg = normal.ctermfg or ctermfg
+
+	if not fg then
+		return fallback_fg, fallback_ctermfg
+	end
+
+	if vim.o.background ~= "light" then
+		return fg, ctermfg
+	end
+
+	-- The terminal config uses cterm colors (`termguicolors=false`), so GUI-only
+	-- contrast fixes do not affect the actual popup. Use a visible per-kind
+	-- palette instead of inheriting pale Diagnostic* colors from light themes.
+	ctermfg = ({
+		MiniIconsAzure = 33,
+		MiniIconsBlue = 27,
+		MiniIconsCyan = 37,
+		MiniIconsGreen = 34,
+		MiniIconsGrey = 242,
+		MiniIconsOrange = 166,
+		MiniIconsPurple = 129,
+		MiniIconsRed = 160,
+		MiniIconsYellow = 136,
+	})[mini_icons_hl] or ctermfg
+
+	local min_ratio = 2.8
+	local fg_lum = rgb_luminance(fg)
+	local max_lum = 130
+	if fg_lum and fg_lum > max_lum then
+		fg = scale_rgb(fg, max_lum / fg_lum)
+		fg_lum = rgb_luminance(fg)
+	end
+
+	if popup_bg then
+		for _ = 1, 8 do
+			if contrast_ratio(fg, popup_bg) >= min_ratio then
+				break
+			end
+			fg = scale_rgb(fg, 0.82)
+		end
+	end
+
+	local ratio = popup_bg and contrast_ratio(fg, popup_bg)
+	if ratio and ratio < min_ratio then
+		fg = fallback_fg or fg
+	end
+
+	-- MiniIconsGrey has no linked fg; use a mid grey on light backgrounds.
+	if mini_icons_hl == "MiniIconsGrey" and (not fg or rgb_luminance(fg) > max_lum) then
+		fg = scale_rgb(0x808080, 0.75)
+	end
+
+	return fg, ctermfg
+end
+
 local function ensure_kind_names()
 	if kind_name_by_id then
 		return
@@ -38,11 +140,6 @@ local function ensure_kind_names()
 	end
 end
 
-local function resolve_hl_attrs(hl_name)
-	-- link=false already resolves the chain; no recursion needed.
-	return vim.api.nvim_get_hl(0, { name = hl_name, link = false })
-end
-
 local function kind_icon_hlgroup(mini_icons_hl)
 	local cached = kind_hl_cache[mini_icons_hl]
 	if cached then
@@ -50,11 +147,16 @@ local function kind_icon_hlgroup(mini_icons_hl)
 	end
 
 	local src = resolve_hl_attrs(mini_icons_hl)
+	local normal = vim.api.nvim_get_hl(0, { name = "Normal", link = false })
+	local fg = src.fg or normal.fg
+	local ctermfg = src.ctermfg or normal.ctermfg
+	fg, ctermfg = ensure_popup_icon_fg(fg, ctermfg, mini_icons_hl)
+
 	local dst_hl = "DotfilesPmenuKindIcon_" .. mini_icons_hl
 
 	vim.api.nvim_set_hl(0, dst_hl, {
-		fg = src.fg,
-		ctermfg = src.ctermfg,
+		fg = fg,
+		ctermfg = ctermfg,
 		bg = "NONE",
 		ctermbg = "NONE",
 		reverse = false,
@@ -96,8 +198,7 @@ local function colorize_by_kind(items)
 		local signature = details.detail
 		local description = details.description
 
-		-- Icon in the left column (abbr), colored per kind; name stays neutral in menu.
-		item.label = icon
+		item.dotfiles_icon = icon
 		item.labelDetails = {
 			detail = signature and signature ~= "" and (name .. " " .. signature) or name,
 			description = description,
@@ -136,11 +237,16 @@ local function apply_mini_completion_patches()
 		return
 	end
 
-	-- 1. Hide the "S " snippet prefix from the menu column.
+	-- 1. Hide the "S " snippet prefix; show icon in abbr without touching insert text.
 	local original_to_items = h.lsp_completion_response_items_to_complete_items
 	h.lsp_completion_response_items_to_complete_items = function(items)
 		local candidates = original_to_items(items)
-		for _, candidate in ipairs(candidates) do
+		for i, candidate in ipairs(candidates) do
+			local item = items[i]
+			if item and item.dotfiles_icon then
+				candidate.abbr = item.dotfiles_icon
+				candidate.abbr_hlgroup = item.abbr_hlgroup
+			end
 			if type(candidate.menu) == "string" then
 				candidate.menu = candidate.menu:gsub("^S ", "")
 			end
@@ -201,18 +307,53 @@ local function apply_mini_completion_patches()
 	})
 end
 
+local function pum_visible()
+	return vim.fn.pumvisible() ~= 0
+end
+
+local on_key_ns
+
+local function setup_pum_navigation_hook()
+	if on_key_ns then
+		vim.on_key(nil, on_key_ns)
+	end
+	on_key_ns = vim.api.nvim_create_namespace("dotfiles-completion-pum-nav")
+
+	-- C-n/C-p can't be remapped while the popup is open (:help compl-states).
+	-- on_key runs after mappings but can discard the key and feed Down/Up instead.
+	local cn = vim.keycode("<C-n>")
+	local cp = vim.keycode("<C-p>")
+
+	vim.on_key(function(key, typed)
+		if vim.fn.pumvisible() ~= 1 then
+			return
+		end
+		if key == cn or typed == cn then
+			vim.schedule(function()
+				vim.api.nvim_feedkeys(vim.keycode("<Down>"), "m", false)
+			end)
+			return ""
+		end
+		if key == cp or typed == cp then
+			vim.schedule(function()
+				vim.api.nvim_feedkeys(vim.keycode("<Up>"), "m", false)
+			end)
+			return ""
+		end
+	end, on_key_ns)
+end
+
 local function setup_keymaps()
-	vim.keymap.set("i", "<Tab>", function()
-		return vim.fn.pumvisible() == 1 and "<C-y>" or "<Tab>"
-	end, { expr = true, replace_keycodes = true, desc = "Accept completion or insert tab" })
+	local map_expr = function(lhs, when_pum, otherwise, desc)
+		vim.keymap.set("i", lhs, function()
+			return pum_visible() and when_pum or otherwise
+		end, { expr = true, replace_keycodes = true, desc = desc })
+	end
 
-	vim.keymap.set("i", "<S-Tab>", function()
-		return vim.fn.pumvisible() == 1 and "<C-p>" or "<S-Tab>"
-	end, { expr = true, replace_keycodes = true, desc = "Previous completion item" })
-
-	vim.keymap.set("i", "<CR>", function()
-		return vim.fn.pumvisible() == 1 and "<C-y>" or "<CR>"
-	end, { expr = true, replace_keycodes = true, desc = "Accept completion or newline" })
+	map_expr("<Tab>", "<C-y>", "<Tab>", "Accept completion or insert tab")
+	map_expr("<S-Tab>", "<Up>", "<S-Tab>", "Previous completion item")
+	map_expr("<CR>", "<C-y>", "<CR>", "Accept completion or newline")
+	setup_pum_navigation_hook()
 end
 
 function M.setup()
@@ -237,8 +378,12 @@ function M.setup()
 		},
 		mappings = {
 			force_twostep = "<C-Space>",
+			force_fallback = "",
 		},
 	})
+
+	-- noinsert: don't insert the pre-selected item on open; accept only via <C-y>.
+	vim.o.completeopt = "menuone,noinsert"
 
 	apply_mini_completion_patches()
 	setup_keymaps()

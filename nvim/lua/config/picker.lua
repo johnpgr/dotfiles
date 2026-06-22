@@ -343,7 +343,7 @@ end
 -- --------------------------------------------------------------------------
 
 local function show_path_items(buf_id, items, query)
-	mini_pick().default_show(buf_id, items, query, { show_icons = false })
+	mini_pick().default_show(buf_id, items, query, { show_icons = vim.g.icons_enabled })
 end
 
 local ns_id = vim.api.nvim_create_namespace("fff_pick_highlights")
