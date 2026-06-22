@@ -24,7 +24,6 @@ wezterm.add_to_config_reload_watch_list(theme.font_family_file)
 wezterm.add_to_config_reload_watch_list(theme.dark_color_scheme_file)
 wezterm.add_to_config_reload_watch_list(theme.light_color_scheme_file)
 
--- config.front_end = "WebGpu"
 config.term = "wezterm"
 config.font = regular_font
 config.font_rules = theme.font_rules(regular_font)
@@ -48,8 +47,6 @@ config.scrollback_lines = 10000
 config.enable_wayland = true
 config.use_ime = false
 config.window_close_confirmation = "AlwaysPrompt"
--- config.window_background_opacity = 0.5
--- config.kde_window_background_blur = true
 
 config.window_padding = {
 	left = 0,
