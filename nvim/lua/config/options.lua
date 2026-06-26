@@ -1,6 +1,6 @@
 -- Global flags
 vim.g.emacs_tab = true
-vim.g.treesitter_enabled = false
+vim.g.treesitter_enabled = true
 vim.g.icons_enabled = true
 vim.g.mapleader = " "
 vim.g.loaded_netrw = 1
@@ -35,7 +35,7 @@ vim.o.smartcase = true
 vim.o.list = false
 vim.o.splitbelow = true
 vim.o.splitright = true
-vim.o.signcolumn = "yes"
+vim.o.signcolumn = "no"
 vim.o.foldcolumn = "0"
 vim.o.breakindent = true
 vim.o.smartindent = true
@@ -46,7 +46,7 @@ vim.o.undofile = true
 vim.o.exrc = true
 vim.o.secure = true
 vim.o.cmdheight = 1
-vim.o.laststatus = 3
+vim.o.laststatus = 2
 vim.o.spelllang = "en,pt_br"
 vim.opt.clipboard = "unnamedplus"
 vim.opt.diffopt:append("linematch:60")

@@ -250,7 +250,7 @@ return {
 				icons = { mappings = false },
 				win = {
 					border = "single",
-					height = { min = 4, max = 10 },
+					height = { min = 4, max = math.huge },
 				},
 			})
 			wk.add({

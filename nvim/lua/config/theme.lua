@@ -156,6 +156,55 @@ local function apply_cursorline_highlights()
 	vim.api.nvim_set_hl(0, "CursorLineFold", { link = "CursorLine" })
 end
 
+local function apply_statusline_highlights(normal_hl, conceal_hl)
+	local statusline_hl = vim.api.nvim_get_hl(0, { name = "StatusLine", link = false })
+	local fallback_ctermbg = vim.o.background == "dark" and 238 or 242
+	local bg = statusline_hl.bg
+		or (statusline_hl.reverse and normal_hl.fg)
+		or (conceal_hl and conceal_hl.bg)
+		or normal_hl.bg
+	local fg = statusline_hl.fg
+		or (statusline_hl.reverse and normal_hl.bg)
+		or (conceal_hl and conceal_hl.fg)
+		or normal_hl.fg
+	local ctermbg = statusline_hl.ctermbg
+		or (statusline_hl.reverse and normal_hl.ctermfg)
+		or (conceal_hl and conceal_hl.ctermbg)
+		or normal_cterm_base(normal_hl)
+		or fallback_ctermbg
+	local ctermfg = statusline_hl.ctermfg
+		or (statusline_hl.reverse and normal_hl.ctermbg)
+		or (conceal_hl and conceal_hl.ctermfg)
+		or normal_hl.ctermfg
+		or 7
+
+	if bg and normal_hl.bg then
+		bg = blend_rgb(bg, normal_hl.bg, 0.18)
+	end
+
+	if fg and conceal_hl and conceal_hl.fg then
+		fg = blend_rgb(fg, conceal_hl.fg, 0.45)
+	elseif fg and normal_hl.bg then
+		fg = blend_rgb(fg, normal_hl.bg, 0.35)
+	end
+
+	if ctermbg then
+		local step = vim.o.background == "dark" and 1 or -1
+		ctermbg = math.max(0, math.min(255, ctermbg + step))
+	end
+
+	local statusline_nc = {
+		fg = fg,
+		bg = bg,
+		ctermfg = ctermfg,
+		ctermbg = ctermbg,
+		reverse = false,
+		bold = false,
+	}
+
+	vim.api.nvim_set_hl(0, "StatusLineNC", statusline_nc)
+end
+
 local function apply_colorscheme_overrides()
 	local normal_hl = vim.api.nvim_get_hl(0, { name = "Normal" })
 	local conceal_hl = vim.api.nvim_get_hl(0, { name = "Conceal" })
@@ -189,6 +238,7 @@ local function apply_colorscheme_overrides()
 	link_completion_colors()
 	-- vim.api.nvim_set_hl(0, "StatusLine", { bg = "none", fg = normal_hl.fg })
 	-- vim.api.nvim_set_hl(0, "StatusLineNC", { bg = "none", fg = normal_hl.fg })
+	apply_statusline_highlights(normal_hl, conceal_hl)
 	vim.api.nvim_set_hl(0, "@function.call", { link = "@function" })
 	vim.api.nvim_set_hl(0, "@function.method", { link = "@function" })
 	vim.api.nvim_set_hl(0, "@function.builtin", { link = "@function" })

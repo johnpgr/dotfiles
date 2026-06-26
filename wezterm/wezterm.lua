@@ -16,6 +16,9 @@ local platform = require("config.platform")
 local theme = require("config.theme")
 local theme_picker = require("config.theme_picker")
 
+-- Set to true to use real Bold/Italic font weights instead of Regular for all styles.
+theme.enable_bold_font = false
+
 local regular_font = theme.regular_font()
 local theme_mode = theme.read_theme_mode()
 
@@ -25,12 +28,14 @@ wezterm.add_to_config_reload_watch_list(theme.dark_color_scheme_file)
 wezterm.add_to_config_reload_watch_list(theme.light_color_scheme_file)
 
 config.term = "wezterm"
+config.front_end = "WebGpu"
 config.font = regular_font
-config.font_rules = theme.font_rules(regular_font)
+config.font_rules = theme.font_rules()
 config.harfbuzz_features = { "calt=0", "clig=0", "liga=0" }
 config.max_fps = 165
 config.default_prog = platform.default_prog()
 config.font_size = 10.0
+config.line_height = 1
 config.enable_tab_bar = true
 config.hide_tab_bar_if_only_one_tab = true
 config.use_fancy_tab_bar = false
@@ -46,7 +51,7 @@ config.colors = theme.tab_bar_colors(theme_mode)
 config.scrollback_lines = 10000
 config.enable_wayland = true
 config.use_ime = false
-config.window_close_confirmation = "AlwaysPrompt"
+config.window_close_confirmation = "NeverPrompt"
 
 config.window_padding = {
 	left = 0,

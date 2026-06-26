@@ -10,6 +10,7 @@ M.light_color_scheme_file = wezterm.home_dir .. "/.dotfiles/.wezterm_light_theme
 M.default_dark_color_scheme = "GruvboxDarkHard"
 M.default_light_color_scheme = "Alabaster"
 M.default_font_family = "BerkeleyMono Nerd Font"
+M.enable_bold_font = true
 
 function M.read_font_family()
 	return prompt.read_file(M.font_family_file, M.default_font_family)
@@ -19,27 +20,66 @@ function M.regular_font()
 	return wezterm.font(M.read_font_family(), { weight = "Regular", italic = false })
 end
 
-function M.font_rules(font)
+function M.bold_font()
+	return wezterm.font(M.read_font_family(), { weight = "Bold", italic = false })
+end
+
+function M.italic_font()
+	return wezterm.font(M.read_font_family(), { weight = "Regular", italic = true })
+end
+
+function M.bold_italic_font()
+	return wezterm.font(M.read_font_family(), { weight = "Bold", italic = true })
+end
+
+function M.font_rules()
+	local regular = M.regular_font()
+
+	if not M.enable_bold_font then
+		return {
+			{
+				intensity = "Normal",
+				italic = false,
+				font = regular,
+			},
+			{
+				intensity = "Bold",
+				italic = false,
+				font = regular,
+			},
+			{
+				intensity = "Normal",
+				italic = true,
+				font = regular,
+			},
+			{
+				intensity = "Bold",
+				italic = true,
+				font = regular,
+			},
+		}
+	end
+
 	return {
 		{
 			intensity = "Normal",
 			italic = false,
-			font = font,
+			font = regular,
 		},
 		{
 			intensity = "Bold",
 			italic = false,
-			font = font,
+			font = M.bold_font(),
 		},
 		{
 			intensity = "Normal",
 			italic = true,
-			font = font,
+			font = M.italic_font(),
 		},
 		{
 			intensity = "Bold",
 			italic = true,
-			font = font,
+			font = M.bold_italic_font(),
 		},
 	}
 end
