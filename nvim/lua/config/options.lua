@@ -1,5 +1,4 @@
 -- Global flags
-vim.g.emacs_tab = true
 vim.g.treesitter_enabled = true
 vim.g.icons_enabled = false
 vim.g.mapleader = " "
