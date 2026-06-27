@@ -1,4 +1,5 @@
 local wezterm = require("wezterm")
+local platform = require("config.platform")
 local prompt = require("config.prompt")
 local theme = require("config.theme")
 
@@ -170,11 +171,76 @@ local function shell_quote(value)
 	return wezterm.shell_quote_arg(value)
 end
 
-local function make_work_dir()
-	local path = os.tmpname()
-	os.remove(path)
+local function path_exists(path)
+	local file = io.open(path, "r")
+	if not file then
+		return false
+	end
 
-	local success, _, stderr = wezterm.run_child_process({ "mkdir", "-p", path .. "/previews" })
+	file:close()
+	return true
+end
+
+local function msys2_root()
+	return "C:/msys64"
+end
+
+local function msys2_bash()
+	return msys2_root() .. "/usr/bin/bash.exe"
+end
+
+local function msys2_fzf()
+	for _, path in ipairs({
+		msys2_root() .. "/ucrt64/bin/fzf.exe",
+		msys2_root() .. "/mingw64/bin/fzf.exe",
+		msys2_root() .. "/usr/bin/fzf.exe",
+	}) do
+		if path_exists(path) then
+			return path:gsub("\\", "/")
+		end
+	end
+
+	return nil
+end
+
+local function msys_path(path)
+	path = path:gsub("\\", "/")
+	local drive, rest = path:match("^([A-Za-z]):/(.*)$")
+	if drive then
+		return "/" .. drive:lower() .. "/" .. rest
+	end
+
+	return path
+end
+
+local function mkdir_p(path)
+	local args = { "mkdir", "-p", path }
+	if platform.is_windows then
+		args = { msys2_bash(), "-lc", "mkdir -p " .. shell_quote(msys_path(path)) }
+	end
+
+	local success, _, stderr = wezterm.run_child_process(args)
+	return success, stderr
+end
+
+local function temp_base_dir()
+	if platform.is_windows then
+		return (os.getenv("TEMP") or os.getenv("TMP") or wezterm.home_dir):gsub("\\", "/"):gsub("/+$", "")
+	end
+
+	return os.getenv("TMPDIR") or "/tmp"
+end
+
+local function make_work_dir()
+	local path
+	if platform.is_windows then
+		path = temp_base_dir() .. "/wezterm-theme-picker-" .. tostring(os.time()) .. "-" .. tostring(math.random(1000000))
+	else
+		path = os.tmpname()
+		os.remove(path)
+	end
+
+	local success, stderr = mkdir_p(path .. "/previews")
 	if not success then
 		return nil, stderr
 	end
@@ -210,6 +276,10 @@ local function write_scheme_files(work_dir)
 end
 
 local function fzf_available()
+	if platform.is_windows then
+		return path_exists(msys2_bash()) and msys2_fzf() ~= nil
+	end
+
 	local success = wezterm.run_child_process({ "bash", "-lc", "command -v fzf" })
 	return success
 end
@@ -227,19 +297,30 @@ local function fzf_command(slot)
 
 	local prompt_text = slot == "light" and "Light scheme: " or "Dark scheme: "
 	local target_file = slot_file(slot)
+	local shell_preview_dir = platform.is_windows and msys_path(preview_dir) or preview_dir
+	local shell_choices_file = platform.is_windows and msys_path(choices_file) or choices_file
+	local shell_target_file = platform.is_windows and msys_path(target_file) or target_file
+	local shell_work_dir = platform.is_windows and msys_path(work_dir) or work_dir
+	local fzf = platform.is_windows and msys_path(msys2_fzf()) or "fzf"
 	local preview_command = table.concat({
 		"line=\"$1\"",
 		"id=$(printf '%s\\n' \"$line\" | cut -f1)",
 		"cat \"$2/$id.ansi\"",
 	}, "; ")
 	local preview_action = "bash -lc " .. shell_quote(preview_command) .. " -- {} " .. shell_quote(preview_dir)
+	if platform.is_windows then
+		preview_action = shell_quote(msys_path(msys2_bash())) .. " -lc "
+			.. shell_quote(preview_command)
+			.. " -- {} "
+			.. shell_quote(shell_preview_dir)
+	end
 
 	return table.concat({
-		"choices=" .. shell_quote(choices_file),
-		"preview_dir=" .. shell_quote(preview_dir),
-		"work_dir=" .. shell_quote(work_dir),
-		"target_file=" .. shell_quote(target_file),
-		"selection=$(fzf --ansi --delimiter='	' --with-nth=2.. --prompt="
+		"choices=" .. shell_quote(shell_choices_file),
+		"preview_dir=" .. shell_quote(shell_preview_dir),
+		"work_dir=" .. shell_quote(shell_work_dir),
+		"target_file=" .. shell_quote(shell_target_file),
+		"selection=$(" .. shell_quote(fzf) .. " --ansi --delimiter='	' --with-nth=2.. --prompt="
 			.. shell_quote(prompt_text)
 			.. " --height=100% --layout=reverse --border=none --preview-window=right:70%:wrap --preview="
 			.. shell_quote(preview_action)
@@ -266,7 +347,7 @@ local function open_fzf_picker(window, pane, slot)
 
 	window:perform_action(
 		act.SpawnCommandInNewTab({
-			args = { "bash", "-lc", command },
+			args = platform.is_windows and { msys2_bash(), "-lc", command } or { "bash", "-lc", command },
 		}),
 		pane
 	)

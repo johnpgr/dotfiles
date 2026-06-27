@@ -8,6 +8,10 @@ local is_neovide = vim.g.neovide ~= nil
 local is_windows = vim.fn.has("win32") == 1
 
 return {
+    -- Colorschemes
+    {
+        "xiantang/darcula-dark.nvim", lazy = false,
+    },
 	-- Smart Splits (seamless navigation/resize across nvim + wezterm/kitty/tmux)
 	{
 		"johnpgr/smart-splits.nvim",
@@ -344,74 +348,6 @@ return {
 				},
 				hijack_file_patterns = { "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp", "*.avif", "*.bmp" },
 			})
-		end,
-	},
-
-	-- Toggleterm
-	{
-		"akinsho/toggleterm.nvim",
-		version = "*",
-		keys = {
-			{ "<leader>tv", desc = "Toggle vertical terminal" },
-			{ "<leader>th", desc = "Toggle horizontal terminal" },
-			{ "<leader>tf", desc = "Toggle floating terminal" },
-			{ "<leader>tt", desc = "Toggle terminal (default)" },
-		},
-		config = function()
-			local toggleterm = require("toggleterm")
-			local Terminal = require("toggleterm.terminal").Terminal
-
-			toggleterm.setup({
-				size = function(term)
-					if term.direction == "horizontal" then
-						return 15
-					elseif term.direction == "vertical" then
-						return vim.o.columns * 0.4
-					end
-				end,
-				open_mapping = [[<leader>tt]],
-				hide_numbers = true,
-				shade_terminals = false,
-				start_in_insert = true,
-				insert_mappings = false,
-				terminal_mappings = true,
-				persist_size = true,
-				persist_mode = false,
-				direction = "horizontal",
-				close_on_exit = true,
-				shell = vim.o.shell,
-				float_opts = {
-					border = "single",
-					width = function()
-						return math.floor(vim.o.columns * 0.8)
-					end,
-					height = function()
-						return math.floor(vim.o.lines * 0.8)
-					end,
-				},
-			})
-
-			local vertical_term = Terminal:new({ direction = "vertical" })
-			local horizontal_term = Terminal:new({ direction = "horizontal" })
-			local float_term = Terminal:new({ direction = "float" })
-
-			vim.keymap.set("n", "<leader>tv", function()
-				vertical_term:toggle()
-			end, { desc = "Toggle vertical terminal" })
-
-			vim.keymap.set("n", "<leader>th", function()
-				horizontal_term:toggle()
-			end, { desc = "Toggle horizontal terminal" })
-
-			vim.keymap.set("n", "<leader>tf", function()
-				float_term:toggle()
-			end, { desc = "Toggle floating terminal" })
-
-			-- Terminal mode navigation (consistent with window nav)
-			vim.keymap.set("t", "<C-h>", [[<Cmd>wincmd h<CR>]], { desc = "Focus left" })
-			vim.keymap.set("t", "<C-j>", [[<Cmd>wincmd j<CR>]], { desc = "Focus down" })
-			vim.keymap.set("t", "<C-k>", [[<Cmd>wincmd k<CR>]], { desc = "Focus up" })
-			vim.keymap.set("t", "<C-l>", [[<Cmd>wincmd l<CR>]], { desc = "Focus right" })
 		end,
 	},
 }

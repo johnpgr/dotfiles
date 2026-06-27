@@ -3,14 +3,42 @@ local prompt = require("config.prompt")
 
 local M = {}
 
-M.theme_mode_file = wezterm.home_dir .. "/.dotfiles/.theme_state"
-M.font_family_file = wezterm.home_dir .. "/.dotfiles/.wezterm_font"
-M.dark_color_scheme_file = wezterm.home_dir .. "/.dotfiles/.wezterm_dark_theme"
-M.light_color_scheme_file = wezterm.home_dir .. "/.dotfiles/.wezterm_light_theme"
+local config_dir = wezterm.config_dir:gsub("\\", "/"):gsub("/+$", "")
+local config_parent = config_dir:match("^(.*)/[^/]+$")
+local home_dotfiles = wezterm.home_dir:gsub("\\", "/"):gsub("/+$", "") .. "/.dotfiles"
+local state_dir = config_parent and config_parent:match("/%.dotfiles$") and config_parent or home_dotfiles
+M.theme_mode_file = state_dir .. "/.theme_state"
+M.font_family_file = state_dir .. "/.wezterm_font"
+M.dark_color_scheme_file = state_dir .. "/.wezterm_dark_theme"
+M.light_color_scheme_file = state_dir .. "/.wezterm_light_theme"
 M.default_dark_color_scheme = "GruvboxDarkHard"
 M.default_light_color_scheme = "Alabaster"
-M.default_font_family = "BerkeleyMono Nerd Font"
+M.default_font_family = "Consolas"
 M.enable_bold_font = true
+
+local function ensure_file(path, value)
+	local file = io.open(path, "r")
+	if file then
+		file:close()
+		return
+	end
+
+	file = io.open(path, "w")
+	if not file then
+		wezterm.log_warn("unable to initialize prompt state: " .. path)
+		return
+	end
+
+	file:write(value, "\n")
+	file:close()
+end
+
+function M.ensure_state_files()
+	ensure_file(M.theme_mode_file, "dark")
+	ensure_file(M.font_family_file, M.default_font_family)
+	ensure_file(M.dark_color_scheme_file, M.default_dark_color_scheme)
+	ensure_file(M.light_color_scheme_file, M.default_light_color_scheme)
+end
 
 function M.read_font_family()
 	return prompt.read_file(M.font_family_file, M.default_font_family)

@@ -2,9 +2,9 @@ local wezterm = require("wezterm")
 
 local root = wezterm.config_dir
 package.path = table.concat({
-	root .. "/?.lua",
-	root .. "/?/init.lua",
-	package.path,
+    root .. "/?.lua",
+    root .. "/?/init.lua",
+    package.path,
 }, ";")
 
 local config = wezterm.config_builder()
@@ -22,23 +22,28 @@ theme.enable_bold_font = false
 local regular_font = theme.regular_font()
 local theme_mode = theme.read_theme_mode()
 
+theme.ensure_state_files()
 wezterm.add_to_config_reload_watch_list(theme.theme_mode_file)
 wezterm.add_to_config_reload_watch_list(theme.font_family_file)
 wezterm.add_to_config_reload_watch_list(theme.dark_color_scheme_file)
 wezterm.add_to_config_reload_watch_list(theme.light_color_scheme_file)
 
-config.term = "wezterm"
-config.front_end = "WebGpu"
+if not platform.is_windows then
+    config.term = "wezterm"
+end
+-- config.front_end = "WebGpu"
 config.font = regular_font
 config.font_rules = theme.font_rules()
 config.harfbuzz_features = { "calt=0", "clig=0", "liga=0" }
 config.max_fps = 165
 config.default_prog = platform.default_prog()
-config.font_size = 10.0
+config.default_cwd = platform.default_cwd()
+config.set_environment_variables = platform.environment_variables()
+config.font_size = 13.0
 config.line_height = 1
 config.enable_tab_bar = true
-config.hide_tab_bar_if_only_one_tab = true
-config.use_fancy_tab_bar = false
+config.hide_tab_bar_if_only_one_tab = false
+config.use_fancy_tab_bar = true
 config.window_decorations = platform.window_decorations()
 config.freetype_interpreter_version = 40
 config.tab_max_width = 32
@@ -54,44 +59,44 @@ config.use_ime = false
 config.window_close_confirmation = "NeverPrompt"
 
 config.window_padding = {
-	left = 0,
-	right = 0,
-	top = 6,
-	bottom = 0,
+    left = 0,
+    right = 0,
+    top = 6,
+    bottom = 0,
 }
 
 config.keys = {
-	{ key = "Enter", mods = "ALT", action = act.DisableDefaultAssignment },
-	{
-		key = "+",
-		mods = "ALT|SHIFT",
-		action = act.SplitHorizontal({}),
-	},
-	{ key = "_", mods = "ALT|SHIFT", action = act.SplitVertical({}) },
-	{ key = "W", mods = "CTRL|SHIFT", action = act.CloseCurrentPane({ confirm = false }) },
-	{ key = "T", mods = "CTRL|SHIFT", action = act.SpawnTab("DefaultDomain") },
-	{ key = "1", mods = "CTRL|ALT", action = act.ActivateTab(0) },
-	{ key = "2", mods = "CTRL|ALT", action = act.ActivateTab(1) },
-	{ key = "3", mods = "CTRL|ALT", action = act.ActivateTab(2) },
-	{ key = "4", mods = "CTRL|ALT", action = act.ActivateTab(3) },
-	{ key = "5", mods = "CTRL|ALT", action = act.ActivateTab(4) },
-	{ key = "6", mods = "CTRL|ALT", action = act.ActivateTab(5) },
-	{ key = "7", mods = "CTRL|ALT", action = act.ActivateTab(6) },
-	{ key = "8", mods = "CTRL|ALT", action = act.ActivateTab(7) },
-	{ key = "9", mods = "CTRL|ALT", action = act.ActivateTab(8) },
-	{ key = "Tab", mods = "CTRL", action = act.ActivateTabRelative(1) },
-	{ key = "Tab", mods = "CTRL|SHIFT", action = act.ActivateTabRelative(-1) },
-	{ key = "z", mods = "ALT", action = act.TogglePaneZoomState },
-	{ key = "F", mods = "ALT|SHIFT", action = font_picker.action() },
-	{ key = "T", mods = "ALT|SHIFT", action = theme_picker.action() },
+    { key = "Enter", mods = "ALT",        action = act.DisableDefaultAssignment },
+    {
+        key = "+",
+        mods = "ALT|SHIFT",
+        action = act.SplitHorizontal({}),
+    },
+    { key = "_",     mods = "ALT|SHIFT",  action = act.SplitVertical({}) },
+    { key = "W",     mods = "CTRL|SHIFT", action = act.CloseCurrentPane({ confirm = false }) },
+    { key = "T",     mods = "CTRL|SHIFT", action = act.SpawnTab("DefaultDomain") },
+    { key = "1",     mods = "CTRL|ALT",   action = act.ActivateTab(0) },
+    { key = "2",     mods = "CTRL|ALT",   action = act.ActivateTab(1) },
+    { key = "3",     mods = "CTRL|ALT",   action = act.ActivateTab(2) },
+    { key = "4",     mods = "CTRL|ALT",   action = act.ActivateTab(3) },
+    { key = "5",     mods = "CTRL|ALT",   action = act.ActivateTab(4) },
+    { key = "6",     mods = "CTRL|ALT",   action = act.ActivateTab(5) },
+    { key = "7",     mods = "CTRL|ALT",   action = act.ActivateTab(6) },
+    { key = "8",     mods = "CTRL|ALT",   action = act.ActivateTab(7) },
+    { key = "9",     mods = "CTRL|ALT",   action = act.ActivateTab(8) },
+    { key = "Tab",   mods = "CTRL",       action = act.ActivateTabRelative(1) },
+    { key = "Tab",   mods = "CTRL|SHIFT", action = act.ActivateTabRelative(-1) },
+    { key = "z",     mods = "ALT",        action = act.TogglePaneZoomState },
+    { key = "phys:F", mods = "ALT|SHIFT",  action = font_picker.action() },
+    { key = "phys:T", mods = "ALT|SHIFT",  action = theme_picker.action() },
 }
 
 smart_splits.apply_to_config(config, {
-	direction_keys = { "h", "j", "k", "l" },
-	modifiers = {
-		move = "CTRL",
-		resize = "META",
-	},
+    direction_keys = { "h", "j", "k", "l" },
+    modifiers = {
+        move = "CTRL",
+        resize = "META",
+    },
 })
 
 open_in_nvim.apply_to_config(config)

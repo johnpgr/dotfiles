@@ -3,11 +3,23 @@ local platform = require("config.platform")
 local M = {}
 
 function M.trim_path(path)
+    path = tostring(path or "")
     return path:gsub("[/\\]+$", "")
 end
 
 function M.normalize_path(path)
-    return M.trim_path(path):gsub("\\", "/")
+    path = M.trim_path(path):gsub("\\", "/")
+
+    if platform.is_windows then
+        path = path:gsub("^/([A-Za-z])/", function(drive)
+            return drive:upper() .. ":/"
+        end)
+        if path:match("^[A-Za-z]:") then
+            path = path:sub(1, 1):upper() .. path:sub(2)
+        end
+    end
+
+    return path
 end
 
 function M.basename(path)

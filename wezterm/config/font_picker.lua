@@ -7,6 +7,10 @@ local M = {}
 local fallback_families = {
 	theme.default_font_family,
 	"JetBrains Mono",
+	"Consolas",
+	"Cascadia Mono",
+	"Cascadia Code",
+	"Courier New",
 }
 
 local function trim(text)
@@ -65,17 +69,38 @@ local function parse_wezterm_ls_fonts(output)
 		end
 	end
 
+	for family in output:gmatch('family="([^"]+)"') do
+		if family:match("[Mm]ono") or family:match("[Cc]ode") or family:match("[Tt]erm") then
+			add_family(families, seen, family)
+		end
+	end
+
 	table.sort(families, family_sort)
 	return families
 end
 
+local function run_child_process(args)
+	local ok, success, stdout, stderr = pcall(wezterm.run_child_process, args)
+	if ok then
+		return success, stdout, stderr
+	end
+
+	wezterm.log_warn("unable to run font picker command: " .. tostring(success))
+	return false, "", tostring(success)
+end
+
+local function wezterm_executable()
+	local exe = wezterm.executable_dir:gsub("\\", "/"):gsub("/+$", "") .. "/wezterm.exe"
+	return exe
+end
+
 local function list_font_families()
-	local success, stdout = wezterm.run_child_process({ "fc-list", ":spacing=100", "family" })
+	local success, stdout = run_child_process({ "fc-list", ":spacing=100", "family" })
 	if success and stdout and stdout ~= "" then
 		return parse_fc_list(stdout)
 	end
 
-	success, stdout = wezterm.run_child_process({ "wezterm", "ls-fonts", "--list-system" })
+	success, stdout = run_child_process({ wezterm_executable(), "ls-fonts", "--list-system" })
 	if success and stdout and stdout ~= "" then
 		return parse_wezterm_ls_fonts(stdout)
 	end

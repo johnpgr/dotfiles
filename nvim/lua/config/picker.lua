@@ -1148,7 +1148,7 @@ vim.keymap.set("n", "<leader>sb", function()
 	live_grep_current_buffer()
 end, { desc = "Search buffer" })
 
-vim.keymap.set("n", "<leader>ct", function()
+vim.keymap.set("n", "<leader>tt", function()
 	pick_todo_comments(todo_pattern)
 end, { desc = "TODO comments" })
 

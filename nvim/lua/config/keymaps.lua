@@ -314,11 +314,10 @@ vim.keymap.set("n", "[q", function()
 end, { desc = "Previous quickfix item" })
 
 -- --------------------------------------------------------------------------
--- Compilation / Dispatch keymaps
+-- Compile keymaps
 -- --------------------------------------------------------------------------
 
-vim.keymap.set("n", "]e", "]q", { remap = true, desc = "Next error" })
-vim.keymap.set("n", "[e", "[q", { remap = true, desc = "Previous error" })
+vim.keymap.set("n", "<leader>m", "<cmd>Compile<cr>", { desc = "Compile" })
 
 -- --------------------------------------------------------------------------
 -- Git / hunk keymaps (requires gitsigns)
@@ -414,9 +413,9 @@ end, { desc = "Quickfix list" })
 -- --------------------------------------------------------------------------
 
 if vim.g.neovide then
+    vim.o.guifont = "Consolas Nerd Font:h12"
 	vim.g.neovide_refresh_rate = 165
 	vim.g.neovide_opacity = 1.0
-	vim.g.neovide_normal_opacity = 1.0
 	vim.g.neovide_floating_shadow = false
 
 	vim.keymap.set("n", "<C-=>", function()
