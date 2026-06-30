@@ -31,6 +31,7 @@ wezterm.add_to_config_reload_watch_list(theme.light_color_scheme_file)
 if not platform.is_windows then
     config.term = "wezterm"
 end
+-- config.front_end = "WebGpu"
 config.font = regular_font
 config.font_rules = theme.font_rules(regular_font.font[1].family)
 config.harfbuzz_features = { "calt=0", "clig=0", "liga=0" }
@@ -40,7 +41,7 @@ config.default_cwd = platform.default_cwd()
 config.set_environment_variables = platform.environment_variables()
 config.font_size = 12.0
 config.line_height = 1.0
-config.cell_width = 1.0
+config.cell_width = 1.1
 config.enable_tab_bar = true
 config.hide_tab_bar_if_only_one_tab = not platform.is_windows
 config.use_fancy_tab_bar = platform.is_windows

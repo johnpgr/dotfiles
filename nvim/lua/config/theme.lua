@@ -240,11 +240,13 @@ local function apply_colorscheme_overrides()
 	-- vim.api.nvim_set_hl(0, "StatusLineNC", { bg = "none", fg = normal_hl.fg })
 	apply_statusline_highlights(normal_hl, conceal_hl)
 	vim.api.nvim_set_hl(0, "@function.call", { link = "@function" })
+	vim.api.nvim_set_hl(0, "@function.call.zig", { link = "@function" })
 	vim.api.nvim_set_hl(0, "@function.method", { link = "@function" })
 	vim.api.nvim_set_hl(0, "@function.builtin", { link = "@function" })
 	vim.api.nvim_set_hl(0, "@keyword.function", { link = "@keyword" })
 	vim.api.nvim_set_hl(0, "@type.builtin.odin", { link = "Type" })
 	vim.api.nvim_set_hl(0, "@constant.builtin.odin", { link = "Type" })
+	vim.api.nvim_set_hl(0, "@string.escape", { link = "@keyword.operator" })
 	vim.api.nvim_set_hl(0, "TSTypeBuiltin", { link = "TSType" })
 	vim.api.nvim_set_hl(0, "@module.odin", { link = "@variable.odin" })
 	vim.api.nvim_set_hl(0, "@tag.builtin", { link = "@type.builtin" })
@@ -261,7 +263,6 @@ local function apply_colorscheme_overrides()
 	-- Making treesitter usable
 	for _, group in ipairs({
 		"@number",
-		"@operator",
 		"@constant",
 		"@punctuation.bracket",
 		"@punctuation.delimiter",

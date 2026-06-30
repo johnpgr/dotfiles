@@ -1,4 +1,5 @@
 {
+  "adwaita.nvim": { "branch": "main", "commit": "c835b9d57a9b059492fd92e7ab8d57c47ff2ecc3" },
   "conform.nvim": { "branch": "master", "commit": "619363c30309d29ffa631e67c8183f2a72caa373" },
   "darcula-dark.nvim": { "branch": "main", "commit": "285c1fe3225ef19ef2639a3080551ee9669f263b" },
   "diagflow.nvim": { "branch": "main", "commit": "b13321b517ff64bf42eeac2214085d3c76d83a0d" },

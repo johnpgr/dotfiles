@@ -120,10 +120,7 @@ return {
 				end)
 			else
 				local allowed_langs = {
-					markdown = true,
-					javascript = true,
-					typescript = true,
-					tsx = true,
+					markdown = true
 				}
 
 				---@diagnostic disable-next-line: duplicate-set-field

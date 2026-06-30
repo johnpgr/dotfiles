@@ -4,14 +4,12 @@
 local term = os.getenv("TERM")
 local is_kitty = term == "xterm-kitty" or term == "xterm-ghostty" or term == "wezterm"
 local image_enabled = is_kitty and #vim.api.nvim_list_uis() > 0
-local is_neovide = vim.g.neovide ~= nil
 local is_windows = vim.fn.has("win32") == 1
 
 return {
-    -- Colorschemes
-    {
-        "xiantang/darcula-dark.nvim", lazy = false,
-    },
+	-- Colorschemes
+	{ "xiantang/darcula-dark.nvim", lazy = false },
+	{ "travisvroman/adwaita.nvim", lazy = false },
 	-- Smart Splits (seamless navigation/resize across nvim + wezterm/kitty/tmux)
 	{
 		"johnpgr/smart-splits.nvim",
@@ -100,17 +98,17 @@ return {
 			}
 			local columns = {
 				{
-				    "permissions",
-				    highlight = function(permission_str)
-				        local hls = {}
-				        for i = 1, #permission_str do
-				            local char = permission_str:sub(i, i)
-				            table.insert(hls, { permission_hlgroups[char], i - 1, i })
-				        end
-				        return hls
-				    end,
+					"permissions",
+					highlight = function(permission_str)
+						local hls = {}
+						for i = 1, #permission_str do
+							local char = permission_str:sub(i, i)
+							table.insert(hls, { permission_hlgroups[char], i - 1, i })
+						end
+						return hls
+					end,
 				},
-				{ "size",  highlight = "Special" },
+				{ "size", highlight = "Special" },
 				{ "mtime", highlight = "Number" },
 			}
 
@@ -127,9 +125,7 @@ return {
 					return
 				end
 
-				local cmd = (vim.fn.has("mac") == 1) and "open"
-					or (vim.fn.has("win32") == 1) and "start"
-					or "xdg-open"
+				local cmd = (vim.fn.has("mac") == 1) and "open" or (vim.fn.has("win32") == 1) and "start" or "xdg-open"
 
 				local full_path = cwd .. entry.name
 				vim.fn.jobstart({ cmd, full_path }, {
@@ -234,7 +230,7 @@ return {
 					winbar = "%!v:lua.get_oil_winbar()",
 					signcolumn = "no",
 					foldcolumn = "0",
-                    number = false
+					number = false,
 				},
 				use_default_keymaps = false,
 				watch_for_changes = true,
@@ -261,14 +257,14 @@ return {
 				{ "<leader>f", group = "file" },
 				{ "<leader>s", group = "search" },
 				{ "<leader>g", group = "git" },
-					{ "<leader>gl", group = "list" },
-					{ "<leader>h", group = "hunk" },
-					{ "<leader>l", group = "lsp" },
-					{ "<leader>t", group = "toggle" },
-					{ "<leader>i", group = "insert" },
-				})
-			end,
-		},
+				{ "<leader>gl", group = "list" },
+				{ "<leader>h", group = "hunk" },
+				{ "<leader>l", group = "lsp" },
+				{ "<leader>t", group = "toggle" },
+				{ "<leader>i", group = "insert" },
+			})
+		end,
+	},
 
 	-- Transparent
 	{
