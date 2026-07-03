@@ -94,6 +94,9 @@ return {
 			local ts_start = vim.treesitter.start
 
 			local function start_treesitter(bufnr, lang)
+				if not vim.g.treesitter_enabled then
+					return
+				end
 				bufnr = bufnr or vim.api.nvim_get_current_buf()
 				if vim.bo[bufnr].buftype ~= "" or is_large_buffer(bufnr) then
 					return
@@ -105,35 +108,36 @@ return {
 				end
 			end
 
-			if vim.g.treesitter_enabled then
-				local group = vim.api.nvim_create_augroup("TreesitterAutoStart", { clear = true })
+			local group = vim.api.nvim_create_augroup("TreesitterAutoStart", { clear = true })
 
-				vim.api.nvim_create_autocmd("FileType", {
-					group = group,
-					callback = function(args)
-						start_treesitter(args.buf)
-					end,
-				})
+			vim.api.nvim_create_autocmd("FileType", {
+				group = group,
+				callback = function(args)
+					start_treesitter(args.buf)
+				end,
+			})
 
-				vim.schedule(function()
-					start_treesitter(vim.api.nvim_get_current_buf())
-				end)
-			else
-				local allowed_langs = {
-					markdown = true
-				}
+			vim.schedule(function()
+				start_treesitter(vim.api.nvim_get_current_buf())
+			end)
 
-				---@diagnostic disable-next-line: duplicate-set-field
-				vim.treesitter.start = function(bufnr, lang)
-					bufnr = bufnr or vim.api.nvim_get_current_buf()
-					local bufname = vim.api.nvim_buf_get_name(bufnr)
-					if bufname == "" then
-						return ts_start(bufnr, lang)
-					end
-					local resolved_lang = resolve_lang(bufnr, lang)
-					if resolved_lang and allowed_langs[resolved_lang] then
-						return ts_start(bufnr, lang or resolved_lang)
-					end
+			local allowed_langs = {
+				markdown = true,
+			}
+
+			---@diagnostic disable-next-line: duplicate-set-field
+			vim.treesitter.start = function(bufnr, lang)
+				if vim.g.treesitter_enabled then
+					return ts_start(bufnr, lang)
+				end
+				bufnr = bufnr or vim.api.nvim_get_current_buf()
+				local bufname = vim.api.nvim_buf_get_name(bufnr)
+				if bufname == "" then
+					return ts_start(bufnr, lang)
+				end
+				local resolved_lang = resolve_lang(bufnr, lang)
+				if resolved_lang and allowed_langs[resolved_lang] then
+					return ts_start(bufnr, lang or resolved_lang)
 				end
 			end
 		end,

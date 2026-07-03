@@ -3,7 +3,7 @@
 local M = {}
 
 -- Delay (ms) before the completion popup auto-opens while typing.
-local COMPLETION_DELAY_MS = 500
+local COMPLETION_DELAY_MS = 0
 -- Max visible rows in the completion popup.
 local PUM_MAX_HEIGHT = 20
 -- Max width in characters; keeps the info window beside the menu.

@@ -1,5 +1,5 @@
 -- Global flags
-vim.g.treesitter_enabled = true
+vim.g.treesitter_enabled = false
 vim.g.icons_enabled = false
 vim.g.mapleader = " "
 vim.g.loaded_netrw = 1
@@ -39,7 +39,7 @@ vim.o.foldcolumn = "0"
 vim.o.breakindent = true
 vim.o.smartindent = true
 vim.o.autoindent = true
-vim.o.termguicolors = false
+vim.o.termguicolors = true
 vim.o.updatetime = 200
 vim.o.undofile = true
 vim.o.exrc = true

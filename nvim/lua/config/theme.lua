@@ -277,6 +277,44 @@ local function apply_colorscheme_overrides()
 	}) do
 		vim.api.nvim_set_hl(0, group, { fg = normal_hl.fg })
 	end
+	-- Override braces in various languages to have Normal color
+	for _, group in ipairs({
+		"luaTable",
+		"jsBraces",
+		"jsObjectBraces",
+		"jsBlockBraces",
+		"jsxBraces",
+		"tsxBraces",
+		"typescriptBraces",
+		"typescriptBlock",
+		"rustBraces",
+		"rustFoldBraces",
+		"goBraces",
+		"cBraces",
+		"cppBraces",
+		"pythonBrackets",
+		"pythonBraces",
+		"jsonBraces",
+		"cssBraces",
+		"scssBraces",
+		"lessBraces",
+		"yamlBraces",
+		"tomlBraces",
+		"vimBraces",
+		"phpBraces",
+		"javaBraces",
+		"ktBraces",
+		"scalaBraces",
+		"hsBraces",
+		"rubyCurlyBraces",
+		"rubyBraces",
+		"swiftBraces",
+		"zigBraces",
+		"odinBraces",
+		"dartBraces",
+	}) do
+		vim.api.nvim_set_hl(0, group, { link = "Normal" })
+	end
 
 	for _, group in ipairs({
 		"LspReferenceText",

@@ -42,7 +42,6 @@ indent_size = 2
 -- --------------------------------------------------------------------------
 -- Navigation
 -- --------------------------------------------------------------------------
-
 vim.keymap.set("n", "<leader>w", "<cmd>update<cr>", { desc = "Write" })
 vim.keymap.set("n", "<leader>q", "<cmd>quit<cr>", { desc = "Quit" })
 vim.keymap.set("n", "<leader>re", "<cmd>restart<cr>", { desc = "Restart" })
@@ -55,11 +54,7 @@ vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" }
 vim.keymap.set("n", "<leader>I", "<cmd>Inspect<cr>", { desc = "Inspect" })
 vim.keymap.set("n", "yig", ":%y<CR>", { desc = "Yank buffer" })
 vim.keymap.set("n", "vig", "ggVG", { desc = "Visual select buffer" })
-vim.keymap.set("n", "cig", ":%d<CR>i", { desc = "Change buffer" })
-vim.keymap.set("n", "n", "nzz", { desc = "Next search result" })
-
-vim.keymap.set("n", "]d", function()
-	vim.diagnostic.jump({ count = 1, float = true })
+vim.keymap.set("n", "cig", ":%d<CR>i", { desc = "Change buffer" }) vim.keymap.set("n", "n", "nzz", { desc = "Next search result" }) vim.keymap.set("n", "]d", function() vim.diagnostic.jump({ count = 1, float = true })
 	vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("zz", true, false, true), "n", true)
 end, { desc = "Next diagnostic" })
 
@@ -196,6 +191,29 @@ vim.keymap.set("n", "<leader>td", function()
 		vim.notify("Diagnostics enabled", vim.log.levels.INFO)
 	end
 end, { desc = "Diagnostics" })
+
+vim.keymap.set("n", "<leader>tt", function()
+	if vim.g.treesitter_enabled == nil then
+		vim.g.treesitter_enabled = true
+	end
+
+	vim.g.treesitter_enabled = not vim.g.treesitter_enabled
+
+	for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+		if vim.api.nvim_buf_is_loaded(bufnr) then
+			if vim.g.treesitter_enabled then
+				local filetype = vim.bo[bufnr].filetype
+				if filetype ~= "" and vim.bo[bufnr].buftype == "" then
+					pcall(vim.treesitter.start, bufnr)
+				end
+			else
+				pcall(vim.treesitter.stop, bufnr)
+			end
+		end
+	end
+
+	vim.notify("Treesitter " .. (vim.g.treesitter_enabled and "enabled" or "disabled"), vim.log.levels.INFO)
+end, { desc = "Toggle Treesitter" })
 
 
 -- --------------------------------------------------------------------------
@@ -369,9 +387,7 @@ local function nav_hunk(direction)
 				target = hunks[i].added.start
 				break
 			end
-		end
-		if not target then
-			target = hunks[#hunks].added.start
+		end if not target then target = hunks[#hunks].added.start
 		end
 	end
 
@@ -413,7 +429,7 @@ end, { desc = "Quickfix list" })
 -- --------------------------------------------------------------------------
 
 if vim.g.neovide then
-    vim.o.guifont = "Consolas Nerd Font:h12"
+    vim.o.guifont = "Hack Nerd Font:h12"
 	vim.g.neovide_refresh_rate = 165
 	vim.g.neovide_opacity = 1.0
 	vim.g.neovide_floating_shadow = false

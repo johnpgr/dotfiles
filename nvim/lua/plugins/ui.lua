@@ -10,6 +10,16 @@ return {
 	-- Colorschemes
 	{ "xiantang/darcula-dark.nvim", lazy = false },
 	{ "travisvroman/adwaita.nvim", lazy = false },
+    {
+      "blazkowolf/gruber-darker.nvim",
+      lazy = false,
+      opts = {
+        bold = false,
+        italic = {
+          strings = false,
+        },
+      },
+    },
 	-- Smart Splits (seamless navigation/resize across nvim + wezterm/kitty/tmux)
 	{
 		"johnpgr/smart-splits.nvim",
