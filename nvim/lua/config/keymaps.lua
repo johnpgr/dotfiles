@@ -429,11 +429,6 @@ end, { desc = "Quickfix list" })
 -- --------------------------------------------------------------------------
 
 if vim.g.neovide then
-    vim.o.guifont = "Hack Nerd Font:h12"
-	vim.g.neovide_refresh_rate = 165
-	vim.g.neovide_opacity = 1.0
-	vim.g.neovide_floating_shadow = false
-
 	vim.keymap.set("n", "<C-=>", function()
 		vim.g.neovide_scale_factor = vim.g.neovide_scale_factor * 1.1
 	end, { desc = "Increase Neovide scale factor" })

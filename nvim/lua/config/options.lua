@@ -7,7 +7,7 @@ vim.g.loaded_netrwPlugin = 1
 
 -- Editor options
 vim.o.cursorline = false
-vim.o.number = true
+vim.o.number = false
 vim.o.relativenumber = false
 function _G.dotfiles_statuscolumn_lnum()
     local winid = vim.g.statusline_winid or vim.api.nvim_get_current_win()
@@ -35,7 +35,7 @@ vim.o.list = false
 vim.o.splitbelow = true
 vim.o.splitright = true
 vim.o.signcolumn = "no"
-vim.o.foldcolumn = "0"
+vim.o.foldcolumn = "1"
 vim.o.breakindent = true
 vim.o.smartindent = true
 vim.o.autoindent = true

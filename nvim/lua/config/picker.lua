@@ -145,7 +145,7 @@ local function path_string(value)
 	end
 
 	-- Ripgrep/null-separated mini.pick items embed location after the first NUL.
-	return value:match("^([^\0]+)") or value
+	return value:match("^([^%z]+)") or value
 end
 
 local function picker_item_to_qf(item)
@@ -995,7 +995,15 @@ local function open_lsp_locations(method, title)
 		return
 	end
 
-	vim.lsp.buf_request_all(0, method, vim.lsp.util.make_position_params(0), function(results)
+	local results = {}
+	local pending = #clients
+
+	local function handle_response()
+		pending = pending - 1
+		if pending > 0 then
+			return
+		end
+
 		vim.schedule(function()
 			local items = {}
 			local seen = {}
@@ -1026,7 +1034,7 @@ local function open_lsp_locations(method, title)
 			end
 
 			if #items == 1 then
-				mini_pick().default_choose(items[1])
+				choose_path_item(items[1])
 				return
 			end
 
@@ -1038,7 +1046,20 @@ local function open_lsp_locations(method, title)
 				choose = choose_path_item,
 			})
 		end)
-	end)
+	end
+
+	for _, client in ipairs(clients) do
+		local position_params = vim.lsp.util.make_position_params(0, client.offset_encoding)
+		local request_ok = client:request(method, position_params, function(err, result)
+			results[client.id] = { error = err, result = result }
+			handle_response()
+		end, 0)
+
+		if not request_ok then
+			results[client.id] = { error = "request failed" }
+			handle_response()
+		end
+	end
 end
 
 local function open_definition_picker()

@@ -8,18 +8,27 @@ local is_windows = vim.fn.has("win32") == 1
 
 return {
 	-- Colorschemes
+	{
+		"scottmckendry/cyberdream.nvim",
+		event = "VeryLazy",
+		config = function()
+			require("cyberdream").setup({
+				variant = vim.o.background == "light" and "light" or "default",
+			})
+		end,
+	},
 	{ "xiantang/darcula-dark.nvim", lazy = false },
 	{ "travisvroman/adwaita.nvim", lazy = false },
-    {
-      "blazkowolf/gruber-darker.nvim",
-      lazy = false,
-      opts = {
-        bold = false,
-        italic = {
-          strings = false,
-        },
-      },
-    },
+	{
+		"blazkowolf/gruber-darker.nvim",
+		lazy = false,
+		opts = {
+			bold = false,
+			italic = {
+				strings = false,
+			},
+		},
+	},
 	-- Smart Splits (seamless navigation/resize across nvim + wezterm/kitty/tmux)
 	{
 		"johnpgr/smart-splits.nvim",
@@ -107,19 +116,19 @@ return {
 				["x"] = "DiagnosticSignOk",
 			}
 			local columns = {
-				{
-					"permissions",
-					highlight = function(permission_str)
-						local hls = {}
-						for i = 1, #permission_str do
-							local char = permission_str:sub(i, i)
-							table.insert(hls, { permission_hlgroups[char], i - 1, i })
-						end
-						return hls
-					end,
-				},
-				{ "size", highlight = "Special" },
-				{ "mtime", highlight = "Number" },
+				-- {
+				-- 	"permissions",
+				-- 	highlight = function(permission_str)
+				-- 		local hls = {}
+				-- 		for i = 1, #permission_str do
+				-- 			local char = permission_str:sub(i, i)
+				-- 			table.insert(hls, { permission_hlgroups[char], i - 1, i })
+				-- 		end
+				-- 		return hls
+				-- 	end,
+				-- },
+				-- { "size", highlight = "Special" },
+				-- { "mtime", highlight = "Number" },
 			}
 
 			if vim.g.icons_enabled then

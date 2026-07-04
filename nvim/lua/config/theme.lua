@@ -231,8 +231,8 @@ local function apply_colorscheme_overrides()
 	-- Some manual fixing of color tokens
     -- vim.api.nvim_set_hl(0, "LineNr", { ctermfg = 8 })
     -- vim.api.nvim_set_hl(0, "Comment", { ctermfg = 8 })
-	vim.api.nvim_set_hl(0, "Visual", { reverse = true })
-	vim.api.nvim_set_hl(0, "VisualNOS", { reverse = true })
+	-- vim.api.nvim_set_hl(0, "Visual", { reverse = true })
+	-- vim.api.nvim_set_hl(0, "VisualNOS", { reverse = true })
 	vim.api.nvim_set_hl(0, "WinSeparator", { link = "Normal" })
 	vim.api.nvim_set_hl(0, "NormalFloat", { link = "Normal" })
 	link_completion_colors()
@@ -255,6 +255,10 @@ local function apply_colorscheme_overrides()
 	if vim.g.colors_name == "quiet" then
 		vim.api.nvim_set_hl(0, "TabLineSel", { link = "Normal" })
 	end
+
+    if vim.g.colors_name == "gruber-darker" then
+        vim.api.nvim_set_hl(0, "FoldColumn", { link = "Normal" })
+    end
 
 	if vim.g.colors_name == "photon" then
 		vim.api.nvim_set_hl(0, "Statement", { link = "Constant" })

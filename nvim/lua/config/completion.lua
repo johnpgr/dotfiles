@@ -215,6 +215,9 @@ end
 
 local function process_items(items, base)
 	items = MiniCompletion.default_process_items(items, base)
+	if not vim.g.icons_enabled then
+		return items
+	end
 	return colorize_by_kind(items)
 end
 

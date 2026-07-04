@@ -1,6 +1,8 @@
 {
   "adwaita.nvim": { "branch": "main", "commit": "c835b9d57a9b059492fd92e7ab8d57c47ff2ecc3" },
+  "c3.vim": { "branch": "master", "commit": "ecf1c04d9ca5e8ffefe8f9c22724528e49f627e2" },
   "conform.nvim": { "branch": "master", "commit": "619363c30309d29ffa631e67c8183f2a72caa373" },
+  "cyberdream.nvim": { "branch": "main", "commit": "b9cc88378b776f33d3ea77164716f37c3f13ef72" },
   "darcula-dark.nvim": { "branch": "main", "commit": "285c1fe3225ef19ef2639a3080551ee9669f263b" },
   "diagflow.nvim": { "branch": "main", "commit": "b13321b517ff64bf42eeac2214085d3c76d83a0d" },
   "diffview.nvim": { "branch": "main", "commit": "4516612fe98ff56ae0415a259ff6361a89419b0a" },

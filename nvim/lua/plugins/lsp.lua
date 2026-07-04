@@ -100,8 +100,7 @@ return {
 			if vim.fn.executable("npm") == 1 then
 				global_node_modules = vim.fn.system("npm root -g"):gsub("[\r\n]", "")
 			else
-				global_node_modules = vim.fn.has("win32") == 1
-					and (vim.fn.expand("$APPDATA") .. "/npm/node_modules")
+				global_node_modules = vim.fn.has("win32") == 1 and (vim.fn.expand("$APPDATA") .. "/npm/node_modules")
 					or "/usr/local/lib/node_modules"
 			end
 
@@ -130,9 +129,13 @@ return {
 				},
 			})
 
+			vim.lsp.config("c3_lsp", {
+				cmd = { "c3lsp", "--stdlib-path=/opt/c3/lib/std" },
+			})
+
 			vim.lsp.enable({
 				"lua_ls",
-                -- "jdtls",
+				-- "jdtls",
 				-- "vtsls",
 				"clangd",
 				"html",
@@ -153,6 +156,7 @@ return {
 				"ts_ls",
 				"ruff",
 				"wc_language_server",
+				"c3_lsp",
 			})
 		end,
 	},
@@ -282,4 +286,5 @@ return {
 			end, { desc = "Show resolved mypy command info" })
 		end,
 	},
+	{ "code5717/c3.vim", ft = "c3" },
 }
