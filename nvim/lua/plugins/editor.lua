@@ -1,5 +1,5 @@
 -- Editor tools: conform, visual-multi, text-case, abolish,
--- mini.bufremove, mini.align, mypy, quicker
+-- blink.cmp, mini.bufremove, mini.align, mypy, quicker
 
 vim.keymap.set("n", "<leader>tu", function()
 	vim.cmd.packadd("nvim.undotree")
@@ -36,11 +36,16 @@ return {
 	-- Abolish
 	{ "tpope/vim-abolish", event = "VeryLazy" },
 
-	-- Mini Completion (LSP popup menu)
+	-- Blink.cmp
 	{
-		"nvim-mini/mini.completion",
-		lazy = false,
-		dependencies = { "nvim-mini/mini.icons" },
+		"saghen/blink.cmp",
+		version = "v1.10.2",
+		event = "InsertEnter",
+		dependencies = {
+			"L3MON4D3/LuaSnip",
+			"rafamadriz/friendly-snippets",
+			"xzbdmw/colorful-menu.nvim",
+		},
 		config = function()
 			require("config.completion").setup()
 		end,
