@@ -7,7 +7,9 @@ vim.api.nvim_create_autocmd('PackChanged', {
     local name, kind = ev.data.spec.name, ev.data.kind
     if name == 'fff.nvim' and (kind == 'install' or kind == 'update') then
       if not ev.data.active then vim.cmd.packadd('fff.nvim') end
-      require('fff.download').download_or_build_binary()
+      if not vim.uv.fs_stat(require('fff.download').get_binary_path()) then
+        require('fff.download').download_or_build_binary()
+      end
     end
   end,
 })
