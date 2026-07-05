@@ -1,4 +1,5 @@
 -- Load config modules that depend on plugins (all are loaded by now).
+require('config.rooter')
 require('config.lsp')
 require('config.keymaps')
 require('config.grep')
