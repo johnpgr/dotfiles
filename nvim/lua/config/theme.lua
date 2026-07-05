@@ -256,10 +256,6 @@ local function apply_colorscheme_overrides()
 		vim.api.nvim_set_hl(0, "TabLineSel", { link = "Normal" })
 	end
 
-    if vim.g.colors_name == "gruber-darker" then
-        vim.api.nvim_set_hl(0, "FoldColumn", { link = "Normal" })
-    end
-
 	if vim.g.colors_name == "photon" then
 		vim.api.nvim_set_hl(0, "Statement", { link = "Constant" })
 	end

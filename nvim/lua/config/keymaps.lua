@@ -392,6 +392,11 @@ vim.keymap.set("n", "<leader>hp", "<cmd>Gitsigns preview_hunk<cr>", { desc = "Pr
 vim.keymap.set("n", "<leader>hi", "<cmd>Gitsigns preview_hunk_inline<cr>", { desc = "Preview hunk inline" })
 vim.keymap.set("n", "<leader>hd", "<cmd>Gitsigns toggle_word_diff<cr>", { desc = "Toggle word diff" })
 
+vim.keymap.set("n", "<leader>tu", function()
+	vim.cmd.packadd("nvim.undotree")
+	vim.cmd.Undotree()
+end, { desc = "Undotree" })
+
 -- --------------------------------------------------------------------------
 -- Window management (smart-splits + builtin)
 -- --------------------------------------------------------------------------

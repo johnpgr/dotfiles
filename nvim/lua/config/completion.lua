@@ -174,7 +174,7 @@ function M.setup()
 			},
 		},
 		cmdline = { enabled = false },
-		fuzzy = { implementation = "prefer_rust_with_warning" },
+		fuzzy = { implementation = "lua" },
 	})
 
 	require("luasnip.loaders.from_vscode").lazy_load()

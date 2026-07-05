@@ -42,7 +42,7 @@ function M.grep(query)
   if not query or query == "" then return end
   ensure_fff()
 
-  local ok, result = pcall(require("fff.picker_ui.grep_renderer").search, query, 0, 100, nil, "plain")
+  local ok, result = pcall(require("fff.grep").search, query, 0, 100, nil, "plain")
   if not ok or not result or not result.items then
     vim.notify("Grep failed", vim.log.levels.ERROR)
     return
@@ -114,7 +114,7 @@ end
 function M.grep_todos()
   ensure_fff()
 
-  local ok, result = pcall(require("fff.picker_ui.grep_renderer").search, [[\b(TODO|FIXME|NOTE):]], 0, 100, nil, "regex")
+  local ok, result = pcall(require("fff.grep").search, [[\b(TODO|FIXME|NOTE):]], 0, 100, nil, "regex")
   if not ok or not result or not result.items then
     vim.notify("Grep failed", vim.log.levels.ERROR)
     return

@@ -22,7 +22,10 @@ local function ensure_fff(base_path)
 		return fff_state.fuzzy
 	end
 
-	pcall(vim.cmd.packadd, "fff.nvim")
+	local plug_dir = vim.fn.stdpath("data") .. "/site/pack/core/opt"
+	if vim.uv.fs_stat(plug_dir .. "/fff.nvim") then
+		vim.o.rtp = plug_dir .. "/fff.nvim," .. vim.o.rtp
+	end
 
 	local cwd = vim.fn.getcwd()
 	local target_path = base_path or cwd
