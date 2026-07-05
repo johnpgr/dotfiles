@@ -437,7 +437,8 @@ vim.keymap.set("n", "<leader>e", function()
 	if vim.bo.filetype == "oil" then
 		return
 	end
-	vim.cmd("horizontal Oil")
+	vim.cmd("belowright split")
+	vim.cmd("Oil")
 end, { desc = "Explore" })
 vim.keymap.set("n", "<leader>c", function()
 	require("quicker").toggle()
