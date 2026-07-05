@@ -1,19 +1,6 @@
 -- Neovim configuration entry point
 require("config.options")
 
--- Download or build fff native binary on install/update.
-vim.api.nvim_create_autocmd('PackChanged', {
-  callback = function(ev)
-    local name, kind = ev.data.spec.name, ev.data.kind
-    if name == 'fff.nvim' and (kind == 'install' or kind == 'update') then
-      if not ev.data.active then vim.cmd.packadd('fff.nvim') end
-      if not vim.uv.fs_stat(require('fff.download').get_binary_path()) then
-        require('fff.download').download_or_build_binary()
-      end
-    end
-  end,
-})
-
 -- fff initialized lazily by config.find + config.grep on first use.
 local function fff_base_path()
 	local cwd = vim.fn.getcwd()
