@@ -164,7 +164,6 @@ require('oil').setup({
         end
       end
 
-      vim.cmd('belowright split')
       vim.cmd('edit ' .. vim.fn.fnameescape(full_path))
     end,
     ['<C-v>'] = { 'actions.select', opts = { vertical = true } },

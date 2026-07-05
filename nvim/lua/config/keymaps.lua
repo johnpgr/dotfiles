@@ -437,7 +437,15 @@ vim.keymap.set("n", "<leader>e", function()
 	if vim.bo.filetype == "oil" then
 		return
 	end
-	vim.cmd("belowright split")
+	local buf = vim.api.nvim_get_current_buf()
+	local is_empty = vim.api.nvim_buf_get_name(buf) == ""
+		and vim.bo.buftype == ""
+		and not vim.bo.modified
+		and vim.api.nvim_buf_line_count(buf) == 1
+		and vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == ""
+	if not is_empty then
+		vim.cmd("belowright split")
+	end
 	vim.cmd("Oil")
 end, { desc = "Explore" })
 vim.keymap.set("n", "<leader>c", function()
