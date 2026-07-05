@@ -125,7 +125,7 @@ function M.setup()
 		},
 		snippets = { preset = "luasnip" },
 		sources = {
-			default = { "lazydev", "lsp", "buffer", "snippets", "path" },
+			default = { "lsp", "buffer", "snippets", "path" },
 			providers = {
 				dadbod = { name = "Dadbod", module = "vim_dadbod_completion.blink" },
 				lazydev = {
@@ -135,6 +135,7 @@ function M.setup()
 				},
 			},
 			per_filetype = {
+				lua = { "lazydev", "lsp", "buffer", "snippets", "path" },
 				sql = { "snippets", "dadbod", "buffer" },
 				DressingInput = { "buffer", "path" },
 			},

@@ -3,8 +3,13 @@ vim.g.icons_enabled = false
 vim.g.emacs_tab = false
 
 vim.schedule(function()
+	local ts_start = vim.treesitter.start
 	---@diagnostic disable-next-line: duplicate-set-field
-	vim.treesitter.start = function() end
+	vim.treesitter.start = function(bufnr, lang)
+		if vim.bo[bufnr or vim.api.nvim_get_current_buf()].filetype == "markdown" then
+			ts_start(bufnr, lang)
+		end
+	end
 end)
 vim.g.mapleader = " "
 vim.g.loaded_netrw = 1
