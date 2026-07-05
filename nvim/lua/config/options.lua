@@ -3,7 +3,8 @@ vim.g.icons_enabled = false
 vim.g.emacs_tab = false
 
 vim.schedule(function()
-  vim.treesitter.start = function() end
+	---@diagnostic disable-next-line: duplicate-set-field
+	vim.treesitter.start = function() end
 end)
 vim.g.mapleader = " "
 vim.g.loaded_netrw = 1
@@ -14,15 +15,15 @@ vim.o.cursorline = false
 vim.o.number = false
 vim.o.relativenumber = false
 function _G.dotfiles_statuscolumn_lnum()
-    local winid = vim.g.statusline_winid or vim.api.nvim_get_current_win()
-    local number = vim.api.nvim_get_option_value("number", { win = winid })
-    if vim.v.virtnum ~= 0 or not number then
-        return ""
-    end
+	local winid = vim.g.statusline_winid or vim.api.nvim_get_current_win()
+	local number = vim.api.nvim_get_option_value("number", { win = winid })
+	if vim.v.virtnum ~= 0 or not number then
+		return ""
+	end
 
-    local relativenumber = vim.api.nvim_get_option_value("relativenumber", { win = winid })
-    local lnum = relativenumber and vim.v.relnum ~= 0 and vim.v.relnum or vim.v.lnum
-    return lnum .. " "
+	local relativenumber = vim.api.nvim_get_option_value("relativenumber", { win = winid })
+	local lnum = relativenumber and vim.v.relnum ~= 0 and vim.v.relnum or vim.v.lnum
+	return lnum .. " "
 end
 
 vim.o.statuscolumn = "%C%s%=%{v:lua.dotfiles_statuscolumn_lnum()}"
@@ -53,32 +54,31 @@ vim.o.laststatus = 2
 vim.o.spelllang = "en,pt_br"
 vim.opt.clipboard = "unnamedplus"
 vim.opt.diffopt:append("linematch:60")
-vim.o.fillchars = [[eob: ,fold: ,foldopen:,foldsep: ,foldclose:,vert:│,horiz:─,horizup:─,horizdown:─]]
 
 require("vim._core.ui2").enable({})
 
 -- macOS: ensure SDKROOT is set for clangd / xcrun tools
 if vim.fn.has("mac") == 1 and not vim.env.SDKROOT and vim.fn.executable("xcrun") == 1 then
-    local sdkroot = vim.trim(vim.fn.system("xcrun --show-sdk-path"))
-    if vim.v.shell_error == 0 and sdkroot ~= "" then
-        vim.env.SDKROOT = sdkroot
-    end
+	local sdkroot = vim.trim(vim.fn.system("xcrun --show-sdk-path"))
+	if vim.v.shell_error == 0 and sdkroot ~= "" then
+		vim.env.SDKROOT = sdkroot
+	end
 end
 
 -- Windows: prefer bash; fall back to pwsh
 if vim.fn.has("win32") == 1 then
-    if vim.fn.executable("win32yank.exe") == 1 or vim.fn.executable("win32yank") == 1 then
-        vim.g.clipboard = "win32yank"
-    end
+	if vim.fn.executable("win32yank.exe") == 1 or vim.fn.executable("win32yank") == 1 then
+		vim.g.clipboard = "win32yank"
+	end
 
-    if vim.fn.executable("bash") == 1 then
-        vim.opt.shell = "bash"
-        vim.opt.shellcmdflag = "-c"
-        vim.opt.shellquote = ""
-        vim.opt.shellxquote = ""
-        vim.opt.shellpipe = "2>&1 | tee"
-        vim.opt.shellredir = ">%s 2>&1"
-    else
-        vim.opt.shell = "pwsh"
-    end
+	if vim.fn.executable("bash") == 1 then
+		vim.opt.shell = "bash"
+		vim.opt.shellcmdflag = "-c"
+		vim.opt.shellquote = ""
+		vim.opt.shellxquote = ""
+		vim.opt.shellpipe = "2>&1 | tee"
+		vim.opt.shellredir = ">%s 2>&1"
+	else
+		vim.opt.shell = "pwsh"
+	end
 end

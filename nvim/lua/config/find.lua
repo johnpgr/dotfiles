@@ -122,10 +122,35 @@ end
 
 vim.o.findfunc = "v:lua.dotfiles_find_func"
 
-vim.keymap.set("n", "<leader><space>", function()
+vim.keymap.set("n", "<leader>ff", function()
+	local context_dir
+	if vim.bo.filetype == "oil" then
+		local ok, dir = pcall(require("oil").get_current_dir)
+		if ok and dir then
+			context_dir = dir
+		end
+	end
+	if not context_dir then
+		local buf_path = vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
+		if buf_path and buf_path ~= "" then
+			context_dir = vim.fn.fnamemodify(buf_path, ":h")
+		end
+	end
+	if not context_dir then
+		context_dir = vim.fn.getcwd()
+	end
+	ensure_fff()
+	context_dir = vim.fs.normalize(context_dir)
+	if not context_dir:match("/$") then
+		context_dir = context_dir .. "/"
+	end
+	vim.api.nvim_feedkeys(":e " .. vim.fn.fnameescape(context_dir), "n", false)
+end, { desc = "Find file" })
+
+vim.keymap.set("n", "<leader>fl", function()
 	ensure_fff()
 	vim.api.nvim_feedkeys(":find ", "n", false)
-end, { desc = "Find file" })
+end, { desc = "Locate file" })
 
 -- <C-q> on :find: send wildmenu matches to quickfix
 vim.keymap.set("c", "<C-q>", function()

@@ -124,11 +124,11 @@ function M.grep_todos()
   set_qflist(items, "TODO comments")
 end
 
-vim.keymap.set("n", "<leader>/", function()
+vim.keymap.set("n", "<leader>sd", function()
   ensure_fff()
   local query = vim.fn.input("Grep > ")
   M.grep(query)
-end, { desc = "Grep" })
+end, { desc = "Search directory" })
 
 vim.keymap.set({ "n", "v" }, "<leader>sw", M.grep_word, { desc = "Grep word/selection" })
 

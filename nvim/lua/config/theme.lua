@@ -1,7 +1,6 @@
--- Theme: colorscheme overrides, dark/light sync, and persistence
+-- Theme: colorscheme overrides, dark/light sync
 
 local theme_uv = vim.uv or vim.loop
-local colorscheme_file = vim.fn.stdpath("config") .. "/.colorscheme"
 local theme_state_file = vim.fs.joinpath(vim.loop.os_homedir(), ".dotfiles", ".theme_state")
 local theme_state_dir = vim.fs.dirname(theme_state_file)
 local theme_state_name = vim.fs.basename(theme_state_file)
@@ -538,59 +537,7 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
 })
 
 -- --------------------------------------------------------------------------
--- Colorscheme persistence
--- --------------------------------------------------------------------------
-
-local function persist_colorscheme(colors_name)
-	if type(colors_name) == "table" then
-		colors_name = colors_name.text
-	end
-
-	if type(colors_name) ~= "string" or colors_name == "" then
-		vim.notify("Unable to persist colorscheme", vim.log.levels.WARN)
-		return
-	end
-
-	local f = io.open(colorscheme_file, "w")
-	if not f then
-		vim.notify("Unable to persist colorscheme", vim.log.levels.WARN)
-		return
-	end
-
-	f:write(colors_name)
-	f:close()
-end
-
-local function load_persisted_colorscheme()
-	local f = io.open(colorscheme_file, "r")
-	if f then
-		local persisted = f:read("*all")
-		f:close()
-
-		persisted = persisted and vim.trim(persisted) or ""
-		if persisted ~= "" then
-			local ok, err = pcall(vim.cmd.colorscheme, persisted)
-			if ok then
-				vim.api.nvim_exec_autocmds("ColorScheme", { pattern = persisted })
-			else
-				vim.notify(
-					string.format("Unable to load persisted colorscheme '%s': %s", persisted, err),
-					vim.log.levels.WARN
-				)
-			end
-		end
-	end
-
-	sync_theme_state({ force = true })
-end
-
--- --------------------------------------------------------------------------
 -- Public API
 -- --------------------------------------------------------------------------
 
-load_persisted_colorscheme()
 start_theme_state_watcher()
-
-return {
-	persist_colorscheme = persist_colorscheme,
-}
