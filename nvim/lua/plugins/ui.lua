@@ -1,5 +1,5 @@
 -- UI plugins: neo-tree, oil, smart-splits, toggleterm,
--- which-key, transparent, indent-blankline, diagflow, image.nvim, cord
+-- transparent, indent-blankline, diagflow, image.nvim, cord
 
 local term = os.getenv("TERM")
 local is_kitty = term == "xterm-kitty" or term == "xterm-ghostty" or term == "wezterm"
@@ -256,33 +256,6 @@ return {
 				use_default_keymaps = false,
 				watch_for_changes = true,
 				constrain_cursor = "name",
-			})
-		end,
-	},
-
-	-- Which Key
-	{
-		"folke/which-key.nvim",
-		event = "VeryLazy",
-		config = function()
-			local wk = require("which-key")
-			wk.setup({
-				preset = "helix",
-				icons = { mappings = false },
-				win = {
-					border = "single",
-					height = { min = 4, max = math.huge },
-				},
-			})
-			wk.add({
-				{ "<leader>f", group = "file" },
-				{ "<leader>s", group = "search" },
-				{ "<leader>g", group = "git" },
-				{ "<leader>gl", group = "list" },
-				{ "<leader>h", group = "hunk" },
-				{ "<leader>l", group = "lsp" },
-				{ "<leader>t", group = "toggle" },
-				{ "<leader>i", group = "insert" },
 			})
 		end,
 	},

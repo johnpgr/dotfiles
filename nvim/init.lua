@@ -4,7 +4,7 @@ require("config.options")
 
 -- fff.nvim currently crashes when its native indexer is initialized with
 -- $HOME as the base path. Keep its plugin file from eager-initializing on
--- UIEnter; config.picker initializes it lazily after checking the cwd.
+-- fff initialized lazily by config.find + config.grep on first use.
 local function fff_base_path()
 	local cwd = vim.fn.getcwd()
 	local home = (vim.uv or vim.loop).os_homedir()
@@ -84,3 +84,5 @@ require("config.autocmds")
 require("config.picker")
 require("config.keymaps")
 require("config.compile")
+require("config.grep")
+require("config.find")

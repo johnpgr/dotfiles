@@ -1,4 +1,4 @@
--- Misc: shared dependencies, pickers (fff + mini.pick),
+-- Misc: shared dependencies, pickers (fff),
 -- scope, neovim-project, mise
 
 return {
@@ -24,24 +24,6 @@ return {
 			pcall(function()
 				require("fff.download").download_or_build_binary()
 			end)
-		end,
-	},
-
-	-- Mini.pick (picker UI)
-	{
-		"nvim-mini/mini.pick",
-		version = false,
-		event = "VeryLazy",
-		config = function()
-			local pick = require("mini.pick")
-			pick.setup({
-				window = {
-					config = {
-						border = "single",
-					},
-				},
-			})
-			vim.ui.select = pick.ui_select
 		end,
 	},
 }

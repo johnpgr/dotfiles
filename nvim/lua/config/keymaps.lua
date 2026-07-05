@@ -261,7 +261,8 @@ end, { desc = "Editorconfig" })
 -- LSP keymaps
 -- --------------------------------------------------------------------------
 
--- vim.keymap.set("n", "gd", vim.lsp.buf.definition, { desc = "Goto definition" })
+vim.keymap.set("n", "gd", vim.lsp.buf.definition, { desc = "Goto definition" })
+vim.keymap.set("n", "gr", vim.lsp.buf.references, { desc = "Goto references" })
 vim.keymap.set("n", "<leader>lr", vim.lsp.buf.rename, { desc = "Rename symbol" })
 vim.keymap.set("n", "<leader>lf", function()
 	require("conform").format({ async = true })
@@ -275,7 +276,7 @@ vim.keymap.set("n", "<leader>ll", vim.diagnostic.setqflist, { desc = "Diagnostic
 -- Quickfix keymaps
 -- --------------------------------------------------------------------------
 
-vim.keymap.set("n", "]q", function()
+vim.keymap.set("n", "]c", function()
 	local qf_list = vim.fn.getqflist()
 	local qf_length = #qf_list
 	if qf_length == 0 then
@@ -291,7 +292,7 @@ vim.keymap.set("n", "]q", function()
 	vim.cmd("copen")
 end, { desc = "Next quickfix item" })
 
-vim.keymap.set("n", "[q", function()
+vim.keymap.set("n", "[c", function()
 	local qf_list = vim.fn.getqflist()
 	local qf_length = #qf_list
 	if qf_length == 0 then

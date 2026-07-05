@@ -234,7 +234,7 @@ end
 --- - Closes any existing compile window.
 --- - Sources `M.last_env` (if set) before the command and then unsets it.
 --- - Supports clickable file paths (e.g., `file:line`) via `<CR>` mapping.
---- - Populates the quickfix list when the command finishes; use `]q` / `[q` to navigate.
+--- - Populates the quickfix list when the command finishes; use `]c` / `[c` to navigate.
 --- - Press `q` to close the window.
 --- @param cmd string Shell command to execute.
 --- @return nil
@@ -307,14 +307,14 @@ M.executor = function(cmd)
         noremap = true,
         silent = true,
     })
-    vim.api.nvim_buf_set_keymap(M.compile_buffer, "n", "]q", "", {
+    vim.api.nvim_buf_set_keymap(M.compile_buffer, "n", "]c", "", {
         callback = function()
             navigate_quickfix(original_window, "next")
         end,
         noremap = true,
         silent = true,
     })
-    vim.api.nvim_buf_set_keymap(M.compile_buffer, "n", "[q", "", {
+    vim.api.nvim_buf_set_keymap(M.compile_buffer, "n", "[c", "", {
         callback = function()
             navigate_quickfix(original_window, "prev")
         end,

@@ -160,7 +160,7 @@ return {
 
 	{
 		"NeogitOrg/neogit",
-		dependencies = { "sindrets/diffview.nvim", "nvim-mini/mini.pick" },
+		dependencies = { "sindrets/diffview.nvim" },
 		cmd = { "Neogit", "NeogitLogCurrent" },
 		keys = {
 			{
