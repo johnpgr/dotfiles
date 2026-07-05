@@ -35,64 +35,6 @@ return {
 		branch = "perf/async-wezterm-cli",
 		lazy = false,
 		build = is_windows and nil or "./kitty/install-kittens.bash",
-		keys = {
-			{
-				"<C-h>",
-				function()
-					require("smart-splits").move_cursor_left()
-				end,
-				desc = "Focus split left",
-			},
-			{
-				"<C-j>",
-				function()
-					require("smart-splits").move_cursor_down()
-				end,
-				desc = "Focus split down",
-			},
-			{
-				"<C-k>",
-				function()
-					require("smart-splits").move_cursor_up()
-				end,
-				desc = "Focus split up",
-			},
-			{
-				"<C-l>",
-				function()
-					require("smart-splits").move_cursor_right()
-				end,
-				desc = "Focus split right",
-			},
-			{
-				"<M-h>",
-				function()
-					require("smart-splits").resize_left()
-				end,
-				desc = "Resize split left",
-			},
-			{
-				"<M-j>",
-				function()
-					require("smart-splits").resize_down()
-				end,
-				desc = "Resize split down",
-			},
-			{
-				"<M-k>",
-				function()
-					require("smart-splits").resize_up()
-				end,
-				desc = "Resize split up",
-			},
-			{
-				"<M-l>",
-				function()
-					require("smart-splits").resize_right()
-				end,
-				desc = "Resize split right",
-			},
-		},
 		config = function()
 			require("smart-splits").setup({
 				at_edge = "stop",
@@ -105,9 +47,6 @@ return {
 		"stevearc/oil.nvim",
 		lazy = false,
 		dependencies = { "nvim-mini/mini.icons" },
-		keys = {
-			{ "<leader>e", "<cmd>Oil<cr>", desc = "Explore" },
-		},
 		config = function()
 			local permission_hlgroups = {
 				["-"] = "NonText",
@@ -231,16 +170,79 @@ return {
 					-- end,
 				},
 				keymaps = {
-					["q"] = "actions.close",
+					["q"] = function()
+						vim.api.nvim_win_close(0, true)
+					end,
 					["<RightMouse>"] = "<LeftMouse><cmd>lua require('oil.actions').select.callback()<CR>",
 					["?"] = "actions.show_help",
-					["<CR>"] = "actions.select",
+					["<CR>"] = function()
+						local oil = require("oil")
+						local entry = oil.get_cursor_entry()
+						if not entry then
+							return
+						end
+						local dir = oil.get_current_dir()
+						if not dir then
+							return
+						end
+						local full_path = dir .. entry.name
+						local stat = vim.uv.fs_stat(full_path)
+						if stat and stat.type == "directory" then
+							oil.select()
+							return
+						end
+
+						local current_win = vim.api.nvim_get_current_win()
+						local current_pos = vim.api.nvim_win_get_position(current_win)
+						local current_row = current_pos[1]
+						local current_col = current_pos[2]
+						local current_width = vim.api.nvim_win_get_width(current_win)
+						local above_win = nil
+						local nearest_bottom = -1
+
+						for _, win in ipairs(vim.api.nvim_list_wins()) do
+							if win ~= current_win then
+								local pos = vim.api.nvim_win_get_position(win)
+								local row = pos[1]
+								local col = pos[2]
+								local height = vim.api.nvim_win_get_height(win)
+								local width = vim.api.nvim_win_get_width(win)
+								local bottom = row + height
+								local overlaps_column = col < current_col + current_width and col + width > current_col
+								if overlaps_column and bottom <= current_row and bottom > nearest_bottom then
+									above_win = win
+									nearest_bottom = bottom
+								end
+							end
+						end
+
+						if not above_win then
+							oil.select()
+							return
+						end
+
+						local above_buf = vim.api.nvim_win_get_buf(above_win)
+						local above_is_empty = vim.api.nvim_buf_get_name(above_buf) == ""
+							and vim.api.nvim_get_option_value("buftype", { buf = above_buf }) == ""
+							and not vim.api.nvim_get_option_value("modified", { buf = above_buf })
+							and vim.api.nvim_buf_line_count(above_buf) == 1
+							and vim.api.nvim_buf_get_lines(above_buf, 0, 1, false)[1] == ""
+
+						if not above_is_empty then
+							oil.select()
+						else
+							vim.api.nvim_win_close(current_win, true)
+							vim.api.nvim_set_current_win(above_win)
+							vim.cmd("edit " .. vim.fn.fnameescape(full_path))
+						end
+					end,
+					["<C-v>"] = { "actions.select", opts = { vertical = true } },
+					["<C-x>"] = { "actions.select", opts = { horizontal = true } },
 					["<F1>"] = oil_action_run_cmd_on_file,
 					["<F5>"] = "actions.refresh",
 					["~"] = { "actions.cd", opts = { scope = "tab" }, mode = "n" },
+					["<BS>"] = { "actions.parent", mode = "n" },
 					["-"] = { "actions.parent", mode = "n" },
-					["<Left>"] = { "actions.parent", mode = "n" },
-					["<Right>"] = { "actions.select", mode = "n" },
 					["H"] = "actions.toggle_hidden",
 					["<leader>o"] = oil_action_open_file,
 				},

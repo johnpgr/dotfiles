@@ -953,21 +953,54 @@ local function open_command_picker()
 	})
 end
 
-local function open_buffer_picker()
+function _G.dotfiles_buffer_completion(arg_lead)
 	local items = {}
-	local buffers_output = vim.api.nvim_exec("buffers", true)
-	for _, line in ipairs(vim.split(buffers_output, "\n")) do
-		local buf_str, name = line:match("^%s*(%d+)"), line:match('"(.*)"')
-		local bufnr = tonumber(buf_str)
-		if bufnr then
-			table.insert(items, { text = name, bufnr = bufnr })
+	for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+		if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_buf_is_loaded(bufnr) then
+			local buftype = vim.api.nvim_buf_get_option(bufnr, "buftype")
+			if buftype == "" then
+				local name = vim.api.nvim_buf_get_name(bufnr)
+				if name and name ~= "" then
+					table.insert(items, vim.fn.fnamemodify(name, ":."))
+				end
+			end
 		end
 	end
 
-	pick_start({
-		items = items,
-		prompt = "Buffers",
-	})
+	if arg_lead == "" then
+		return items
+	end
+
+	local matches = {}
+	local needle = arg_lead:lower()
+	for _, item in ipairs(items) do
+		if item:lower():find(needle, 1, true) then
+			table.insert(matches, item)
+		end
+	end
+
+	return vim.tbl_isempty(matches) and items or matches
+end
+
+local function open_buffer_picker()
+	vim.fn.inputsave()
+	vim.defer_fn(function()
+		vim.api.nvim_input("<Tab><Tab>")
+	end, 10)
+
+	local buf_str = vim.fn.input("Buffers > ", "", "customlist,v:lua.dotfiles_buffer_completion")
+	vim.fn.inputrestore()
+	if not buf_str or buf_str == "" then
+		return
+	end
+
+	local bufnr = vim.fn.bufnr(buf_str)
+	if bufnr == -1 or not vim.api.nvim_buf_is_loaded(bufnr) then
+		vim.notify("Invalid buffer: " .. buf_str, vim.log.levels.WARN)
+		return
+	end
+
+	vim.api.nvim_set_current_buf(bufnr)
 end
 
 local function location_to_pick_item(location)

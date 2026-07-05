@@ -264,23 +264,6 @@ local function apply_colorscheme_overrides()
 		vim.api.nvim_set_hl(0, "Statement", { link = "Constant" })
 	end
 
-	-- Making treesitter usable
-	for _, group in ipairs({
-		"@number",
-		"@constant",
-		"@punctuation.bracket",
-		"@punctuation.delimiter",
-		"@variable",
-		"@variable.parameter",
-		"@property",
-		"@constructor",
-		"@variable.member",
-		"Special",
-		"SpecialChar",
-		"@tag.attribute",
-	}) do
-		vim.api.nvim_set_hl(0, group, { fg = normal_hl.fg })
-	end
 	-- Override braces in various languages to have Normal color
 	for _, group in ipairs({
 		"luaTable",

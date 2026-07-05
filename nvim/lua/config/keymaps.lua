@@ -192,30 +192,6 @@ vim.keymap.set("n", "<leader>td", function()
 	end
 end, { desc = "Diagnostics" })
 
-vim.keymap.set("n", "<leader>tt", function()
-	if vim.g.treesitter_enabled == nil then
-		vim.g.treesitter_enabled = true
-	end
-
-	vim.g.treesitter_enabled = not vim.g.treesitter_enabled
-
-	for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-		if vim.api.nvim_buf_is_loaded(bufnr) then
-			if vim.g.treesitter_enabled then
-				local filetype = vim.bo[bufnr].filetype
-				if filetype ~= "" and vim.bo[bufnr].buftype == "" then
-					pcall(vim.treesitter.start, bufnr)
-				end
-			else
-				pcall(vim.treesitter.stop, bufnr)
-			end
-		end
-	end
-
-	vim.notify("Treesitter " .. (vim.g.treesitter_enabled and "enabled" or "disabled"), vim.log.levels.INFO)
-end, { desc = "Toggle Treesitter" })
-
-
 -- --------------------------------------------------------------------------
 -- Yank keymaps
 -- --------------------------------------------------------------------------
@@ -416,10 +392,47 @@ vim.keymap.set("n", "<leader>hi", "<cmd>Gitsigns preview_hunk_inline<cr>", { des
 vim.keymap.set("n", "<leader>hd", "<cmd>Gitsigns toggle_word_diff<cr>", { desc = "Toggle word diff" })
 
 -- --------------------------------------------------------------------------
+-- Window management (smart-splits + builtin)
+-- --------------------------------------------------------------------------
+
+vim.keymap.set("n", "<C-h>", function()
+	require("smart-splits").move_cursor_left()
+end, { desc = "Focus split left" })
+vim.keymap.set("n", "<C-j>", function()
+	require("smart-splits").move_cursor_down()
+end, { desc = "Focus split down" })
+vim.keymap.set("n", "<C-k>", function()
+	require("smart-splits").move_cursor_up()
+end, { desc = "Focus split up" })
+vim.keymap.set("n", "<C-l>", function()
+	require("smart-splits").move_cursor_right()
+end, { desc = "Focus split right" })
+
+vim.keymap.set("n", "<M-h>", function()
+	require("smart-splits").resize_left()
+end, { desc = "Resize split left" })
+vim.keymap.set("n", "<M-j>", function()
+	require("smart-splits").resize_down()
+end, { desc = "Resize split down" })
+vim.keymap.set("n", "<M-k>", function()
+	require("smart-splits").resize_up()
+end, { desc = "Resize split up" })
+vim.keymap.set("n", "<M-l>", function()
+	require("smart-splits").resize_right()
+end, { desc = "Resize split right" })
+
+vim.keymap.set("n", "<leader>z", "<C-w>_<C-w>|", { desc = "Maximize window" })
+
+-- --------------------------------------------------------------------------
 -- Misc plugin keymaps
 -- --------------------------------------------------------------------------
 
-vim.keymap.set("n", "<leader>e", "<cmd>Oil<cr>", { desc = "Explore" })
+vim.keymap.set("n", "<leader>e", function()
+	if vim.bo.filetype == "oil" then
+		return
+	end
+	vim.cmd("horizontal Oil")
+end, { desc = "Explore" })
 vim.keymap.set("n", "<leader>c", function()
 	require("quicker").toggle()
 end, { desc = "Quickfix list" })
