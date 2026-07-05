@@ -93,6 +93,19 @@ config.keys = {
     { key = "phys:T", mods = "ALT|SHIFT",  action = theme_picker.action() },
 }
 
+config.mouse_bindings = {
+    {
+        event = { Down = { streak = 1, button = { WheelUp = 1 } } },
+        mods = "CTRL",
+        action = act.IncreaseFontSize,
+    },
+    {
+        event = { Down = { streak = 1, button = { WheelDown = 1 } } },
+        mods = "CTRL",
+        action = act.DecreaseFontSize,
+    },
+}
+
 smart_splits.apply_to_config(config, {
     direction_keys = { "h", "j", "k", "l" },
     modifiers = {
