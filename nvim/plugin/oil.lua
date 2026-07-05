@@ -148,25 +148,24 @@ require('oil').setup({
         end
       end
 
-      if not above_win then
-        oil.select()
-        return
+      if above_win then
+        local above_buf = vim.api.nvim_win_get_buf(above_win)
+        local above_is_empty = vim.api.nvim_buf_get_name(above_buf) == ''
+          and vim.api.nvim_get_option_value('buftype', { buf = above_buf }) == ''
+          and not vim.api.nvim_get_option_value('modified', { buf = above_buf })
+          and vim.api.nvim_buf_line_count(above_buf) == 1
+          and vim.api.nvim_buf_get_lines(above_buf, 0, 1, false)[1] == ''
+
+        if above_is_empty then
+          vim.api.nvim_win_close(current_win, true)
+          vim.api.nvim_set_current_win(above_win)
+          vim.cmd('edit ' .. vim.fn.fnameescape(full_path))
+          return
+        end
       end
 
-      local above_buf = vim.api.nvim_win_get_buf(above_win)
-      local above_is_empty = vim.api.nvim_buf_get_name(above_buf) == ''
-        and vim.api.nvim_get_option_value('buftype', { buf = above_buf }) == ''
-        and not vim.api.nvim_get_option_value('modified', { buf = above_buf })
-        and vim.api.nvim_buf_line_count(above_buf) == 1
-        and vim.api.nvim_buf_get_lines(above_buf, 0, 1, false)[1] == ''
-
-      if not above_is_empty then
-        oil.select()
-      else
-        vim.api.nvim_win_close(current_win, true)
-        vim.api.nvim_set_current_win(above_win)
-        vim.cmd('edit ' .. vim.fn.fnameescape(full_path))
-      end
+      vim.cmd('belowright split')
+      vim.cmd('edit ' .. vim.fn.fnameescape(full_path))
     end,
     ['<C-v>'] = { 'actions.select', opts = { vertical = true } },
     ['<C-x>'] = { 'actions.select', opts = { horizontal = true } },
