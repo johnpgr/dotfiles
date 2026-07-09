@@ -207,6 +207,22 @@ vim.keymap.set("n", "<leader>fY", function()
 	print("Copied path: " .. relative_path)
 end, { desc = "Yank filepath from workspace" })
 
+vim.keymap.set("n", "<leader>tt", function()
+	vim.g.treesitter_disabled = not vim.g.treesitter_disabled
+	if vim.g.treesitter_disabled then
+		vim.treesitter.stop()
+		vim.notify("Treesitter disabled (except markdown)", vim.log.levels.INFO)
+	else
+		for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+			local ft = vim.bo[bufnr].filetype
+			if ft ~= "" and ft ~= "markdown" then
+				pcall(vim.treesitter.start, bufnr, ft)
+			end
+		end
+		vim.notify("Treesitter enabled", vim.log.levels.INFO)
+	end
+end, { desc = "Toggle treesitter" })
+
 -- --------------------------------------------------------------------------
 -- Insert keymaps
 -- --------------------------------------------------------------------------

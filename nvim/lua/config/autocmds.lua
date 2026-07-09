@@ -17,6 +17,17 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 	end,
 })
 
+-- Respect global treesitter toggle on new buffers
+vim.api.nvim_create_autocmd("FileType", {
+	group = vim.api.nvim_create_augroup("TreesitterToggle", { clear = true }),
+	pattern = "*",
+	callback = function(args)
+		if vim.g.treesitter_disabled and args.match ~= "markdown" then
+			vim.treesitter.stop(args.buf)
+		end
+	end,
+})
+
 -- Custom filetypes
 vim.filetype.add({
 	extension = {
