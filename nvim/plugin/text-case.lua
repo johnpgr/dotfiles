@@ -5,6 +5,9 @@ vim.pack.add({
 
 require("textcase").setup()
 
+local selabel_conf = require("config.selabel")
+selabel_conf.setup({})
+
 local conversions = {
 	{ label = "camelCase", key = "c", method = "to_camel_case" },
 	{ label = "PascalCase", key = "p", method = "to_pascal_case" },
@@ -18,31 +21,6 @@ local conversions = {
 	{ label = "Title-Dash Case", key = "T", method = "to_title_dash_case" },
 	{ label = "Phrase case", key = "P", method = "to_phrase_case" },
 }
-
-local select_labels = {}
-for _, conversion in ipairs(conversions) do
-	select_labels[#select_labels + 1] = conversion.key
-end
-
-vim.list_extend(select_labels, {
-	"f", "a", "j", "k",
-	";", "r", "e", "w",
-	"q", "i", "o", "v",
-	"x", "z", "m", ",",
-	"/",
-})
-
-require("selabel").setup({
-	labels = select_labels,
-	win_opts = {
-		relative = "cursor",
-		style = "minimal",
-		border = "single",
-		title_pos = "center",
-		row = 1,
-		col = 1,
-	},
-})
 
 local function pick_case()
 	vim.ui.select(conversions, {

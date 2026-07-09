@@ -1,14 +1,4 @@
-local function fff_base_path()
-	local cwd = vim.fn.getcwd()
-	local home = (vim.uv or vim.loop).os_homedir()
-	if not home then
-		return cwd
-	end
-
-	local real_cwd = (vim.uv or vim.loop).fs_realpath(cwd) or vim.fn.fnamemodify(cwd, ":p"):gsub("/+$", "")
-	local real_home = (vim.uv or vim.loop).fs_realpath(home) or vim.fn.fnamemodify(home, ":p"):gsub("/+$", "")
-	return real_cwd == real_home and vim.fn.stdpath("config") or cwd
-end
+local fff_config = require("config.fff")
 
 vim.pack.add({
 	{ src = "https://github.com/dmtrKovalenko/fff.nvim", version = vim.version.range("0.9") },
@@ -49,7 +39,7 @@ vim.api.nvim_create_autocmd("PackChanged", {
 })
 
 vim.g.fff = vim.tbl_deep_extend("force", vim.g.fff or {}, {
-	base_path = fff_base_path(),
+	base_path = fff_config.base_path(),
 	lazy_sync = true,
 	prompt = "",
 	layout = { prompt_position = "top" },
@@ -58,7 +48,7 @@ vim.g.fff = vim.tbl_deep_extend("force", vim.g.fff or {}, {
 })
 
 local function sync_base_path()
-	vim.g.fff = vim.tbl_deep_extend("force", vim.g.fff or {}, { base_path = fff_base_path() })
+	vim.g.fff = vim.tbl_deep_extend("force", vim.g.fff or {}, { base_path = fff_config.base_path() })
 end
 
 vim.api.nvim_create_autocmd("DirChanged", {
@@ -81,7 +71,7 @@ local function cword_or_selection()
 end
 
 vim.keymap.set("n", "<leader>ff", function()
-	require("fff").find_files({ cwd = fff_base_path() })
+	require("fff").find_files({ cwd = fff_config.base_path() })
 end, { desc = "Find" })
 
 vim.keymap.set("n", "<leader>fn", function()
@@ -102,11 +92,11 @@ end, { desc = "Search in vim.pack plugins" })
 
 vim.keymap.set("n", "<leader>sd", function()
 	require("fff").live_grep({
-		cwd = fff_base_path(),
+		cwd = fff_config.base_path(),
 		grep = { modes = { "plain", "fuzzy" } },
 	})
 end, { desc = "Search directory" })
 
 vim.keymap.set({ "n", "x" }, "<leader>sw", function()
-	require("fff").live_grep({ cwd = fff_base_path(), query = cword_or_selection() })
+	require("fff").live_grep({ cwd = fff_config.base_path(), query = cword_or_selection() })
 end, { desc = "Search current word / selection" })
