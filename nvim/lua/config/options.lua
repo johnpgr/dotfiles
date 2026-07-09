@@ -11,6 +11,7 @@ vim.schedule(function()
 		end
 	end
 end)
+
 vim.g.mapleader = " "
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
@@ -19,6 +20,7 @@ vim.g.loaded_netrwPlugin = 1
 vim.o.cursorline = false
 vim.o.number = false
 vim.o.relativenumber = false
+
 function _G.dotfiles_statuscolumn_lnum()
 	local winid = vim.g.statusline_winid or vim.api.nvim_get_current_win()
 	local number = vim.api.nvim_get_option_value("number", { win = winid })
@@ -57,7 +59,8 @@ vim.o.secure = true
 vim.o.cmdheight = 1
 vim.o.laststatus = 2
 vim.o.spelllang = "en,pt_br"
-vim.opt.clipboard = "unnamedplus"
+require("config.clipboard").setup()
+require("config.theme").setup()
 vim.opt.diffopt:append("linematch:60")
 
 require("vim._core.ui2").enable({})
@@ -72,10 +75,6 @@ end
 
 -- Windows: prefer bash; fall back to pwsh
 if vim.fn.has("win32") == 1 then
-	if vim.fn.executable("win32yank.exe") == 1 or vim.fn.executable("win32yank") == 1 then
-		vim.g.clipboard = "win32yank"
-	end
-
 	if vim.fn.executable("bash") == 1 then
 		vim.opt.shell = "bash"
 		vim.opt.shellcmdflag = "-c"

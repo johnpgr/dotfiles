@@ -174,14 +174,6 @@ vim.keymap.set("n", "<leader>ts", function()
 	end
 end, { desc = "Sign column" })
 
-vim.keymap.set("n", "<leader>tc", function()
-	if vim.o.colorcolumn == "" then
-		vim.o.colorcolumn = "80"
-	else
-		vim.o.colorcolumn = ""
-	end
-end, { desc = "Color column" })
-
 vim.keymap.set("n", "<leader>td", function()
 	if vim.diagnostic.is_enabled() then
 		vim.diagnostic.enable(false)
@@ -432,6 +424,7 @@ vim.keymap.set("n", "<leader>z", "<C-w>_<C-w>|", { desc = "Maximize window" })
 -- --------------------------------------------------------------------------
 -- Misc plugin keymaps
 -- --------------------------------------------------------------------------
+vim.keymap.set("n", "<leader>E", "<cmd>Oil<cr>", {desc = "Explore"})
 
 vim.keymap.set("n", "<leader>e", function()
 	if vim.bo.filetype == "oil" then

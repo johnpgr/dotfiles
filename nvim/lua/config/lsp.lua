@@ -14,8 +14,8 @@ vim.diagnostic.config({
 	severity_sort = true,
 	float = { border = "single", source = "if_many" },
 	underline = true,
-	virtual_text = false,
-	virtual_lines = { current_line = false },
+	virtual_text = true,
+	virtual_lines = false,
 })
 
 vim.lsp.semantic_tokens.enable(false)

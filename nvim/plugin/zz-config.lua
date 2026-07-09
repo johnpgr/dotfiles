@@ -2,8 +2,6 @@
 require('config.rooter')
 require('config.lsp')
 require('config.keymaps')
-require('config.grep')
-require('config.find')
 require('config.cmdline')
 require('config.picker')
 require('config.compile')

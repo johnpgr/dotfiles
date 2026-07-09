@@ -21,5 +21,7 @@ require('transparent').setup({
     'WhichKeyTitle',
     'FloatBorder',
     'SpecialKey',
+    'BlinkCmpDoc',
+    'BlinkCmpDocBorder',
   },
 })

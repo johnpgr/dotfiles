@@ -1,6 +1,5 @@
 -- Buffer picker + native-cmdline picker keymaps
 -- File finding via :find is in config/find.lua
--- Grep via fff → quickfix is in config/grep.lua
 
 function _G.dotfiles_buffer_completion(arg_lead)
 	local items = {}
