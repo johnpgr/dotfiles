@@ -2,7 +2,7 @@
 vim.g.icons_enabled = false
 vim.g.emacs_tab = false
 
-vim.g.treesitter_disabled = false
+vim.g.treesitter_enabled = true
 
 vim.g.mapleader = " "
 vim.g.loaded_netrw = 1
@@ -53,6 +53,7 @@ vim.o.laststatus = 2
 vim.o.spelllang = "en,pt_br"
 require("config.clipboard").setup()
 require("config.theme").setup()
+require("syntax").setup()
 vim.opt.diffopt:append("linematch:60")
 
 require("vim._core.ui2").enable({})

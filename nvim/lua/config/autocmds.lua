@@ -17,12 +17,15 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 	end,
 })
 
--- Respect global treesitter toggle on new buffers
+-- Start treesitter highlighting for any filetype with an installed parser,
+-- respecting the global toggle (markdown is always kept on).
 vim.api.nvim_create_autocmd("FileType", {
 	group = vim.api.nvim_create_augroup("TreesitterToggle", { clear = true }),
 	pattern = "*",
 	callback = function(args)
-		if vim.g.treesitter_disabled and args.match ~= "markdown" then
+		if vim.g.treesitter_enabled or args.match == "markdown" then
+			pcall(vim.treesitter.start, args.buf)
+		else
 			vim.treesitter.stop(args.buf)
 		end
 	end,

@@ -208,8 +208,8 @@ vim.keymap.set("n", "<leader>fY", function()
 end, { desc = "Yank filepath from workspace" })
 
 vim.keymap.set("n", "<leader>tt", function()
-	vim.g.treesitter_disabled = not vim.g.treesitter_disabled
-	if vim.g.treesitter_disabled then
+	vim.g.treesitter_enabled = not vim.g.treesitter_enabled
+	if not vim.g.treesitter_enabled then
 		vim.treesitter.stop()
 		vim.notify("Treesitter disabled (except markdown)", vim.log.levels.INFO)
 	else
