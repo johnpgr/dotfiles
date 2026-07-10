@@ -179,9 +179,7 @@ require('oil').setup({
   confirmation = { border = 'single' },
   win_options = {
     winbar = '%!v:lua.get_oil_winbar()',
-    signcolumn = 'no',
-    foldcolumn = '0',
-    number = false,
+    foldcolumn = vim.o.foldcolumn,
   },
   use_default_keymaps = false,
   watch_for_changes = true,

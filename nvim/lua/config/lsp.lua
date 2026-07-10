@@ -37,9 +37,12 @@ function _G.get_oil_winbar()
 	else
 		result = vim.api.nvim_buf_get_name(bufnr)
 	end
-	if vim.o.foldcolumn == "0" then
-		return result
-	else
-		return " " .. result
+
+	local wininfo = vim.fn.getwininfo(winid)
+	local textoff = wininfo[1] and wininfo[1].textoff or 0
+	if textoff > 0 then
+		result = string.rep(" ", textoff) .. result
 	end
+
+	return result
 end
