@@ -7,24 +7,12 @@
 -- result always follows whatever colorscheme is active.
 local M = {}
 
--- Keywords are structure, not meaning: the logic after `if`/`return`/`import`
--- matters, not the keyword itself. Variable/call/field references are ~75%
--- of any file -- field access (`vim.o`, `obj.prop`) is just as common as a
--- plain variable and just as much "usage", not a declaration -- so all of it
--- gets stripped to `Normal` rather than earning its own color.
+-- Variable/call/field references are ~75% of any file -- field access
+-- (`vim.o`, `obj.prop`) is just as common as a plain variable and just as
+-- much "usage", not a declaration -- so all of it gets stripped to `Normal`
+-- rather than earning its own color. Keywords are handled separately below
+-- (they keep their classic per-category colors).
 local strip_to_normal = {
-	"@keyword",
-	"@keyword.modifier",
-	"@keyword.type",
-	"@keyword.repeat",
-	"@keyword.conditional",
-	"@keyword.import",
-	"@keyword.directive",
-	"@keyword.exception",
-	"@include",
-	"@conditional",
-	"@repeat",
-	"@exception",
 	"@variable",
 	"@variable.parameter",
 	"@variable.member",
@@ -44,6 +32,9 @@ local strip_to_normal = {
 	-- it's just a variable reference (the 75% rule), so a naming style
 	-- shouldn't earn it a color real literals don't get.
 	"@constant",
+	-- Numeric literals aren't distinguished from any other value either.
+	"@number",
+	"@float",
 	-- JSX/TSX tag names and prop names are references too: `<div>` and
 	-- `<Skeleton>` are both just "using a name", same as a variable or a
 	-- function call, and a prop name is a field access. Without this,
@@ -53,20 +44,31 @@ local strip_to_normal = {
 	"@tag",
 	"@tag.builtin",
 	"@tag.attribute",
-}
-
--- Delimiters and operators are scaffolding. Dimming them to `Comment` lets
--- identifiers -- the part worth reading -- take center stage. This also
--- covers operators spelled as keywords (`typeof`, `instanceof`, `as`, the
--- ternary `?`/`:`) so all operator-shaped tokens are muted uniformly
--- instead of only the symbolic ones.
-local dim_to_comment = {
+	-- The jsx grammar defaults tag text content to `@none` (no highlight),
+	-- but overrides that for text inside semantic tag names -- `<h1>`-`<h6>`,
+	-- `<strong>`, `<em>`, `<code>`, `<a>`, etc. -- treating it like markdown.
+	-- JSX isn't markdown; text between tags should never pick up a color
+	-- just because of the enclosing tag's name.
+	"@markup.heading",
+	"@markup.heading.1",
+	"@markup.heading.2",
+	"@markup.heading.3",
+	"@markup.heading.4",
+	"@markup.heading.5",
+	"@markup.heading.6",
+	"@markup.strong",
+	"@markup.italic",
+	"@markup.strikethrough",
+	"@markup.underline",
+	"@markup.raw",
+	"@markup.link.label",
+	-- Punctuation (`;(){}<>`) is pure scaffolding -- no highlighting at all,
+	-- not even a muted one, so identifiers are the only thing carrying
+	-- color. Operators (`=`, `??`, `typeof`, ternary `?`/`:`, ...) are
+	-- handled separately below, via the standard `Operator` group.
 	"@punctuation.delimiter",
 	"@punctuation.bracket",
 	"@punctuation.special",
-	"@operator",
-	"@keyword.operator",
-	"@keyword.conditional.ternary",
 	"@tag.delimiter",
 }
 
@@ -83,12 +85,36 @@ local reference_points = {
 	["@string"] = "String",
 	["@string.documentation"] = "String",
 	["@string.escape"] = "String",
-	["@number"] = "Constant",
-	["@float"] = "Constant",
-	["@boolean"] = "Constant",
-	["@constant.builtin"] = "Constant",
-	["@type"] = "Type",
-	["@type.builtin"] = "Type",
+	-- `null`/`undefined`/`true`/`false` are reserved language sentinels, not
+	-- user data -- grouped with keywords instead of literal constants.
+	["@boolean"] = "Keyword",
+	["@constant.builtin"] = "Keyword",
+	-- Types share the `Function` link rather than getting their own group.
+	["@type"] = "Function",
+	["@type.builtin"] = "Function",
+	-- Operators get Vim's standard `Special` group -- distinct from both
+	-- the unhighlighted punctuation and the muted `Comment` used elsewhere.
+	-- (`Operator` itself is just bold-on-Normal in some colorschemes, e.g.
+	-- ef-dream, which isn't actually a distinct color.) Includes operators
+	-- spelled as keywords (`typeof`, `instanceof`, `as`) and the ternary
+	-- `?`/`:`, so every operator-shaped token matches.
+	["@operator"] = "Special",
+	["@keyword.operator"] = "Special",
+	["@keyword.conditional.ternary"] = "Special",
+	-- Every keyword variant shares one `Keyword` link -- `if`/`for`/`import`/
+	-- `try` all look the same as each other, just distinct from identifiers.
+	["@keyword"] = "Keyword",
+	["@keyword.modifier"] = "Keyword",
+	["@keyword.type"] = "Keyword",
+	["@keyword.repeat"] = "Keyword",
+	["@keyword.conditional"] = "Keyword",
+	["@keyword.import"] = "Keyword",
+	["@keyword.directive"] = "Keyword",
+	["@keyword.exception"] = "Keyword",
+	["@include"] = "Keyword",
+	["@conditional"] = "Keyword",
+	["@repeat"] = "Keyword",
+	["@exception"] = "Keyword",
 }
 
 -- Neovim resolves `@capture.lang` before falling back to plain `@capture`
@@ -115,17 +141,12 @@ end
 local function apply(opts)
 	opts = opts or {}
 	-- Comments explain what the code can't; they earn attention rather than
-	-- fading into gray. Default to `Todo` (usually bold/inverted); pass
-	-- comment_hl = "String" or "Constant" to pick a different accent.
-	local comment_hl = opts.comment_hl or "Todo"
+	-- fading into gray. Default to `Define`; pass comment_hl to override.
+	local comment_hl = opts.comment_hl or "Define"
 	local langs = installed_languages()
 
 	for _, group in ipairs(strip_to_normal) do
 		set_hl_all_langs(langs, group, "Normal")
-	end
-
-	for _, group in ipairs(dim_to_comment) do
-		set_hl_all_langs(langs, group, "Comment")
 	end
 
 	for group, target in pairs(reference_points) do
