@@ -32,7 +32,7 @@ if not platform.is_windows then
     config.term = "wezterm"
 end
 
-config.front_end = "WebGpu"
+-- config.front_end = "WebGpu"
 config.font = regular_font
 config.font_rules = theme.font_rules(regular_font.font[1].family)
 config.harfbuzz_features = { "calt=0", "clig=0", "liga=0" }

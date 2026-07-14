@@ -372,3 +372,5 @@ vim.api.nvim_create_user_command(
         end
     }
 )
+
+return M

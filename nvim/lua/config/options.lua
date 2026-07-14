@@ -5,6 +5,7 @@ vim.g.treesitter_enabled = true
 vim.g.mapleader = " "
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
+vim.o.background = "dark"
 
 -- Editor options
 vim.o.cursorline = true
@@ -41,3 +42,10 @@ require("syntax").setup()
 vim.opt.diffopt:append("linematch:60")
 
 require("vim._core.ui2").enable({})
+
+if vim.g.neovide then
+	vim.o.guifont = "IosevkaInput:h12"
+	vim.g.neovide_refresh_rate = 165
+	vim.g.neovide_opacity = 1.0
+	vim.g.neovide_floating_shadow = false
+end

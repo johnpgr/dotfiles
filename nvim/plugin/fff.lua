@@ -1,4 +1,5 @@
 local fff_config = require("config.fff")
+local language_sources = require("config.language_sources")
 
 vim.pack.add({
 	{ src = "https://github.com/dmtrKovalenko/fff.nvim", version = vim.version.range("0.9") },
@@ -42,6 +43,7 @@ vim.g.fff = vim.tbl_deep_extend("force", vim.g.fff or {}, {
 	base_path = fff_config.base_path(),
 	lazy_sync = true,
 	prompt = "",
+	title = "Find Files",
 	layout = { prompt_position = "top" },
 	hl = { cursor = "CursorLine" },
 	-- debug = { enabled = true, show_scores = true },
@@ -82,6 +84,14 @@ vim.keymap.set("n", "<leader>fp", function()
 	require("fff").find_files({ cwd = vim.fs.joinpath(vim.fn.stdpath("data"), "site", "pack") })
 end, { desc = "Find in vim.pack plugins" })
 
+vim.keymap.set("n", "<leader>fs", function()
+	local language = language_sources.name_for(vim.bo.filetype)
+	local path = language_sources.current()
+	if path then
+		require("fff").find_files({ cwd = path, title = language .. " stdlib files" })
+	end
+end, { desc = "Find in language stdlib" })
+
 vim.keymap.set("n", "<leader>sn", function()
 	require("fff").live_grep({ cwd = vim.fn.stdpath("config") })
 end, { desc = "Search in Neovim config" })
@@ -89,6 +99,14 @@ end, { desc = "Search in Neovim config" })
 vim.keymap.set("n", "<leader>sp", function()
 	require("fff").live_grep({ cwd = vim.fs.joinpath(vim.fn.stdpath("data"), "site", "pack") })
 end, { desc = "Search in vim.pack plugins" })
+
+vim.keymap.set("n", "<leader>ss", function()
+	local language = language_sources.name_for(vim.bo.filetype)
+	local path = language_sources.current()
+	if path then
+		require("fff").live_grep({ cwd = path, title = language .. " stdlib search" })
+	end
+end, { desc = "Search in language stdlib" })
 
 vim.keymap.set("n", "<leader>sd", function()
 	require("fff").live_grep({
