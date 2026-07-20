@@ -114,6 +114,10 @@
       "rev": "e898cfd46fa6cde0e83abb624a16e67d2ffc6457",
       "src": "https://github.com/johmsalas/text-case.nvim"
     },
+    "tmux.nvim": {
+      "rev": "32ceaf2793582955ef9576809730878c4d2d9426",
+      "src": "https://github.com/aserowy/tmux.nvim"
+    },
     "transparent.nvim": {
       "rev": "8ac59883de84e9cd1850ea25cf087031c5ba7d54",
       "src": "https://github.com/xiyaowong/transparent.nvim"
