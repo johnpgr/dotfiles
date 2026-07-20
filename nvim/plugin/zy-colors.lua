@@ -5,7 +5,7 @@ vim.pack.add({
 ---@diagnostic disable-next-line: missing-fields
 require("ef-themes").setup({
 	light = "ef-tritanopia-light",
-	dark = "ef-dream",
+	dark = "ef-cherie",
 })
 
 vim.cmd.colorscheme("ef-theme")
