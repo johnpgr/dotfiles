@@ -12,7 +12,7 @@ function M.default_prog()
         }
     end
 
-    return { "bash" }
+    return { "bash", "-l" }
 end
 
 function M.default_cwd()

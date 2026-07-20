@@ -8,7 +8,7 @@ vim.g.loaded_netrwPlugin = 1
 vim.o.background = "dark"
 
 -- Editor options
-vim.o.cursorline = true
+vim.o.cursorline = false
 vim.o.number = false
 vim.o.relativenumber = false
 vim.o.confirm = true
@@ -24,7 +24,7 @@ vim.o.list = false
 vim.o.splitbelow = true
 vim.o.splitright = true
 vim.o.signcolumn = "no"
-vim.o.foldcolumn = "1"
+vim.o.foldcolumn = "0"
 vim.o.breakindent = true
 vim.o.smartindent = true
 vim.o.autoindent = true

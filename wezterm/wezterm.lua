@@ -19,7 +19,7 @@ local theme_picker = require("config.theme_picker")
 -- Set to true to use real Bold/Italic font weights instead of Regular for all styles.
 theme.enable_bold_font = false
 
-local regular_font = theme.regular_font()
+-- local regular_font = theme.regular_font()
 local theme_mode = theme.read_theme_mode()
 
 theme.ensure_state_files()
@@ -33,15 +33,15 @@ if not platform.is_windows then
 end
 
 -- config.front_end = "WebGpu"
-config.font = regular_font
-config.font_rules = theme.font_rules(regular_font.font[1].family)
+config.font = wezterm.font "Comic Code"
+-- config.font_rules = theme.font_rules(regular_font.font[1].family)
 config.harfbuzz_features = { "calt=0", "clig=0", "liga=0" }
 config.max_fps = 165
 config.default_prog = platform.default_prog()
 config.default_cwd = platform.default_cwd()
 config.set_environment_variables = platform.environment_variables()
-config.font_size = 11
-config.line_height = 1
+config.font_size = 15
+config.line_height = 0.85
 config.cell_width = 1
 config.enable_tab_bar = true
 config.hide_tab_bar_if_only_one_tab = not platform.is_windows
@@ -49,7 +49,7 @@ config.use_fancy_tab_bar = platform.is_windows
 config.window_decorations = platform.window_decorations()
 config.freetype_interpreter_version = 40
 config.tab_max_width = 32
-config.window_frame = theme.window_frame(theme_mode, regular_font)
+-- config.window_frame = theme.window_frame(theme_mode, regular_font)
 config.cursor_blink_rate = 0
 config.underline_position = "-3px"
 config.underline_thickness = "1px"

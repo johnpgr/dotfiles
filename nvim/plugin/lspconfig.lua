@@ -95,23 +95,31 @@ vim.api.nvim_create_autocmd("FileType", {
 	end,
 })
 
-local global_node_modules = ""
-if vim.fn.executable("npm") == 1 then
-	global_node_modules = vim.fn.system("npm root -g"):gsub("[\r\n]", "")
-else
-	global_node_modules = vim.fn.has("win32") == 1 and (vim.fn.expand("$APPDATA") .. "/npm/node_modules")
-		or "/usr/local/lib/node_modules"
-end
+-- `npm root -g` is a slow sync spawn (~200-350ms); only pay that cost once,
+-- when a JS/TS buffer is actually opened, instead of on every startup.
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
+	once = true,
+	callback = function()
+		local global_node_modules
+		if vim.fn.executable("npm") == 1 then
+			global_node_modules = vim.fn.system("npm root -g"):gsub("[\r\n]", "")
+		else
+			global_node_modules = vim.fn.has("win32") == 1 and (vim.fn.expand("$APPDATA") .. "/npm/node_modules")
+				or "/usr/local/lib/node_modules"
+		end
 
-vim.lsp.config("ts_ls", {
-	init_options = {
-		plugins = {
-			{
-				name = "typescript-lit-html-plugin",
-				location = global_node_modules,
+		vim.lsp.config("ts_ls", {
+			init_options = {
+				plugins = {
+					{
+						name = "typescript-lit-html-plugin",
+						location = global_node_modules,
+					},
+				},
 			},
-		},
-	},
+		})
+	end,
 })
 
 vim.lsp.config("wc_language_server", {

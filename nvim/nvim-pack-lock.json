@@ -83,7 +83,7 @@
       "src": "https://github.com/feakuru/mypy.nvim"
     },
     "neogit": {
-      "rev": "4046f747739cf7e7b9aada447f3edc59c947b111",
+      "rev": "f8674ec894315c02449b61c9de9a116c5aafeb90",
       "src": "https://github.com/NeogitOrg/neogit"
     },
     "nvim-lspconfig": {
@@ -108,8 +108,7 @@
     },
     "smart-splits.nvim": {
       "rev": "c0048ddcba7f8c9b89e434c6e20bda3492cb40a0",
-      "src": "https://github.com/johnpgr/smart-splits.nvim",
-      "version": "'perf/async-wezterm-cli'"
+      "src": "https://github.com/johnpgr/smart-splits.nvim"
     },
     "text-case.nvim": {
       "rev": "e898cfd46fa6cde0e83abb624a16e67d2ffc6457",

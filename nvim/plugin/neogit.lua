@@ -138,35 +138,45 @@ local function patch_neogit_checkout_commit()
   actions.__dotfiles_checkout_commit_patch = true
 end
 
-vim.pack.add({ 'https://github.com/NeogitOrg/neogit' })
+local lazy_pack = require('lazy_pack')
 
-patch_neogit_checkout_commit()
+local load = lazy_pack.loader({ 'https://github.com/NeogitOrg/neogit' }, function()
+  patch_neogit_checkout_commit()
 
-require('neogit').setup({
-  graph_style = is_kitty and 'kitty' or 'ascii',
-  commit_editor = {
-    kind = 'vsplit',
-    show_staged_diff = false,
-  },
-  console_timeout = 5000,
-  auto_show_console = false,
-  integrations = {
-    diffview = true,
-    mini_pick = false,
-    telescope = false,
-    fzf_lua = false,
-    snacks = false,
-  },
+  require('neogit').setup({
+    graph_style = is_kitty and 'kitty' or 'ascii',
+    commit_editor = {
+      kind = 'vsplit',
+      show_staged_diff = false,
+    },
+    console_timeout = 5000,
+    auto_show_console = false,
+    integrations = {
+      diffview = true,
+      mini_pick = false,
+      telescope = false,
+      fzf_lua = false,
+      snacks = false,
+    },
+  })
+end)
+
+load = lazy_pack.on_command(load, { 'Neogit', 'NeogitLogCurrent' })
+
+lazy_pack.on_keys(load, {
+  { mode = 'n', lhs = '<M-g>', desc = 'Git status', fn = function()
+    require('neogit').open({ kind = 'split' })
+  end },
+  { mode = 'n', lhs = '<leader>gg', desc = 'Git status', fn = function()
+    require('neogit').open({ kind = 'split' })
+  end },
+  { mode = 'n', lhs = '<leader>gc', desc = 'Git commit', fn = function()
+    require('neogit.buffers.commit_view').new('HEAD'):open('replace')
+  end },
+  { mode = 'n', lhs = '<leader>gb', desc = 'Git branch', fn = function()
+    vim.cmd('Neogit branch')
+  end },
+  { mode = 'n', lhs = '<leader>gL', desc = 'Git log', fn = function()
+    vim.cmd('NeogitLogCurrent')
+  end },
 })
-
-vim.keymap.set('n', '<M-g>', function()
-  require('neogit').open({ kind = 'split' })
-end, { desc = 'Git status' })
-vim.keymap.set('n', '<leader>gg', function()
-  require('neogit').open({ kind = 'split' })
-end, { desc = 'Git status' })
-vim.keymap.set('n', '<leader>gc', function()
-  require('neogit.buffers.commit_view').new('HEAD'):open('replace')
-end, { desc = 'Git commit' })
-vim.keymap.set('n', '<leader>gb', '<cmd>Neogit branch<cr>', { desc = 'Git branch' })
-vim.keymap.set('n', '<leader>gL', '<cmd>NeogitLogCurrent<cr>', { desc = 'Git log' })
