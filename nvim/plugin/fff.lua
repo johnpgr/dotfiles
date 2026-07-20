@@ -46,7 +46,7 @@ vim.g.fff = vim.tbl_deep_extend("force", vim.g.fff or {}, {
 	title = "Find Files",
 	layout = { prompt_position = "top" },
 	hl = { cursor = "CursorLine" },
-	-- debug = { enabled = true, show_scores = true },
+	debug = { enabled = vim.g.icons_enabled, show_scores = vim.g.icons_enabled },
 })
 
 local function sync_base_path()
