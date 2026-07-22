@@ -5,7 +5,10 @@ vim.pack.add({
 ---@diagnostic disable-next-line: missing-fields
 require("ef-themes").setup({
 	light = "ef-tritanopia-light",
-	dark = "ef-cherie",
+	dark = "ef-dream",
 })
 
-vim.cmd.colorscheme("ef-theme")
+vim.cmd [[
+    colorscheme ef-theme
+    hi! link EndOfBuffer WinSeparator
+]]
