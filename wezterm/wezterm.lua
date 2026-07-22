@@ -2,9 +2,9 @@ local wezterm = require("wezterm")
 
 local root = wezterm.config_dir
 package.path = table.concat({
-    root .. "/?.lua",
-    root .. "/?/init.lua",
-    package.path,
+	root .. "/?.lua",
+	root .. "/?/init.lua",
+	package.path,
 }, ";")
 
 local config = wezterm.config_builder()
@@ -29,7 +29,7 @@ wezterm.add_to_config_reload_watch_list(theme.dark_color_scheme_file)
 wezterm.add_to_config_reload_watch_list(theme.light_color_scheme_file)
 
 if not platform.is_windows then
-    config.term = "wezterm"
+	config.term = "wezterm"
 end
 
 -- config.front_end = "WebGpu"
@@ -40,7 +40,7 @@ config.default_prog = platform.default_prog()
 config.default_cwd = platform.default_cwd()
 config.set_environment_variables = platform.environment_variables()
 config.font_size = 14
-config.line_height = 0.8
+config.line_height = 0.75
 config.cell_width = 1
 config.enable_tab_bar = true
 config.hide_tab_bar_if_only_one_tab = not platform.is_windows
@@ -59,57 +59,57 @@ config.use_ime = false
 config.window_close_confirmation = "NeverPrompt"
 
 config.window_padding = {
-    left = 0,
-    right = 0,
-    top = 6,
-    bottom = 0,
+	left = 0,
+	right = 0,
+	top = 6,
+	bottom = 0,
 }
 
 config.keys = {
-    { key = "Enter", mods = "ALT",        action = act.DisableDefaultAssignment },
-    {
-        key = "+",
-        mods = "ALT|SHIFT",
-        action = act.SplitHorizontal({}),
-    },
-    { key = "_",     mods = "ALT|SHIFT",  action = act.SplitVertical({}) },
-    { key = "W",     mods = "CTRL|SHIFT", action = act.CloseCurrentPane({ confirm = false }) },
-    { key = "T",     mods = "CTRL|SHIFT", action = act.SpawnTab("DefaultDomain") },
-    { key = "1",     mods = "CTRL|ALT",   action = act.ActivateTab(0) },
-    { key = "2",     mods = "CTRL|ALT",   action = act.ActivateTab(1) },
-    { key = "3",     mods = "CTRL|ALT",   action = act.ActivateTab(2) },
-    { key = "4",     mods = "CTRL|ALT",   action = act.ActivateTab(3) },
-    { key = "5",     mods = "CTRL|ALT",   action = act.ActivateTab(4) },
-    { key = "6",     mods = "CTRL|ALT",   action = act.ActivateTab(5) },
-    { key = "7",     mods = "CTRL|ALT",   action = act.ActivateTab(6) },
-    { key = "8",     mods = "CTRL|ALT",   action = act.ActivateTab(7) },
-    { key = "9",     mods = "CTRL|ALT",   action = act.ActivateTab(8) },
-    { key = "Tab",   mods = "CTRL",       action = act.ActivateTabRelative(1) },
-    { key = "Tab",   mods = "CTRL|SHIFT", action = act.ActivateTabRelative(-1) },
-    { key = "z",     mods = "ALT",        action = act.TogglePaneZoomState },
-    { key = "phys:F", mods = "ALT|SHIFT",  action = font_picker.action() },
-    { key = "phys:T", mods = "ALT|SHIFT",  action = theme_picker.action() },
+	{ key = "Enter", mods = "ALT", action = act.DisableDefaultAssignment },
+	{
+		key = "+",
+		mods = "ALT|SHIFT",
+		action = act.SplitHorizontal({}),
+	},
+	{ key = "_", mods = "ALT|SHIFT", action = act.SplitVertical({}) },
+	{ key = "W", mods = "CTRL|SHIFT", action = act.CloseCurrentPane({ confirm = false }) },
+	{ key = "T", mods = "CTRL|SHIFT", action = act.SpawnTab("DefaultDomain") },
+	{ key = "1", mods = "CTRL|ALT", action = act.ActivateTab(0) },
+	{ key = "2", mods = "CTRL|ALT", action = act.ActivateTab(1) },
+	{ key = "3", mods = "CTRL|ALT", action = act.ActivateTab(2) },
+	{ key = "4", mods = "CTRL|ALT", action = act.ActivateTab(3) },
+	{ key = "5", mods = "CTRL|ALT", action = act.ActivateTab(4) },
+	{ key = "6", mods = "CTRL|ALT", action = act.ActivateTab(5) },
+	{ key = "7", mods = "CTRL|ALT", action = act.ActivateTab(6) },
+	{ key = "8", mods = "CTRL|ALT", action = act.ActivateTab(7) },
+	{ key = "9", mods = "CTRL|ALT", action = act.ActivateTab(8) },
+	{ key = "Tab", mods = "CTRL", action = act.ActivateTabRelative(1) },
+	{ key = "Tab", mods = "CTRL|SHIFT", action = act.ActivateTabRelative(-1) },
+	{ key = "z", mods = "ALT", action = act.TogglePaneZoomState },
+	{ key = "phys:F", mods = "ALT|SHIFT", action = font_picker.action() },
+	{ key = "phys:T", mods = "ALT|SHIFT", action = theme_picker.action() },
 }
 
 config.mouse_bindings = {
-    {
-        event = { Down = { streak = 1, button = { WheelUp = 1 } } },
-        mods = "CTRL",
-        action = act.IncreaseFontSize,
-    },
-    {
-        event = { Down = { streak = 1, button = { WheelDown = 1 } } },
-        mods = "CTRL",
-        action = act.DecreaseFontSize,
-    },
+	{
+		event = { Down = { streak = 1, button = { WheelUp = 1 } } },
+		mods = "CTRL",
+		action = act.IncreaseFontSize,
+	},
+	{
+		event = { Down = { streak = 1, button = { WheelDown = 1 } } },
+		mods = "CTRL",
+		action = act.DecreaseFontSize,
+	},
 }
 
 smart_splits.apply_to_config(config, {
-    direction_keys = { "h", "j", "k", "l" },
-    modifiers = {
-        move = "CTRL",
-        resize = "META",
-    },
+	direction_keys = { "h", "j", "k", "l" },
+	modifiers = {
+		move = "CTRL",
+		resize = "META",
+	},
 })
 
 open_in_nvim.apply_to_config(config)
