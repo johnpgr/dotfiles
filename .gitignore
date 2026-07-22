@@ -1,5 +1,6 @@
 .theme_state
 .wezterm_font
+.wezterm_font_families
 .wezterm_dark_theme
 .wezterm_light_theme
 /theme-monitor/target/
