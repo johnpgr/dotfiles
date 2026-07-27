@@ -33,6 +33,7 @@ if not platform.is_windows then
 end
 
 -- config.front_end = "WebGpu"
+config.font = regular_font
 config.font_rules = theme.font_rules(regular_font.font[1].family)
 config.harfbuzz_features = { "calt=0", "clig=0", "liga=0" }
 config.max_fps = 165
@@ -40,7 +41,7 @@ config.default_prog = platform.default_prog()
 config.default_cwd = platform.default_cwd()
 config.set_environment_variables = platform.environment_variables()
 config.font_size = 14
-config.line_height = 0.75
+config.line_height = 0.85
 config.cell_width = 1
 config.enable_tab_bar = true
 config.hide_tab_bar_if_only_one_tab = not platform.is_windows

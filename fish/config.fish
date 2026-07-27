@@ -7,3 +7,7 @@ end
 
 # Added by Antigravity CLI installer
 set -gx PATH "/home/joao/.local/bin" $PATH
+
+
+# Added by Antigravity CLI installer
+set -gx PATH "/Users/sandragreidinger/.local/bin" $PATH

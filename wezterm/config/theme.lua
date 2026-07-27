@@ -68,44 +68,43 @@ end
 ---@param font_name string
 ---@return FontRules[]
 function M.font_rules(font_name)
-    print(font_name)
 	local font = M.regular_font()
-    local bold = M.bold_font()
+	local bold = M.bold_font()
 
-    local rules = {
-        {
-            intensity = "Normal",
-            italic = false,
-            font = font,
-        },
-        {
-            intensity = "Bold",
-            italic = false,
-            font = font,
-        },
-        {
-            intensity = "Normal",
-            italic = true,
-            font = font,
-        },
-        {
-            intensity = "Bold",
-            italic = true,
-            font = font,
-        },
-    }
+	local rules = {
+		{
+			intensity = "Normal",
+			italic = false,
+			font = font,
+		},
+		{
+			intensity = "Bold",
+			italic = false,
+			font = font,
+		},
+		{
+			intensity = "Normal",
+			italic = true,
+			font = font,
+		},
+		{
+			intensity = "Bold",
+			italic = true,
+			font = font,
+		},
+	}
 
 	if M.enable_bold_font then
-        rules[2].font = bold
-        rules[4].font = bold
+		rules[2].font = bold
+		rules[4].font = bold
 	end
 
-    if font_name == "Terminess Nerd Font" then
-        rules[1].font = bold
-        rules[3].font = bold
-    end
+	if font_name == "Terminess Nerd Font" then
+		rules[1].font = bold
+		rules[3].font = bold
+	end
 
-    return rules
+	return rules
 end
 
 function M.read_theme_mode()

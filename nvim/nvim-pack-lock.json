@@ -29,6 +29,10 @@
       "rev": "4516612fe98ff56ae0415a259ff6361a89419b0a",
       "src": "https://github.com/sindrets/diffview.nvim"
     },
+    "dropbar.nvim": {
+      "rev": "808ba31cde89aec8833e9789f5e04557cd31c9e1",
+      "src": "https://github.com/Bekaboo/dropbar.nvim"
+    },
     "ef-themes.nvim": {
       "rev": "d9076b0e81cc1ec9f59ab6e65af9317763b7d2bb",
       "src": "https://github.com/oonamo/ef-themes.nvim"
@@ -105,6 +109,10 @@
     "selabel.nvim": {
       "rev": "1b512aa5d586ad54d6df6370ffc7cc81ca359924",
       "src": "https://github.com/Axlefublr/selabel.nvim"
+    },
+    "sidekick.nvim": {
+      "rev": "208e1c5b8170c01fd1d07df0139322a76479b235",
+      "src": "https://github.com/folke/sidekick.nvim"
     },
     "smart-splits.nvim": {
       "rev": "c0048ddcba7f8c9b89e434c6e20bda3492cb40a0",
