@@ -4,4 +4,7 @@
 .wezterm_dark_theme
 .wezterm_light_theme
 /theme-monitor/target/
+node_modules/
+package-lock.json
 fish/fish_variables
+misc/

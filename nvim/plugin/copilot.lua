@@ -41,7 +41,7 @@ local function sign_in(bufnr, client)
 				"Copied your one-time code to clipboard.\nOpen the browser to complete the sign-in process?",
 				"&Yes\n&No"
 			)
-            -- handle the case where the user chooses to open the browser and complete the sign-in
+			-- handle the case where the user chooses to open the browser and complete the sign-in
 			if continue == 1 then
 				client:exec_cmd(result.command, { bufnr = bufnr }, function(cmd_err, cmd_result)
 					if cmd_err then
@@ -55,10 +55,10 @@ local function sign_in(bufnr, client)
 			end
 		end
 
-        -- handle the case where the user needs to enter the code manually
+		-- handle the case where the user needs to enter the code manually
 		if result.status == "PromptUserDeviceFlow" then
 			vim.notify("Enter your one-time code " .. result.userCode .. " in " .. result.verificationUri)
-        -- handle the case where the user is already signed in
+		-- handle the case where the user is already signed in
 		elseif result.status == "AlreadySignedIn" then
 			vim.notify("Already signed in as " .. result.user .. ".")
 		end
@@ -114,10 +114,19 @@ require("sidekick").setup({
 		diff = {
 			inline = "words",
 			-- Only render the diff once the cursor reaches the edit.
-			show = "cursor",
+			show = "always",
 		},
 		signs = true,
 		jumplist = true,
+	},
+	cli = {
+		-- Persist Pi (and other CLIs) in tmux so send/submit use real Enter
+		-- keys instead of pasting into a Neovim :term (which fails for Pi).
+		mux = {
+			backend = "tmux",
+			enabled = true,
+			create = "split",
+		},
 	},
 })
 
@@ -142,10 +151,9 @@ vim.api.nvim_create_autocmd("LspAttach", {
 -- --------------------------------------------------------------------------
 -- Keymaps
 -- --------------------------------------------------------------------------
--- Autocomplete and NES are kept on separate keys for now. Once NES proves
--- itself, both can move onto <Tab> via blink.cmp (see lua/config/completion.lua).
--- <C-l>/<M-l> are normal-mode tmux navigation, so Copilot only claims them
--- in insert mode.
+-- Inline completion stays on insert-mode keys. NES uses normal-mode <Tab>:
+-- jump to the edit, then accept/dismiss via selabel.
+-- <C-l> is normal-mode tmux navigation, so Copilot only claims it in insert.
 
 vim.keymap.set("i", "<C-l>", function()
 	if vim.lsp.inline_completion.get() then
@@ -162,23 +170,84 @@ vim.keymap.set({ "i", "n" }, "<M-[>", function()
 	vim.lsp.inline_completion.select({ count = -1 })
 end, { desc = "Previous Copilot completion" })
 
-vim.keymap.set("i", "<M-l>", function()
-	if require("sidekick").nes_jump_or_apply() then
-		return ""
+vim.keymap.set("n", "<Tab>", function()
+	local Nes = require("sidekick.nes")
+	if not Nes.have() then
+		return "<Tab>"
 	end
-	return "<M-l>"
-end, { expr = true, silent = true, desc = "Jump/apply Copilot next edit" })
 
-vim.keymap.set("n", "<leader>aa", function()
-	require("sidekick").nes_jump_or_apply()
-end, { desc = "Jump/apply Copilot next edit" })
+	-- Jump schedules the cursor move; selabel.select also schedules, so the
+	-- picker opens after the cursor lands (relative = "cursor").
+	Nes.jump()
 
-vim.keymap.set("n", "<leader>an", function()
+	require("config.selabel").select({ "Accept", "Dismiss" }, { "a", "d" }, "Copilot next edit", function(choice)
+		if choice == "Accept" then
+			Nes.apply()
+		elseif choice == "Dismiss" then
+			Nes.clear()
+		end
+	end)
+
+	return ""
+end, { expr = true, silent = true, desc = "Jump to Copilot next edit" })
+
+vim.keymap.set("n", "<M-n>", function()
+	vim.notify("Requested Copilot next edit", vim.log.levels.INFO)
 	require("sidekick.nes").update()
 end, { desc = "Request Copilot next edit" })
 
-vim.keymap.set("n", "<leader>ad", function()
-	require("sidekick.nes").clear()
-end, { desc = "Dismiss Copilot next edit" })
+-- Sidekick CLI: pick a context-aware prompt and paste it into Pi (no submit).
+-- Visual mode: only prompts attached to a selection ({selection} / {this}).
+-- Normal mode: only prompts that do not use selection context.
+local prompt_label = {
+	buffers = "b",
+	changes = "c",
+	class = "C",
+	diagnostics = "d",
+	diagnostics_all = "a",
+	document = "m",
+	explain = "e",
+	file = "f",
+	fix = "f",
+	["function"] = "n",
+	line = "l",
+	optimize = "o",
+	position = "p",
+	quickfix = "q",
+	review = "r",
+	selection = "s",
+	tests = "t",
+}
+
+vim.keymap.set({ "n", "x" }, "<M-p>", function()
+	local selabel = require("config.selabel")
+	local visual = vim.fn.mode():find("[vV\22]") ~= nil
+	local prompts = {}
+
+	for name, prompt in pairs(require("sidekick.config").cli.prompts) do
+		local msg = type(prompt) == "table" and (prompt.msg or "") or tostring(prompt)
+		local visual_prompt = msg:find("{selection}", 1, true) ~= nil
+			or msg:find("{this}", 1, true) ~= nil
+		if visual == visual_prompt then
+			prompts[#prompts + 1] = name
+		end
+	end
+	table.sort(prompts)
+
+	local labels = {}
+	for i, name in ipairs(prompts) do
+		labels[i] = prompt_label[name] or name:sub(1, 1)
+	end
+
+	selabel.select(prompts, labels, "Prompt action", function(choice)
+		if not choice then
+			return
+		end
+		require("sidekick.cli").send({
+			prompt = choice,
+			name = "pi",
+		})
+	end)
+end, { desc = "Sidekick prompt to Pi" })
 
 vim.lsp.enable("copilot")

@@ -1,0 +1,16 @@
+{
+  "theme": "light/dark",
+  "defaultProvider": "anthropic",
+  "defaultModel": "claude-opus-5",
+  "defaultThinkingLevel": "high",
+  "packages": [
+    "npm:@ff-labs/pi-fff",
+    "npm:pi-web-access",
+    "npm:context-mode",
+    "../../.dotfiles/pi/extensions/delegates",
+    "npm:@mazli/pi-ask-user-question",
+    "npm:@plannotator/pi-extension"
+  ],
+  "hideThinkingBlock": false,
+  "lastChangelogVersion": "0.82.1"
+}

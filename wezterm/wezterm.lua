@@ -58,6 +58,7 @@ config.scrollback_lines = 10000
 config.enable_wayland = true
 config.use_ime = false
 config.window_close_confirmation = "NeverPrompt"
+config.enable_kitty_keyboard = false
 
 config.window_padding = {
 	left = 0,

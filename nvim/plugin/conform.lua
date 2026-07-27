@@ -17,6 +17,15 @@ require('conform').setup({
     cpp = { 'clang-format', stop_after_first = true, lsp_format = 'fallback' },
     odin = { lsp_format = 'fallback' },
     zig = { lsp_format = 'fallback' },
+    markdown = { 'prettierd', 'prettier', stop_after_first = true },
+  },
+  formatters = {
+    prettierd = {
+      prepend_args = { '--print-width', '80', '--prose-wrap', 'always' },
+    },
+    prettier = {
+      prepend_args = { '--print-width', '80', '--prose-wrap', 'always' },
+    },
   },
 })
 

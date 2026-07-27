@@ -1,0 +1,31 @@
+{
+  "maxConcurrent": 4,
+  "maxTracked": 64,
+  "maxPreviewBytes": 4096,
+  "maxAttachBytes": 6144,
+  "indexFinalOutput": true,
+  "indexExecutionLog": false,
+  "artifactRetentionDays": 14,
+  "delegates": {
+    "codex": {
+      "enabled": true,
+      "timeoutMinutes": 60,
+      "allowDangerousBypass": false
+    },
+    "claude": {
+      "enabled": true,
+      "timeoutMinutes": 60,
+      "allowDangerousBypass": false
+    },
+    "agent": {
+      "enabled": true,
+      "timeoutMinutes": 30,
+      "allowDangerousBypass": false
+    },
+    "agy": {
+      "enabled": true,
+      "timeoutMinutes": 30,
+      "allowDangerousBypass": true
+    }
+  }
+}
