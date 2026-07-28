@@ -1,4 +1,3 @@
-import type { ChildProcess } from "node:child_process";
 import type { Static } from "typebox";
 import type {
     DelegateJobMetadataSchema,
@@ -7,7 +6,7 @@ import type {
     DelegateStatusSchema,
     DelegatesConfigSchema,
     KnownCursorEventSchema,
-} from "./schema.js";
+} from "./schema.ts";
 
 export type DelegateName = Static<typeof DelegateNameSchema>;
 export type DelegateProfile = Static<typeof DelegateProfileSchema>;
@@ -35,33 +34,14 @@ export interface DelegateTask {
     artifacts: ArtifactPaths;
 }
 
-export interface DelegateCapabilities {
-    structuredEvents: boolean;
-    liveText: boolean;
-    toolEvents: boolean;
-    tokenUsage: boolean;
-    cancellation: boolean;
-    resume: boolean;
-    steering: boolean;
-}
-
 export interface DelegateOutcome {
     exitCode?: number;
     signal?: NodeJS.Signals;
     error?: string;
-    changedFiles: string[];
-}
-
-export interface RunningProcess {
-    child: ChildProcess;
-    closed: Promise<void>;
-    terminate(): Promise<void>;
 }
 
 export interface DelegateBackend {
     readonly name: DelegateName;
-    readonly capabilities: DelegateCapabilities;
-    available(): boolean;
     start(
         task: DelegateTask,
         signal: AbortSignal,
@@ -80,7 +60,6 @@ export interface DelegateResultEntryData {
     artifactPath: string;
     contextSources: string[];
     warnings: string[];
-    changedFiles: string[];
 }
 
 export interface SearchResult {

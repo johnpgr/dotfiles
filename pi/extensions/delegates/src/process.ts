@@ -27,11 +27,10 @@ function waitForClose(child: ChildProcess, timeoutMs: number) {
 
 async function taskkill(pid: number, force: boolean) {
     await new Promise<void>((resolve) => {
-        const killer = spawn(
-            "taskkill",
-            ["/pid", String(pid), "/T", ...(force ? ["/F"] : [])],
-            { stdio: "ignore", windowsHide: true },
-        );
+        const killer = spawn("taskkill", ["/pid", String(pid), "/T", ...(force ? ["/F"] : [])], {
+            stdio: "ignore",
+            windowsHide: true,
+        });
         killer.once("error", () => resolve());
         killer.once("close", () => resolve());
     });
@@ -59,12 +58,10 @@ export async function terminateProcessTree(child: ChildProcess) {
     // `exit` is not enough: descendants may keep inherited stdio and the process
     // group alive. Only `close` proves the tree's inherited streams are gone.
     if (closedChildren.has(child)) return;
-    if (process.platform === "win32" && child.pid)
-        await taskkill(child.pid, false);
+    if (process.platform === "win32" && child.pid) await taskkill(child.pid, false);
     else signalProcessTree(child, "SIGTERM");
     if (await waitForClose(child, FORCE_KILL_AFTER_MS)) return;
-    if (process.platform === "win32" && child.pid)
-        await taskkill(child.pid, true);
+    if (process.platform === "win32" && child.pid) await taskkill(child.pid, true);
     else signalProcessTree(child, "SIGKILL");
     await waitForClose(child, CLOSE_AFTER_KILL_MS);
 }
@@ -87,21 +84,15 @@ export interface ProcessResult {
     error?: string;
 }
 
-export async function spawnDelegateProcess(
-    options: SpawnDelegateOptions,
-): Promise<ProcessResult> {
-    if (options.signal.aborted)
-        return { error: "Delegate was cancelled before launch." };
+export async function spawnDelegateProcess(options: SpawnDelegateOptions): Promise<ProcessResult> {
+    if (options.signal.aborted) return { error: "Delegate was cancelled before launch." };
     const handles: FileHandle[] = [];
     try {
         const stderr = await open(options.stderrPath, "a", 0o600);
         handles.push(stderr);
-        const stdout = options.stdoutPath
-            ? await open(options.stdoutPath, "a", 0o600)
-            : undefined;
+        const stdout = options.stdoutPath ? await open(options.stdoutPath, "a", 0o600) : undefined;
         if (stdout) handles.push(stdout);
-        if (options.signal.aborted)
-            return { error: "Delegate was cancelled before launch." };
+        if (options.signal.aborted) return { error: "Delegate was cancelled before launch." };
 
         const child = spawn(options.executable, options.args, {
             cwd: options.cwd,
@@ -131,12 +122,11 @@ export async function spawnDelegateProcess(
         const stdoutWork =
             child.stdout && options.onStdout
                 ? Promise.resolve()
-                    .then(() => options.onStdout?.(child.stdout!))
-                    .catch(async (error: unknown) => {
-                        stdoutError =
-                            error instanceof Error ? error.message : String(error);
-                        await terminateProcessTree(child);
-                    })
+                      .then(() => options.onStdout?.(child.stdout!))
+                      .catch(async (error: unknown) => {
+                          stdoutError = error instanceof Error ? error.message : String(error);
+                          await terminateProcessTree(child);
+                      })
                 : Promise.resolve();
         if (options.stdin !== undefined) {
             child.stdin?.on("error", () => {

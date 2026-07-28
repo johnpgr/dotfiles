@@ -1,30 +1,13 @@
-import { constants } from "node:fs";
-import { access, stat } from "node:fs/promises";
+import { stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { spawnDelegateProcess } from "./process.js";
-import type {
-    ArtifactPaths,
-    DelegateJobMetadata,
-    DelegatesConfig,
-    SearchResult,
-} from "./types.js";
-
-async function executable(candidate: string) {
-    try {
-        await access(
-            candidate,
-            process.platform === "win32" ? constants.F_OK : constants.X_OK,
-        );
-        return true;
-    } catch {
-        return false;
-    }
-}
+import { findOnPath, isExecutable } from "./config.ts";
+import { spawnDelegateProcess } from "./process.ts";
+import type { ArtifactPaths, DelegateJobMetadata, DelegatesConfig, SearchResult } from "./types.ts";
 
 export async function resolveContextMode() {
     const override = process.env.CONTEXT_MODE_BIN;
-    if (override) return (await executable(override)) ? override : undefined;
+    if (override) return (await isExecutable(override)) ? override : undefined;
     const local = path.join(
         os.homedir(),
         ".pi",
@@ -34,20 +17,10 @@ export async function resolveContextMode() {
         ".bin",
         process.platform === "win32" ? "context-mode.cmd" : "context-mode",
     );
-    if (await executable(local)) return local;
+    if (await isExecutable(local)) return local;
     const names =
-        process.platform === "win32"
-            ? ["context-mode.cmd", "context-mode.exe"]
-            : ["context-mode"];
-    for (const directory of (process.env.PATH ?? "")
-        .split(path.delimiter)
-        .filter(Boolean)) {
-        for (const name of names) {
-            const candidate = path.join(directory, name);
-            if (await executable(candidate)) return candidate;
-        }
-    }
-    return undefined;
+        process.platform === "win32" ? ["context-mode.cmd", "context-mode.exe"] : ["context-mode"];
+    return findOnPath(names);
 }
 
 async function exists(filePath: string) {
@@ -87,14 +60,12 @@ export async function indexDelegateArtifacts(
         return;
     }
     const candidates = [
-        ...(config.indexFinalOutput
-            ? [{ path: artifacts.final, suffix: "final" }]
-            : []),
+        ...(config.indexFinalOutput ? [{ path: artifacts.final, suffix: "final" }] : []),
         ...(config.indexExecutionLog
             ? [
-                { path: artifacts.log, suffix: "log" },
-                { path: artifacts.events, suffix: "events" },
-            ]
+                  { path: artifacts.log, suffix: "log" },
+                  { path: artifacts.events, suffix: "events" },
+              ]
             : []),
     ];
     for (const candidate of candidates) {
@@ -104,14 +75,7 @@ export async function indexDelegateArtifacts(
         const contextLog = path.join(artifacts.directory, ".context-mode.log");
         const result = await spawnDelegateProcess({
             executable: executablePath,
-            args: [
-                "index",
-                candidate.path,
-                "--project",
-                metadata.cwd,
-                "--source",
-                source,
-            ],
+            args: ["index", candidate.path, "--project", metadata.cwd, "--source", source],
             cwd: metadata.cwd,
             stdoutPath: contextLog,
             stderrPath: contextLog,
@@ -164,9 +128,7 @@ export async function searchDelegateArtifacts(
         signal: timeout.signal,
         onStdout: async (stream) => {
             for await (const chunk of stream) {
-                const bytes = Buffer.isBuffer(chunk)
-                    ? chunk
-                    : Buffer.from(String(chunk));
+                const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk));
                 const remaining = maxBytes - retained;
                 if (remaining > 0) {
                     const kept = bytes.subarray(0, remaining);
@@ -183,9 +145,8 @@ export async function searchDelegateArtifacts(
         truncated,
         ...(result.error || (result.exitCode ?? 0) !== 0
             ? {
-                warning:
-                    result.error ?? `Context Mode exited with ${result.exitCode}.`,
-            }
+                  warning: result.error ?? `Context Mode exited with ${result.exitCode}.`,
+              }
             : {}),
     };
 }

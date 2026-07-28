@@ -2,8 +2,8 @@ import { constants } from "node:fs";
 import { access, readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { DelegateName, DelegatesConfig } from "./types.js";
-import { validateConfig } from "./validators.js";
+import type { DelegateName, DelegatesConfig } from "./types.ts";
+import { validateConfig } from "./validators.ts";
 
 export const DEFAULT_CONFIG: DelegatesConfig = {
     maxConcurrent: 4,
@@ -30,15 +30,14 @@ export function piAgentDir() {
 }
 
 export async function loadConfig(
-    warn: (message: string) => void = () => { },
+    warn: (message: string) => void = () => {},
 ): Promise<DelegatesConfig> {
     const configPath = path.join(piAgentDir(), "delegates.json");
     let text: string;
     try {
         text = await readFile(configPath, "utf8");
     } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === "ENOENT")
-            return DEFAULT_CONFIG;
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") return DEFAULT_CONFIG;
         warn(`Could not read ${configPath}; using safe defaults: ${String(error)}`);
         return DEFAULT_CONFIG;
     }
@@ -46,9 +45,7 @@ export async function loadConfig(
     try {
         value = JSON.parse(text);
     } catch (error) {
-        warn(
-            `Invalid JSON in ${configPath}; using safe defaults: ${String(error)}`,
-        );
+        warn(`Invalid JSON in ${configPath}; using safe defaults: ${String(error)}`);
         return DEFAULT_CONFIG;
     }
     const result = validateConfig(value);
@@ -74,16 +71,24 @@ const DEFAULT_EXECUTABLES: Record<DelegateName, string> = {
     agy: "agy",
 };
 
-async function isExecutable(candidate: string) {
+export async function isExecutable(candidate: string) {
     try {
-        await access(
-            candidate,
-            process.platform === "win32" ? constants.F_OK : constants.X_OK,
-        );
+        await access(candidate, process.platform === "win32" ? constants.F_OK : constants.X_OK);
         return true;
     } catch {
         return false;
     }
+}
+
+export async function findOnPath(names: string[]) {
+    const directories = (process.env.PATH ?? "").split(path.delimiter).filter(Boolean);
+    for (const directory of directories) {
+        for (const name of names) {
+            const candidate = path.join(directory, name);
+            if (await isExecutable(candidate)) return candidate;
+        }
+    }
+    return undefined;
 }
 
 export async function resolveExecutable(
@@ -92,18 +97,9 @@ export async function resolveExecutable(
 ): Promise<string | undefined> {
     if (override) return (await isExecutable(override)) ? override : undefined;
     const command = DEFAULT_EXECUTABLES[name];
-    const directories = (process.env.PATH ?? "")
-        .split(path.delimiter)
-        .filter(Boolean);
     const extensions =
         process.platform === "win32"
             ? (process.env.PATHEXT ?? ".EXE;.CMD;.BAT;.COM").split(";")
             : [""];
-    for (const directory of directories) {
-        for (const extension of extensions) {
-            const candidate = path.join(directory, `${command}${extension}`);
-            if (await isExecutable(candidate)) return candidate;
-        }
-    }
-    return undefined;
+    return findOnPath(extensions.map((extension) => `${command}${extension}`));
 }

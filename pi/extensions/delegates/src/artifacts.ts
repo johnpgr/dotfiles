@@ -12,9 +12,9 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import { StringDecoder } from "node:string_decoder";
-import { piAgentDir } from "./config.js";
-import type { ArtifactPaths, DelegateJobMetadata } from "./types.js";
-import { parseMetadata, stringifyMetadata } from "./validators.js";
+import { piAgentDir } from "./config.ts";
+import type { ArtifactPaths, DelegateJobMetadata } from "./types.ts";
+import { parseMetadata, stringifyMetadata } from "./validators.ts";
 
 const DIRECTORY_MODE = 0o700;
 const FILE_MODE = 0o600;
@@ -25,12 +25,8 @@ export async function canonicalizeCwd(cwd: string) {
 }
 
 export function projectIdFor(canonicalCwd: string) {
-    const name =
-        path.basename(canonicalCwd).replace(/[^a-zA-Z0-9._-]+/gu, "-") || "project";
-    const hash = createHash("sha256")
-        .update(canonicalCwd)
-        .digest("hex")
-        .slice(0, 12);
+    const name = path.basename(canonicalCwd).replace(/[^a-zA-Z0-9._-]+/gu, "-") || "project";
+    const hash = createHash("sha256").update(canonicalCwd).digest("hex").slice(0, 12);
     return `${name.slice(0, 80)}-${hash}`;
 }
 
@@ -64,10 +60,7 @@ export async function ensurePrivateFile(filePath: string) {
     await handle.close();
 }
 
-export async function writeMetadataAtomic(
-    filePath: string,
-    metadata: DelegateJobMetadata,
-) {
+export async function writeMetadataAtomic(filePath: string, metadata: DelegateJobMetadata) {
     const temporary = `${filePath}.${process.pid}.${randomBytes(4).toString("hex")}.tmp`;
     await writeFile(temporary, stringifyMetadata(metadata), {
         mode: FILE_MODE,
@@ -84,10 +77,7 @@ export async function readBoundedFile(filePath: string, maxBytes: number) {
         const buffer = Buffer.alloc(length);
         const { bytesRead } = await handle.read(buffer, 0, length, 0);
         const truncated = info.size > maxBytes;
-        const used = buffer.subarray(
-            0,
-            truncated ? Math.min(bytesRead, maxBytes) : bytesRead,
-        );
+        const used = buffer.subarray(0, truncated ? Math.min(bytesRead, maxBytes) : bytesRead);
         const decoder = new StringDecoder("utf8");
         const text = decoder.write(used) + (truncated ? "" : decoder.end());
         return { text, truncated, size: info.size };
@@ -104,10 +94,7 @@ export async function readMetadata(filePath: string) {
     return parseMetadata(await readFile(filePath, "utf8"));
 }
 
-export async function loadProjectMetadata(
-    projectId: string,
-    maxTracked: number,
-) {
+export async function loadProjectMetadata(projectId: string, maxTracked: number) {
     const projectRoot = path.join(artifactRoot(), projectId);
     let entries;
     try {
@@ -124,15 +111,10 @@ export async function loadProjectMetadata(
         ).catch(() => undefined);
         if (result?.success) loaded.push(result.data);
     }
-    return loaded
-        .sort((left, right) => right.createdAt - left.createdAt)
-        .slice(0, maxTracked);
+    return loaded.sort((left, right) => right.createdAt - left.createdAt).slice(0, maxTracked);
 }
 
-export async function cleanupRetention(
-    projectId: string,
-    retentionDays: number,
-) {
+export async function cleanupRetention(projectId: string, retentionDays: number) {
     const projectRoot = path.join(artifactRoot(), projectId);
     let entries;
     try {
@@ -147,9 +129,16 @@ export async function cleanupRetention(
             .filter((entry) => entry.isDirectory() && entry.name.startsWith("dlg-"))
             .map(async (entry) => {
                 const directory = path.join(projectRoot, entry.name);
-                const info = await stat(directory);
-                if (info.mtimeMs < cutoff)
-                    await rm(directory, { recursive: true, force: true });
+                try {
+                    const info = await stat(directory);
+                    if (info.mtimeMs < cutoff) {
+                        await rm(directory, { recursive: true, force: true });
+                    }
+                } catch (error) {
+                    // Another Pi session may remove the directory between readdir and
+                    // stat; do not fail recover() for a missing retention candidate.
+                    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+                }
             }),
     );
 }

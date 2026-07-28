@@ -4,12 +4,8 @@ import {
     DelegateJobMetadataSchema,
     DelegatesConfigSchema,
     KnownCursorEventSchema,
-} from "./schema.js";
-import type {
-    DelegateJobMetadata,
-    DelegatesConfig,
-    KnownCursorEvent,
-} from "./types.js";
+} from "./schema.ts";
+import type { DelegateJobMetadata, DelegatesConfig, KnownCursorEvent } from "./types.ts";
 
 function formatErrors(schema: TSchema, value: unknown) {
     return [...Errors(schema, value)]
@@ -21,8 +17,7 @@ function formatErrors(schema: TSchema, value: unknown) {
 export function validateConfig(
     value: unknown,
 ): { success: true; data: DelegatesConfig } | { success: false; error: string } {
-    if (Check(DelegatesConfigSchema, value))
-        return { success: true, data: value };
+    if (Check(DelegatesConfigSchema, value)) return { success: true, data: value };
     return {
         success: false,
         error: formatErrors(DelegatesConfigSchema, value),
@@ -31,9 +26,7 @@ export function validateConfig(
 
 export function parseMetadata(
     text: string,
-):
-    | { success: true; data: DelegateJobMetadata }
-    | { success: false; error: string } {
+): { success: true; data: DelegateJobMetadata } | { success: false; error: string } {
     let value: unknown;
     try {
         value = JSON.parse(text);

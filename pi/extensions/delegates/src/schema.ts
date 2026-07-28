@@ -1,7 +1,6 @@
 import { Type } from "typebox";
 
-const positiveInteger = (maximum: number) =>
-    Type.Integer({ minimum: 1, maximum });
+const positiveInteger = (maximum: number) => Type.Integer({ minimum: 1, maximum });
 
 export const DelegateNameSchema = Type.Union([
     Type.Literal("codex"),
@@ -75,9 +74,6 @@ export const DelegateJobMetadataSchema = Type.Object(
         warnings: Type.Array(Type.String({ maxLength: 4096 }), { maxItems: 32 }),
         contextSources: Type.Array(Type.String({ maxLength: 256 }), {
             maxItems: 3,
-        }),
-        changedFiles: Type.Array(Type.String({ maxLength: 4096 }), {
-            maxItems: 256,
         }),
     },
     { additionalProperties: false },

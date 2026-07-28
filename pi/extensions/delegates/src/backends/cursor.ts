@@ -1,23 +1,16 @@
 import { appendFile, open, writeFile } from "node:fs/promises";
 import type { Readable } from "node:stream";
-import { spawnDelegateProcess } from "../process.js";
-import type {
-    DelegateCapabilities,
-    DelegateOutcome,
-    DelegateTask,
-    KnownCursorEvent,
-} from "../types.js";
-import { parseCursorEvent } from "../validators.js";
-import { BaseBackend } from "./backend.js";
+import { spawnDelegateProcess } from "../process.ts";
+import type { DelegateOutcome, DelegateTask, KnownCursorEvent } from "../types.ts";
+import { parseCursorEvent } from "../validators.ts";
+import { BaseBackend } from "./backend.ts";
 
 const MAX_PARSE_BUFFER = 1024 * 1024;
 
 function assistantText(event: KnownCursorEvent) {
     if (event.type !== "assistant") return "";
     return (event.message?.content ?? [])
-        .filter(
-            (content) => content.type === "text" && typeof content.text === "string",
-        )
+        .filter((content) => content.type === "text" && typeof content.text === "string")
         .map((content) => content.text ?? "")
         .join("");
 }
@@ -37,25 +30,18 @@ function parseLine(line: string, state: CursorParseState) {
         return;
     }
     if (parsed.kind === "unknown") {
-        state.diagnostics.push(
-            "Unknown Cursor event variant preserved in events.jsonl.",
-        );
+        state.diagnostics.push("Unknown Cursor event variant preserved in events.jsonl.");
         return;
     }
     const event = parsed.event;
     if (event.type === "assistant") state.assistant += assistantText(event);
     if (event.type === "result") {
         if (typeof event.result === "string") state.final = event.result;
-        if (event.is_error)
-            state.resultError = event.result || "Cursor reported an error result.";
+        if (event.is_error) state.resultError = event.result || "Cursor reported an error result.";
     }
 }
 
-async function consumeCursorStream(
-    stream: Readable,
-    eventsPath: string,
-    state: CursorParseState,
-) {
+async function consumeCursorStream(stream: Readable, eventsPath: string, state: CursorParseState) {
     const output = await open(eventsPath, "a", 0o600);
     let buffer = "";
     try {
@@ -84,15 +70,6 @@ async function consumeCursorStream(
 
 export class CursorBackend extends BaseBackend {
     readonly name = "agent" as const;
-    readonly capabilities: DelegateCapabilities = {
-        structuredEvents: true,
-        liveText: true,
-        toolEvents: true,
-        tokenUsage: false,
-        cancellation: true,
-        resume: false,
-        steering: false,
-    };
 
     async start(
         task: DelegateTask,
@@ -120,18 +97,15 @@ export class CursorBackend extends BaseBackend {
             cwd: task.cwd,
             stderrPath: task.artifacts.log,
             signal,
-            onStdout: (stream) =>
-                consumeCursorStream(stream, task.artifacts.events, state),
+            onStdout: (stream) => consumeCursorStream(stream, task.artifacts.events, state),
             ...(onSpawn ? { onSpawn } : {}),
         });
         const final = state.final ?? state.assistant;
         await writeFile(task.artifacts.final, final, { mode: 0o600 });
         if (state.diagnostics.length > 0) {
-            await appendFile(
-                task.artifacts.log,
-                `\n${state.diagnostics.join("\n")}\n`,
-                { mode: 0o600 },
-            );
+            await appendFile(task.artifacts.log, `\n${state.diagnostics.join("\n")}\n`, {
+                mode: 0o600,
+            });
         }
         return this.outcome(result, state.resultError);
     }

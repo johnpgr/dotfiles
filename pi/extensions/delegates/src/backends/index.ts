@@ -1,8 +1,8 @@
-import type { DelegateName } from "../types.js";
-import { AntigravityBackend } from "./antigravity.js";
-import { ClaudeBackend } from "./claude.js";
-import { CodexBackend } from "./codex.js";
-import { CursorBackend } from "./cursor.js";
+import type { DelegateName } from "../types.ts";
+import { AntigravityBackend } from "./antigravity.ts";
+import { ClaudeBackend } from "./claude.ts";
+import { CodexBackend } from "./codex.ts";
+import { CursorBackend } from "./cursor.ts";
 
 export function createBackends(executables: Record<DelegateName, string>) {
     return {

@@ -1,11 +1,12 @@
 {
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "noEmit": false,
-    "outDir": ".test-build",
-    "rootDir": ".",
-    "sourceMap": true
-  },
-  "include": ["index.ts", "src/**/*.ts", "tests/**/*.ts"],
-  "exclude": ["scripts"]
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "noEmit": false,
+        "outDir": ".test-build",
+        "rootDir": ".",
+        "sourceMap": true
+    },
+    "include": ["index.ts", "src/**/*.ts", "tests/**/*.ts"],
+    "exclude": ["scripts"]
 }

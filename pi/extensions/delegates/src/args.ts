@@ -1,4 +1,4 @@
-import type { DelegateProfile } from "./types.js";
+import type { DelegateProfile } from "./types.ts";
 
 export interface LaunchArguments {
     profile: DelegateProfile;
@@ -6,16 +6,34 @@ export interface LaunchArguments {
     task: string;
 }
 
+function isWhitespace(character: string) {
+    return /\s/u.test(character);
+}
+
 export function parseLaunchArguments(raw: string): LaunchArguments {
-    const tokens = raw.trim().split(/\s+/u).filter(Boolean);
     let profile: DelegateProfile = "plan";
     let explicitProfile = false;
     let dangerousBypass = false;
-    let index = 0;
-    for (; index < tokens.length; index++) {
-        const token = tokens[index];
+    let pos = 0;
+
+    const skipWhitespace = () => {
+        while (pos < raw.length && isWhitespace(raw[pos]!)) pos++;
+    };
+
+    const readToken = () => {
+        const start = pos;
+        while (pos < raw.length && !isWhitespace(raw[pos]!)) pos++;
+        return raw.slice(start, pos);
+    };
+
+    for (;;) {
+        skipWhitespace();
+        if (pos >= raw.length) break;
+        if (!raw.startsWith("--", pos)) break;
+
+        const token = readToken();
         if (token === "--") {
-            index++;
+            skipWhitespace();
             break;
         }
         if (token === "--plan" || token === "--implementation") {
@@ -31,10 +49,11 @@ export function parseLaunchArguments(raw: string): LaunchArguments {
             dangerousBypass = true;
             continue;
         }
-        if (token?.startsWith("--")) throw new Error(`Unknown option: ${token}`);
-        break;
+        throw new Error(`Unknown option: ${token}`);
     }
-    const task = tokens.slice(index).join(" ").trim();
+
+    // Slice the raw input so task newlines, blank lines, and indentation survive.
+    const task = raw.slice(pos).replace(/\s+$/u, "");
     if (!task) throw new Error("A delegate task is required.");
     if (Buffer.byteLength(task, "utf8") > 32 * 1024) {
         throw new Error("Delegate task exceeds the 32 KiB limit.");
@@ -47,8 +66,7 @@ export function parseLaunchArguments(raw: string): LaunchArguments {
 
 export function parseJobId(raw: string) {
     const id = raw.trim();
-    if (!/^dlg-[a-z0-9-]+$/u.test(id))
-        throw new Error("A valid job ID is required.");
+    if (!/^dlg-[a-z0-9-]+$/u.test(id)) throw new Error("A valid job ID is required.");
     return id;
 }
 

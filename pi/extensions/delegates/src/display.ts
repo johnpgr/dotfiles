@@ -1,6 +1,6 @@
 import type { Theme } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
-import type { DelegateJobMetadata, DelegateResultEntryData } from "./types.js";
+import type { DelegateJobMetadata, DelegateResultEntryData } from "./types.ts";
 
 export function formatDuration(milliseconds: number) {
     if (milliseconds < 1000) return `${milliseconds}ms`;
@@ -10,9 +10,7 @@ export function formatDuration(milliseconds: number) {
 }
 
 export function formatJob(metadata: DelegateJobMetadata) {
-    const elapsed =
-        (metadata.settledAt ?? Date.now()) -
-        (metadata.startedAt ?? metadata.createdAt);
+    const elapsed = (metadata.settledAt ?? Date.now()) - (metadata.startedAt ?? metadata.createdAt);
     const danger = metadata.dangerousBypass ? " · DANGEROUS BYPASS" : "";
     return `${metadata.id} · ${metadata.delegate} · ${metadata.profile}${danger} · ${metadata.status} · ${formatDuration(elapsed)}`;
 }
@@ -35,8 +33,7 @@ export function renderDelegateEntry(
     theme: Theme,
 ) {
     const data = entry.data;
-    if (!data)
-        return new Text(theme.fg("error", "Invalid delegate result entry"), 0, 0);
+    if (!data) return new Text(theme.fg("error", "Invalid delegate result entry"), 0, 0);
     const failed = data.status === "error" || data.status === "stopped";
     const icon = failed ? theme.fg("error", "x") : theme.fg("success", "■");
     const header = `${icon} ${theme.fg("accent", theme.bold(`${data.delegate} · ${data.id}`))}${theme.fg("muted", ` · ${data.profile} · ${data.status} · ${formatDuration(data.elapsedMs)}`)}`;
@@ -44,9 +41,6 @@ export function renderDelegateEntry(
         data.preview || "(no final output)",
         data.truncated ? "[preview truncated]" : "",
         data.warnings.map((warning) => `Warning: ${warning}`).join("\n"),
-        data.changedFiles.length > 0
-            ? `Changed: ${data.changedFiles.join(", ")}`
-            : "",
         options.expanded ? `Artifacts: ${data.artifactPath}` : "",
         options.expanded && data.contextSources.length > 0
             ? `Context sources: ${data.contextSources.join(", ")}`

@@ -1,4 +1,3 @@
-import path from "node:path";
 import {
     artifactPaths,
     canonicalizeCwd,
@@ -8,7 +7,7 @@ import {
     newJobId,
     projectIdFor,
     writeMetadataAtomic,
-} from "./artifacts.js";
+} from "./artifacts.ts";
 import type {
     ArtifactPaths,
     DelegateBackend,
@@ -16,7 +15,7 @@ import type {
     DelegateName,
     DelegateProfile,
     DelegatesConfig,
-} from "./types.js";
+} from "./types.ts";
 
 interface ManagedJob {
     metadata: DelegateJobMetadata;
@@ -48,6 +47,16 @@ export interface DelegateManagerOptions {
     onSettled?: (metadata: DelegateJobMetadata, artifacts: ArtifactPaths) => void;
 }
 
+function settleFromStopReason(stopReason: "user" | "timeout" | "shutdown") {
+    if (stopReason === "timeout") {
+        return { status: "error" as const, error: "Delegate timed out." };
+    }
+    if (stopReason === "shutdown") {
+        return { status: "stopped" as const, error: "Stopped during Pi session shutdown." };
+    }
+    return { status: "stopped" as const, error: "Delegate was stopped." };
+}
+
 export class DelegateManager {
     readonly #jobs = new Map<string, ManagedJob>();
     readonly #queue: string[] = [];
@@ -71,19 +80,13 @@ export class DelegateManager {
         const canonicalCwd = await canonicalizeCwd(cwd);
         const projectId = projectIdFor(canonicalCwd);
         await cleanupRetention(projectId, this.#config.artifactRetentionDays);
-        const metadata = await loadProjectMetadata(
-            projectId,
-            this.#config.maxTracked,
-        );
+        const metadata = await loadProjectMetadata(projectId, this.#config.maxTracked);
         for (const item of metadata.reverse()) {
             if (item.status === "queued" || item.status === "running") {
                 item.status = "stopped";
                 item.settledAt = Date.now();
                 item.error = "Interrupted before Pi could record a clean shutdown.";
-                await writeMetadataAtomic(
-                    artifactPaths(projectId, item.id).metadata,
-                    item,
-                );
+                await writeMetadataAtomic(artifactPaths(projectId, item.id).metadata, item);
             }
             this.#jobs.set(item.id, {
                 metadata: item,
@@ -104,27 +107,21 @@ export class DelegateManager {
 
     get(id: string) {
         const job = this.#jobs.get(id);
-        return job
-            ? { metadata: { ...job.metadata }, artifacts: { ...job.artifacts } }
-            : undefined;
+        return job ? { metadata: { ...job.metadata }, artifacts: { ...job.artifacts } } : undefined;
     }
 
     async submit(input: SubmitJob) {
-        if (this.#shuttingDown)
-            throw new Error("Delegate manager is shutting down.");
+        if (this.#shuttingDown) throw new Error("Delegate manager is shutting down.");
         this.#pruneSettled();
         if (this.#jobs.size + this.#submissions >= this.#config.maxTracked) {
-            throw new Error(
-                `All ${this.#config.maxTracked} tracked delegate slots are unsettled.`,
-            );
+            throw new Error(`All ${this.#config.maxTracked} tracked delegate slots are unsettled.`);
         }
         // Reserve before the first await so concurrent command handlers cannot
         // race past maxTracked while canonicalizing paths or creating artifacts.
         this.#submissions++;
         try {
             const canonicalCwd = await canonicalizeCwd(input.cwd);
-            if (this.#shuttingDown)
-                throw new Error("Delegate manager is shutting down.");
+            if (this.#shuttingDown) throw new Error("Delegate manager is shutting down.");
             const id = newJobId();
             const projectId = projectIdFor(canonicalCwd);
             const artifacts = artifactPaths(projectId, id);
@@ -141,7 +138,6 @@ export class DelegateManager {
                 createdAt: Date.now(),
                 warnings: [],
                 contextSources: [],
-                changedFiles: [],
             };
             await writeMetadataAtomic(artifacts.metadata, metadata);
             const job: ManagedJob = {
@@ -188,9 +184,7 @@ export class DelegateManager {
                 await this.#settleStopped(job, "Stopped during Pi session shutdown.");
             }),
         );
-        const running = [...this.#jobs.values()].filter(
-            (job) => job.metadata.status === "running",
-        );
+        const running = [...this.#jobs.values()].filter((job) => job.metadata.status === "running");
         for (const job of running) {
             job.stopReason = "shutdown";
             job.controller?.abort();
@@ -200,9 +194,7 @@ export class DelegateManager {
     }
 
     #runningJobs() {
-        return [...this.#jobs.values()].filter(
-            (job) => job.metadata.status === "running",
-        );
+        return [...this.#jobs.values()].filter((job) => job.metadata.status === "running");
     }
 
     #eligible(job: ManagedJob) {
@@ -261,12 +253,9 @@ export class DelegateManager {
                 },
             );
             if (job.stopReason) {
-                job.metadata.status =
-                    job.stopReason === "timeout" ? "error" : "stopped";
-                job.metadata.error =
-                    job.stopReason === "timeout"
-                        ? "Delegate timed out."
-                        : "Delegate was stopped.";
+                const settled = settleFromStopReason(job.stopReason);
+                job.metadata.status = settled.status;
+                job.metadata.error = settled.error;
             } else if (outcome.error || (outcome.exitCode ?? 0) !== 0) {
                 job.metadata.status = "error";
                 job.metadata.error =
@@ -274,35 +263,36 @@ export class DelegateManager {
             } else {
                 job.metadata.status = "done";
             }
-            if (outcome.exitCode !== undefined)
-                job.metadata.exitCode = outcome.exitCode;
+            if (outcome.exitCode !== undefined) job.metadata.exitCode = outcome.exitCode;
             if (outcome.signal) job.metadata.signal = outcome.signal;
-            job.metadata.changedFiles = outcome.changedFiles;
         } catch (error) {
-            job.metadata.status = job.stopReason ? "stopped" : "error";
-            job.metadata.error =
-                error instanceof Error ? error.message : String(error);
+            if (job.stopReason) {
+                const settled = settleFromStopReason(job.stopReason);
+                job.metadata.status = settled.status;
+                job.metadata.error = settled.error;
+            } else {
+                job.metadata.status = "error";
+                job.metadata.error = error instanceof Error ? error.message : String(error);
+            }
         } finally {
             clearTimeout(timeout);
             job.metadata.settledAt = Date.now();
-            await writeMetadataAtomic(job.artifacts.metadata, job.metadata).catch(
-                () => { },
-            );
+            await writeMetadataAtomic(job.artifacts.metadata, job.metadata).catch(() => {});
             if (!this.#shuttingDown && this.#afterSettle) {
                 try {
+                    // Job abort (stop/timeout) must not skip indexing of artifacts
+                    // already on disk; use a fresh signal independent of the run.
                     await this.#afterSettle(
                         job.metadata,
                         job.artifacts,
-                        controller.signal,
+                        new AbortController().signal,
                     );
                 } catch (error) {
                     job.metadata.warnings.push(
                         `Post-processing failed: ${error instanceof Error ? error.message : String(error)}`,
                     );
                 }
-                await writeMetadataAtomic(job.artifacts.metadata, job.metadata).catch(
-                    () => { },
-                );
+                await writeMetadataAtomic(job.artifacts.metadata, job.metadata).catch(() => {});
             }
             if (!this.#shuttingDown && !job.delivered) {
                 job.delivered = true;
@@ -318,9 +308,7 @@ export class DelegateManager {
         job.metadata.status = "stopped";
         job.metadata.error = message;
         job.metadata.settledAt = Date.now();
-        await writeMetadataAtomic(job.artifacts.metadata, job.metadata).catch(
-            () => { },
-        );
+        await writeMetadataAtomic(job.artifacts.metadata, job.metadata).catch(() => {});
         if (!this.#shuttingDown && !job.delivered) {
             job.delivered = true;
             this.#onSettled?.({ ...job.metadata }, { ...job.artifacts });
@@ -338,8 +326,7 @@ export class DelegateManager {
         const settled = [...this.#jobs.values()]
             .filter((job) => job.metadata.settledAt !== undefined)
             .sort(
-                (left, right) =>
-                    (left.metadata.settledAt ?? 0) - (right.metadata.settledAt ?? 0),
+                (left, right) => (left.metadata.settledAt ?? 0) - (right.metadata.settledAt ?? 0),
             );
         while (this.#jobs.size >= this.#config.maxTracked && settled.length > 0) {
             const job = settled.shift();
@@ -354,12 +341,4 @@ export class DelegateManager {
 
 export function artifactForMetadata(metadata: DelegateJobMetadata) {
     return artifactPaths(metadata.projectId, metadata.id);
-}
-
-export function sourceLabelFor(metadata: DelegateJobMetadata) {
-    return `delegate:${metadata.id}`;
-}
-
-export function displayArtifactPath(paths: ArtifactPaths) {
-    return path.normalize(paths.directory);
 }

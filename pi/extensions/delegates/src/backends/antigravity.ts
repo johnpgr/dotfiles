@@ -1,19 +1,10 @@
-import { ensurePrivateFile } from "../artifacts.js";
-import { spawnDelegateProcess } from "../process.js";
-import type { DelegateCapabilities, DelegateTask } from "../types.js";
-import { BaseBackend } from "./backend.js";
+import { ensurePrivateFile } from "../artifacts.ts";
+import { spawnDelegateProcess } from "../process.ts";
+import type { DelegateTask } from "../types.ts";
+import { BaseBackend } from "./backend.ts";
 
 export class AntigravityBackend extends BaseBackend {
     readonly name = "agy" as const;
-    readonly capabilities: DelegateCapabilities = {
-        structuredEvents: false,
-        liveText: false,
-        toolEvents: false,
-        tokenUsage: false,
-        cancellation: true,
-        resume: false,
-        steering: false,
-    };
 
     async start(
         task: DelegateTask,

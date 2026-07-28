@@ -1,7 +1,7 @@
 {
   "theme": "light/dark",
-  "defaultProvider": "anthropic",
-  "defaultModel": "claude-opus-5",
+  "defaultProvider": "opencode",
+  "defaultModel": "deepseek-v4-flash-free",
   "defaultThinkingLevel": "high",
   "packages": [
     "npm:@ff-labs/pi-fff",
