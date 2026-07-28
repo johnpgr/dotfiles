@@ -7,7 +7,8 @@
     "npm:@ff-labs/pi-fff",
     "npm:pi-web-access",
     "npm:context-mode",
-    "../../.dotfiles/pi/extensions/delegates",
+    "~/.dotfiles/pi/extensions/pi-delegates",
+    "~/.dotfiles/pi/extensions/copy-all",
     "npm:@mazli/pi-ask-user-question",
     "npm:@plannotator/pi-extension"
   ],

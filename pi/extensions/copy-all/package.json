@@ -1,0 +1,29 @@
+{
+    "name": "@local/copy-all",
+    "version": "0.1.0",
+    "private": true,
+    "keywords": [
+        "pi-extension",
+        "pi-package"
+    ],
+    "type": "module",
+    "scripts": {
+        "check": "tsc --noEmit -p tsconfig.json",
+        "format": "oxfmt --write \"**/*.{ts,json,md}\"",
+        "format:check": "oxfmt --check \"**/*.{ts,json,md}\""
+    },
+    "devDependencies": {
+        "@earendil-works/pi-coding-agent": "^0.82.0",
+        "@types/node": "^24.0.0",
+        "oxfmt": "^0.61.0",
+        "typescript": "^5.9.0"
+    },
+    "peerDependencies": {
+        "@earendil-works/pi-coding-agent": "*"
+    },
+    "pi": {
+        "extensions": [
+            "./index.ts"
+        ]
+    }
+}
