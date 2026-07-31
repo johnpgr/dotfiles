@@ -6,4 +6,7 @@ require('ibl').setup({
   scope = { enabled = false },
 })
 
-vim.keymap.set('n', '<leader>ig', '<cmd>IBLToggle<cr>', { desc = 'Indent Guides' })
+vim.keymap.set('n', '<leader>ig', function()
+	vim.cmd('IBLToggle')
+	vim.cmd('NvimTreeToggleIndent')
+end, { desc = 'Indent Guides' })

@@ -461,6 +461,8 @@ vim.keymap.set("n", "<leader>c", function()
 	require("quicker").toggle()
 end, { desc = "Quickfix list" })
 
+vim.keymap.set("n", "<leader>b", "<cmd>NvimTreeToggle<cr>", { desc = "Toggle file tree" })
+
 -- --------------------------------------------------------------------------
 -- Neovide
 -- --------------------------------------------------------------------------
