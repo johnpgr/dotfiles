@@ -40,8 +40,8 @@ config.max_fps = 165
 config.default_prog = platform.default_prog()
 config.default_cwd = platform.default_cwd()
 config.set_environment_variables = platform.environment_variables()
-config.font_size = 14
-config.line_height = 0.85
+config.line_height = 0.8
+config.font_size = 12
 config.cell_width = 1
 config.enable_tab_bar = true
 config.hide_tab_bar_if_only_one_tab = not platform.is_windows
@@ -52,6 +52,7 @@ config.window_frame = theme.window_frame(theme_mode, regular_font)
 config.cursor_blink_rate = 0
 config.underline_position = "-3px"
 config.underline_thickness = "1px"
+config.freetype_interpreter_version = 40
 config.color_scheme = theme.color_scheme(theme_mode)
 config.colors = theme.tab_bar_colors(theme_mode)
 config.scrollback_lines = 10000
@@ -63,7 +64,7 @@ config.enable_kitty_keyboard = false
 config.window_padding = {
 	left = 0,
 	right = 0,
-	top = 6,
+	top = 0,
 	bottom = 0,
 }
 
