@@ -9,7 +9,7 @@ vim.o.background = "dark"
 
 -- Editor options
 vim.o.cursorline = false
-vim.o.number = false
+vim.o.number = true
 vim.o.relativenumber = false
 vim.o.confirm = true
 vim.o.wrap = false

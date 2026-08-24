@@ -9,4 +9,3 @@ export CARGO_INSTALL_ROOT="$HOME/.local"
 export GOBIN="$HOME/.local/bin"
 export PATH="$PATH:$HOME/.local/bin"
 export PATH="$PATH:$HOME/.cargo/bin"
-
