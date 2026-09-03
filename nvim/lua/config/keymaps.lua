@@ -49,7 +49,15 @@ vim.keymap.set("n", "]t", "<cmd>tabnext<cr>", { desc = "Tab next" })
 vim.keymap.set("n", "[t", "<cmd>tabprev<cr>", { desc = "Tab prev" })
 vim.keymap.set("n", "<leader>tn", "<cmd>tabnew<cr>", { desc = "New tab" })
 vim.keymap.set("n", "<leader>tc", "<cmd>tabclose<cr>", { desc = "Close tab" })
-vim.keymap.set("n", "<Esc>", "<cmd>noh<cr>", { desc = "Clear highlights" })
+vim.keymap.set("n", "<Esc>", function()
+  local ok, mcursor = pcall(require, "vim._core.mcursor")
+  if ok and mcursor.active() then
+    vim.api.nvim_buf_clear_namespace(0, vim.api.nvim_create_namespace("nvim.multicursor"), 0, -1)
+    vim.cmd("nohlsearch")
+  else
+    vim.cmd("noh")
+  end
+end, { desc = "Clear highlights/multicursor" })
 vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 vim.keymap.set("n", "<leader>I", "<cmd>Inspect<cr>", { desc = "Inspect" })
 vim.keymap.set("n", "yig", ":%y<CR>", { desc = "Yank buffer" })

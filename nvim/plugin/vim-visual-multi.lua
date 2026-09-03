@@ -1,8 +1,5 @@
-vim.pack.add({ 'https://github.com/mg979/vim-visual-multi' })
-
-vim.cmd([[
-  let g:VM_maps = {}
-  let g:VM_maps["Goto Prev"] = "\[\["
-  let g:VM_maps["Goto Next"] = "\]\]"
-  nmap <C-M-n> <Plug>(VM-Select-All)
-]])
+-- vim-visual-multi has been replaced by native multicursor (Neovim 0.13)
+-- See nvim/plugin/multicursor.lua for keymaps (C-n, C-Up/Down, \A, <C-M-n>, [[/]] etc.)
+-- Native docs: :help multicursor
+-- This file intentionally left as stub to avoid re-install of the old plugin.
+-- You can safely delete this file.
