@@ -111,168 +111,211 @@
 
 #define RESP_CAP (256 * 1024)
 
-static const char* socket_path(void) {
-    const char* p = getenv("HERDR_SOCKET_PATH");
-    if(p && *p)
-        return p;
-    static char buf[sizeof(((struct sockaddr_un*)0)->sun_path)];
-    const char* home = getenv("HOME");
-    if(!home)
-        return NULL;
-    snprintf(buf, sizeof buf, "%s/.config/herdr/herdr.sock", home);
-    return buf;
+static const char *socket_path(void) {
+	const char *p = getenv("HERDR_SOCKET_PATH");
+	if (p && *p)
+		return p;
+	static char buf[sizeof(((struct sockaddr_un *)0)->sun_path)];
+	const char *home = getenv("HOME");
+	if (!home)
+		return NULL;
+	snprintf(buf, sizeof buf, "%s/.config/herdr/herdr.sock", home);
+	return buf;
 }
 
-/* One request/response exchange. Returns bytes read, or -1. */
-static ssize_t rpc(const char* req, char* out, size_t cap) {
-    const char* path = socket_path();
-    if(!path)
-        return -1;
-    struct sockaddr_un addr;
-    memset(&addr, 0, sizeof addr);
-    addr.sun_family = AF_UNIX;
-    if(strlen(path) >= sizeof addr.sun_path)
-        return -1;
-    strcpy(addr.sun_path, path);
+/* Raw exchange: connect, write req, read until newline/EOF. Bytes read or -1. */
+static ssize_t rpc_raw(const char *req, char *out, size_t cap) {
+	const char *path = socket_path();
+	if (!path)
+		return -1;
+	struct sockaddr_un addr;
+	memset(&addr, 0, sizeof addr);
+	addr.sun_family = AF_UNIX;
+	if (strlen(path) >= sizeof addr.sun_path)
+		return -1;
+	strcpy(addr.sun_path, path);
 
-    int fd = socket(AF_UNIX, SOCK_STREAM, 0);
-    if(fd < 0)
-        return -1;
-    if(connect(fd, (struct sockaddr*)&addr, sizeof addr) < 0) {
-        close(fd);
-        return -1;
-    }
-    size_t len = strlen(req), off = 0;
-    while(off < len) {
-        ssize_t n = write(fd, req + off, len - off);
-        if(n <= 0) {
-            close(fd);
-            return -1;
-        }
-        off += (size_t)n;
-    }
-    size_t got = 0;
-    while(got < cap - 1) {
-        ssize_t n = read(fd, out + got, cap - 1 - got);
-        if(n <= 0)
-            break;
-        got += (size_t)n;
-        if(memchr(out + got - (size_t)n, '\n', (size_t)n))
-            break;
-    }
-    close(fd);
-    out[got] = '\0';
-    return (ssize_t)got;
+	int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+	if (fd < 0)
+		return -1;
+	if (connect(fd, (struct sockaddr *)&addr, sizeof addr) < 0) {
+		close(fd);
+		return -1;
+	}
+	size_t len = strlen(req), off = 0;
+	while (off < len) {
+		ssize_t n = write(fd, req + off, len - off);
+		if (n <= 0) {
+			close(fd);
+			return -1;
+		}
+		off += (size_t)n;
+	}
+	size_t got = 0;
+	while (got < cap - 1) {
+		ssize_t n = read(fd, out + got, cap - 1 - got);
+		if (n <= 0)
+			break;
+		got += (size_t)n;
+		if (memchr(out + got - (size_t)n, '\n', (size_t)n))
+			break;
+	}
+	close(fd);
+	out[got] = '\0';
+	return (ssize_t)got;
 }
 
 /* Copy the string value following `"key":"` into dst. Returns 1 on success. */
-static int json_str(const char* hay, const char* key, char* dst, size_t cap) {
-    char pat[64];
-    snprintf(pat, sizeof pat, "\"%s\":\"", key);
-    const char* p = strstr(hay, pat);
-    if(!p)
-        return 0;
-    p += strlen(pat);
-    size_t i = 0;
-    while(*p && *p != '"' && i < cap - 1) {
-        if(*p == '\\' && p[1])
-            p++;
-        dst[i++] = *p++;
-    }
-    dst[i] = '\0';
-    return 1;
+static int json_str(const char *hay, const char *key, char *dst, size_t cap) {
+	char pat[64];
+	snprintf(pat, sizeof pat, "\"%s\":\"", key);
+	const char *p = strstr(hay, pat);
+	if (!p)
+		return 0;
+	p += strlen(pat);
+	size_t i = 0;
+	while (*p && *p != '"' && i < cap - 1) {
+		if (*p == '\\' && p[1])
+			p++;
+		dst[i++] = *p++;
+	}
+	dst[i] = '\0';
+	return 1;
 }
 
-static int name_in_list(const char* name, const char* list) {
-    size_t nlen = strlen(name);
-    const char* p = list;
-    while(*p) {
-        const char* end = strchr(p, ',');
-        size_t len = end ? (size_t)(end - p) : strlen(p);
-        if(len == nlen && strncmp(p, name, len) == 0)
-            return 1;
-        if(!end)
-            break;
-        p = end + 1;
-    }
-    return 0;
-}
-
-/* Does any foreground process in a pane.process_info reply match the app list?
+/*
+ * One request that must succeed. A reply counts as success only if it is a
+ * complete line (the server terminates every reply with '\n') that carries a
+ * top-level "result" and no preceding top-level "error". Anything else --
+ * connection failure, truncated read, empty reply, {"error":...} -- is
+ * reported on stderr and returns 0, so the caller can stop instead of
+ * guessing. Never navigate on a reply we did not actually understand.
  */
-static int wants_the_chord(const char* resp) {
-    const char* apps = getenv("HERDR_SMART_NAV_APPS");
-    if(!apps || !*apps)
-        apps = "nvim,vim,vi";
-    const char* p = resp;
-    char name[256];
-    while((p = strstr(p, "\"name\":\"")) != NULL) {
-        if(json_str(p, "name", name, sizeof name) && name_in_list(name, apps))
-            return 1;
-        p += 8;
-    }
-    return 0;
+static int rpc_ok(const char *what, const char *req, char *out, size_t cap) {
+	ssize_t n = rpc_raw(req, out, cap);
+	if (n < 0) {
+		fprintf(stderr, "smart-nav: %s: cannot reach herdr socket\n", what);
+		return 0;
+	}
+	if (n == 0 || out[n - 1] != '\n') {
+		fprintf(stderr, "smart-nav: %s: %s reply from herdr\n", what, n == 0 ? "empty" : "truncated");
+		return 0;
+	}
+	const char *res = strstr(out, "\"result\":");
+	const char *err = strstr(out, "\"error\":");
+	if (!res || (err && err < res)) {
+		char msg[256] = "unknown error";
+		if (err)
+			json_str(err, "message", msg, sizeof msg);
+		fprintf(stderr, "smart-nav: %s: herdr error: %s\n", what, msg);
+		return 0;
+	}
+	return 1;
 }
 
-int main(int argc, char** argv) {
-    if(argc != 2) {
-        fprintf(stderr, "usage: %s <left|down|up|right>\n", argv[0]);
-        return 2;
-    }
-    const char *dir = argv[1], *chord;
-    if(!strcmp(dir, "left"))
-        chord = "ctrl+h";
-    else if(!strcmp(dir, "down"))
-        chord = "ctrl+j";
-    else if(!strcmp(dir, "up"))
-        chord = "ctrl+k";
-    else if(!strcmp(dir, "right"))
-        chord = "ctrl+l";
-    else {
-        fprintf(stderr, "bad direction: %s\n", dir);
-        return 2;
-    }
+static int name_in_list(const char *name, const char *list) {
+	size_t nlen = strlen(name);
+	const char *p = list;
+	while (*p) {
+		const char *end = strchr(p, ',');
+		size_t len = end ? (size_t)(end - p) : strlen(p);
+		if (len == nlen && strncmp(p, name, len) == 0)
+			return 1;
+		if (!end)
+			break;
+		p = end + 1;
+	}
+	return 0;
+}
 
-    static char resp[RESP_CAP];
-    char req[512];
+/* Does any foreground process in a pane.process_info reply match the app list? */
+static int wants_the_chord(const char *resp) {
+	const char *apps = getenv("HERDR_SMART_NAV_APPS");
+	if (!apps || !*apps)
+		apps = "nvim,vim,vi";
+	const char *p = resp;
+	char name[256];
+	while ((p = strstr(p, "\"name\":\"")) != NULL) {
+		if (json_str(p, "name", name, sizeof name) && name_in_list(name, apps))
+			return 1;
+		p += 8;
+	}
+	return 0;
+}
 
-    /* No pane_id: the server resolves the focused pane, i.e. the one that got
-     * the keypress. */
-    if(rpc("{\"id\":\"1\",\"method\":\"pane.process_info\",\"params\":{}}\n",
-           resp,
-           sizeof resp) < 0)
-        return 1;
+/*
+ * Pin down WHICH pane this invocation is about, once, before doing anything.
+ * herdr resolves an omitted pane_id against whatever is focused at the moment
+ * each request is handled, so two pane_id-less requests could disagree if
+ * focus moves between them (e.g. a previous keypress's focus change landing
+ * mid-flight) and we would navigate from a pane we never inspected. Sources,
+ * most specific first: the invocation's own HERDR_PANE_ID, the focused pane
+ * recorded in HERDR_PLUGIN_CONTEXT_JSON, else empty (the caller then adopts
+ * the pane_id echoed back by the first reply and uses it for the rest).
+ */
+static void invocation_pane(char *dst, size_t cap) {
+	const char *env = getenv("HERDR_PANE_ID");
+	if (env && *env) {
+		snprintf(dst, cap, "%s", env);
+		return;
+	}
+	const char *ctx = getenv("HERDR_PLUGIN_CONTEXT_JSON");
+	if (ctx && json_str(ctx, "focused_pane_id", dst, cap) && *dst)
+		return;
+	dst[0] = '\0';
+}
 
-    char pane_id[128] = "?";
-    json_str(resp, "pane_id", pane_id, sizeof pane_id);
-    int forward = wants_the_chord(resp) && pane_id[0] != '?';
-    if(forward) {
-        snprintf(
-            req,
-            sizeof req,
-            "{\"id\":\"2\",\"method\":\"pane.send_keys\",\"params\":{\"pane_"
-            "id\":\"%s\",\"keys\":[\"%s\"]}}\n",
-            pane_id,
-            chord
-        );
-    } else {
-        snprintf(
-            req,
-            sizeof req,
-            "{\"id\":\"2\",\"method\":\"pane.focus_direction\",\"params\":{"
-            "\"direction\":\"%s\"}}\n",
-            dir
-        );
-    }
-    /* HERDR_SMART_NAV_DEBUG=1: one line per keypress in `herdr plugin log
-     * list`. */
-    if(getenv("HERDR_SMART_NAV_DEBUG"))
-        fprintf(
-            stderr,
-            "smart-nav: pane=%s dir=%s -> %s\n",
-            pane_id,
-            dir,
-            forward ? "forward chord to (n)vim" : "herdr focus_direction"
-        );
-    return rpc(req, resp, sizeof resp) < 0 ? 1 : 0;
+int main(int argc, char **argv) {
+	if (argc != 2) {
+		fprintf(stderr, "usage: %s <left|down|up|right>\n", argv[0]);
+		return 2;
+	}
+	const char *dir = argv[1], *chord;
+	if (!strcmp(dir, "left"))
+		chord = "ctrl+h";
+	else if (!strcmp(dir, "down"))
+		chord = "ctrl+j";
+	else if (!strcmp(dir, "up"))
+		chord = "ctrl+k";
+	else if (!strcmp(dir, "right"))
+		chord = "ctrl+l";
+	else {
+		fprintf(stderr, "smart-nav: bad direction: %s\n", dir);
+		return 2;
+	}
+
+	static char resp[RESP_CAP];
+	char req[512];
+	char pane_id[128];
+	invocation_pane(pane_id, sizeof pane_id);
+
+	if (pane_id[0])
+		snprintf(req, sizeof req,
+			"{\"id\":\"1\",\"method\":\"pane.process_info\",\"params\":{\"pane_id\":\"%s\"}}\n", pane_id);
+	else
+		snprintf(req, sizeof req, "{\"id\":\"1\",\"method\":\"pane.process_info\",\"params\":{}}\n");
+	if (!rpc_ok("process_info", req, resp, sizeof resp))
+		return 1;
+	/* Adopt the server's view of the pane if we had none; it is used for every request below. */
+	if (!pane_id[0] && !(json_str(resp, "pane_id", pane_id, sizeof pane_id) && pane_id[0])) {
+		fprintf(stderr, "smart-nav: process_info reply carries no pane_id\n");
+		return 1;
+	}
+
+	int forward = wants_the_chord(resp);
+	if (forward)
+		snprintf(req, sizeof req,
+			"{\"id\":\"2\",\"method\":\"pane.send_keys\",\"params\":{\"pane_id\":\"%s\",\"keys\":[\"%s\"]}}\n",
+			pane_id, chord);
+	else
+		snprintf(req, sizeof req,
+			"{\"id\":\"2\",\"method\":\"pane.focus_direction\",\"params\":{\"pane_id\":\"%s\",\"direction\":\"%s\"}}\n",
+			pane_id, dir);
+
+	/* HERDR_SMART_NAV_DEBUG=1: one line per keypress in `herdr plugin log list`. */
+	if (getenv("HERDR_SMART_NAV_DEBUG"))
+		fprintf(stderr, "smart-nav: pane=%s dir=%s -> %s\n", pane_id, dir,
+			forward ? "forward chord to (n)vim" : "herdr focus_direction");
+
+	return rpc_ok(forward ? "send_keys" : "focus_direction", req, resp, sizeof resp) ? 0 : 1;
 }
