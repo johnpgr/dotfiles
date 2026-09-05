@@ -119,15 +119,6 @@ require("sidekick").setup({
 		signs = true,
 		jumplist = true,
 	},
-	cli = {
-		-- Persist Pi (and other CLIs) in tmux so send/submit use real Enter
-		-- keys instead of pasting into a Neovim :term (which fails for Pi).
-		mux = {
-			backend = "tmux",
-			enabled = true,
-			create = "split",
-		},
-	},
 })
 
 -- --------------------------------------------------------------------------
@@ -153,7 +144,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
 -- --------------------------------------------------------------------------
 -- Inline completion stays on insert-mode keys. NES uses normal-mode <Tab>:
 -- jump to the edit, then accept/dismiss via selabel.
--- <C-l> is normal-mode tmux navigation, so Copilot only claims it in insert.
+-- <C-l> is normal-mode split/pane navigation, so Copilot only claims it in insert.
 
 vim.keymap.set("i", "<C-l>", function()
 	if vim.lsp.inline_completion.get() then
@@ -195,59 +186,5 @@ vim.keymap.set("n", "<M-n>", function()
 	vim.notify("Requested Copilot next edit", vim.log.levels.INFO)
 	require("sidekick.nes").update()
 end, { desc = "Request Copilot next edit" })
-
--- Sidekick CLI: pick a context-aware prompt and paste it into Pi (no submit).
--- Visual mode: only prompts attached to a selection ({selection} / {this}).
--- Normal mode: only prompts that do not use selection context.
-local prompt_label = {
-	buffers = "b",
-	changes = "c",
-	class = "C",
-	diagnostics = "d",
-	diagnostics_all = "a",
-	document = "m",
-	explain = "e",
-	file = "f",
-	fix = "f",
-	["function"] = "n",
-	line = "l",
-	optimize = "o",
-	position = "p",
-	quickfix = "q",
-	review = "r",
-	selection = "s",
-	tests = "t",
-}
-
-vim.keymap.set({ "n", "x" }, "<M-p>", function()
-	local selabel = require("config.selabel")
-	local visual = vim.fn.mode():find("[vV\22]") ~= nil
-	local prompts = {}
-
-	for name, prompt in pairs(require("sidekick.config").cli.prompts) do
-		local msg = type(prompt) == "table" and (prompt.msg or "") or tostring(prompt)
-		local visual_prompt = msg:find("{selection}", 1, true) ~= nil
-			or msg:find("{this}", 1, true) ~= nil
-		if visual == visual_prompt then
-			prompts[#prompts + 1] = name
-		end
-	end
-	table.sort(prompts)
-
-	local labels = {}
-	for i, name in ipairs(prompts) do
-		labels[i] = prompt_label[name] or name:sub(1, 1)
-	end
-
-	selabel.select(prompts, labels, "Prompt action", function(choice)
-		if not choice then
-			return
-		end
-		require("sidekick.cli").send({
-			prompt = choice,
-			name = "pi",
-		})
-	end)
-end, { desc = "Sidekick prompt to Pi" })
 
 vim.lsp.enable("copilot")

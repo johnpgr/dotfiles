@@ -1,0 +1,43 @@
+onboarding = false
+[theme]
+name = "gruvbox-light"
+auto_switch = false
+
+[[keys.command]]
+key = "prefix+e"
+type = "plugin_action"
+command = "chmarax.herdr-nvim.toggle"
+description = "nvim sidebar"
+
+[[keys.command]]
+key = "prefix+o"
+type = "plugin_action"
+command = "chmarax.herdr-nvim.pick-file"
+description = "open file from agent output"
+
+# ctrl+h/j/k/l from any pane: focus the neighbouring pane, unless the focused
+# pane runs (n)vim, in which case the chord is forwarded so nvim can navigate
+# its own splits first (see plugins/smart-nav and nvim/lua/config/herdr_nav.lua).
+[[keys.command]]
+key = "ctrl+h"
+type = "plugin_action"
+command = "johnpgr.smart-nav.left"
+description = "focus pane left (vim-aware)"
+
+[[keys.command]]
+key = "ctrl+j"
+type = "plugin_action"
+command = "johnpgr.smart-nav.down"
+description = "focus pane down (vim-aware)"
+
+[[keys.command]]
+key = "ctrl+k"
+type = "plugin_action"
+command = "johnpgr.smart-nav.up"
+description = "focus pane up (vim-aware)"
+
+[[keys.command]]
+key = "ctrl+l"
+type = "plugin_action"
+command = "johnpgr.smart-nav.right"
+description = "focus pane right (vim-aware)"

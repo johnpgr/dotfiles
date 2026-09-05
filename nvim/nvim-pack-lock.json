@@ -54,6 +54,10 @@
       "rev": "cc2e664c7e3cd8a31af34df040d16a75cfcadced",
       "src": "https://github.com/lewis6991/gitsigns.nvim"
     },
+    "herdr-nvim": {
+      "rev": "e652ebf7b3d6713992e68a30aec588822e69fae5",
+      "src": "https://github.com/ChmaraX/herdr-nvim"
+    },
     "image.nvim": {
       "rev": "a8d6829ce8472a79df140bc494e75f1847f8861e",
       "src": "https://github.com/3rd/image.nvim"
@@ -129,10 +133,6 @@
     "text-case.nvim": {
       "rev": "e898cfd46fa6cde0e83abb624a16e67d2ffc6457",
       "src": "https://github.com/johmsalas/text-case.nvim"
-    },
-    "tmux.nvim": {
-      "rev": "32ceaf2793582955ef9576809730878c4d2d9426",
-      "src": "https://github.com/aserowy/tmux.nvim"
     },
     "transparent.nvim": {
       "rev": "8ac59883de84e9cd1850ea25cf087031c5ba7d54",

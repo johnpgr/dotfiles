@@ -1,0 +1,43 @@
+id = "johnpgr.smart-nav"
+name = "smart-nav"
+version = "0.1.0"
+min_herdr_version = "0.7.4"
+platforms = ["linux", "macos"]
+description = "ctrl+h/j/k/l pane navigation that passes the chord through to (n)vim, vim-tmux-navigator style."
+
+# Why a compiled native helper rather than config or a script: herdr key
+# bindings are unconditional and plugins are spawn-per-invocation argv commands,
+# so a process per keypress is unavoidable; a self-contained C binary that
+# speaks the socket protocol makes it exactly one spawn with no shell. The full
+# reasoning, constraints, and rejected alternatives are in smart-nav.c's header.
+
+# `herdr plugin install` runs this; `herdr plugin link` does not, so run
+# `make` in this directory once after linking (see Makefile).
+[[build]]
+command = ["make"]
+
+# Runtime commands run with the plugin directory as cwd, so the relative path
+# resolves. Argv arrays are exec'd directly: one process, no shell.
+[[actions]]
+id = "left"
+title = "smart nav: focus left"
+contexts = ["pane"]
+command = ["bin/herdr-smart-nav", "left"]
+
+[[actions]]
+id = "down"
+title = "smart nav: focus down"
+contexts = ["pane"]
+command = ["bin/herdr-smart-nav", "down"]
+
+[[actions]]
+id = "up"
+title = "smart nav: focus up"
+contexts = ["pane"]
+command = ["bin/herdr-smart-nav", "up"]
+
+[[actions]]
+id = "right"
+title = "smart nav: focus right"
+contexts = ["pane"]
+command = ["bin/herdr-smart-nav", "right"]

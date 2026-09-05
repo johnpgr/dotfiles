@@ -1,5 +1,5 @@
 -- Global flags
-vim.g.icons_enabled = false
+vim.g.icons_enabled = true
 vim.g.emacs_tab = false
 vim.g.treesitter_enabled = true
 vim.g.mapleader = " "
@@ -9,7 +9,7 @@ vim.o.background = "dark"
 
 -- Editor options
 vim.o.cursorline = false
-vim.o.number = true
+vim.o.number = false
 vim.o.relativenumber = false
 vim.o.confirm = true
 vim.o.wrap = false
