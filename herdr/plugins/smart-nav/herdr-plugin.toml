@@ -18,26 +18,51 @@ command = ["make"]
 
 # Runtime commands run with the plugin directory as cwd, so the relative path
 # resolves. Argv arrays are exec'd directly: one process, no shell.
-[[actions]]
-id = "left"
-title = "smart nav: focus left"
-contexts = ["pane"]
-command = ["bin/herdr-smart-nav", "left"]
 
 [[actions]]
-id = "down"
-title = "smart nav: focus down"
+id = "focus-left"
+title = "smart nav: focus left (ctrl+h)"
 contexts = ["pane"]
-command = ["bin/herdr-smart-nav", "down"]
+command = ["bin/herdr-smart-nav", "focus", "left"]
 
 [[actions]]
-id = "up"
-title = "smart nav: focus up"
+id = "focus-down"
+title = "smart nav: focus down (ctrl+j)"
 contexts = ["pane"]
-command = ["bin/herdr-smart-nav", "up"]
+command = ["bin/herdr-smart-nav", "focus", "down"]
 
 [[actions]]
-id = "right"
-title = "smart nav: focus right"
+id = "focus-up"
+title = "smart nav: focus up (ctrl+k)"
 contexts = ["pane"]
-command = ["bin/herdr-smart-nav", "right"]
+command = ["bin/herdr-smart-nav", "focus", "up"]
+
+[[actions]]
+id = "focus-right"
+title = "smart nav: focus right (ctrl+l)"
+contexts = ["pane"]
+command = ["bin/herdr-smart-nav", "focus", "right"]
+
+[[actions]]
+id = "resize-left"
+title = "smart nav: resize left (alt+h)"
+contexts = ["pane"]
+command = ["bin/herdr-smart-nav", "resize", "left"]
+
+[[actions]]
+id = "resize-down"
+title = "smart nav: resize down (alt+j)"
+contexts = ["pane"]
+command = ["bin/herdr-smart-nav", "resize", "down"]
+
+[[actions]]
+id = "resize-up"
+title = "smart nav: resize up (alt+k)"
+contexts = ["pane"]
+command = ["bin/herdr-smart-nav", "resize", "up"]
+
+[[actions]]
+id = "resize-right"
+title = "smart nav: resize right (alt+l)"
+contexts = ["pane"]
+command = ["bin/herdr-smart-nav", "resize", "right"]

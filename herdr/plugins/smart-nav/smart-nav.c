@@ -1,12 +1,17 @@
 /*
- * herdr-smart-nav <left|down|up|right>
+ * herdr-smart-nav <focus|resize> <left|down|up|right>
  *
- * vim-tmux-navigator for herdr. Bound to ctrl+h/j/k/l as a herdr plugin action:
+ * vim-tmux-navigator for herdr. Bound as herdr plugin actions to
+ * ctrl+h/j/k/l (focus) and alt+h/j/k/l (resize):
  *   - if the focused pane's foreground process is (n)vim, forward the chord to
- *     it (nvim then moves between its own splits, or asks herdr to focus the
- *     neighbouring pane itself when it hits the edge of its layout -- see
- *     nvim/lua/config/herdr_nav.lua);
- *   - otherwise focus the neighbouring herdr pane directly.
+ *     it (nvim then moves between / resizes its own splits, or asks herdr to
+ *     focus / resize the pane itself when it hits the edge of its layout --
+ *     see nvim/lua/config/herdr_nav.lua);
+ *   - otherwise focus the neighbouring herdr pane / resize this pane directly.
+ *
+ * Resize direction means "move this pane's border that way", matching both
+ * herdr's pane.resize and what herdr_nav.lua does at nvim's edge, so alt+l
+ * always pushes the right border rightwards whether or not nvim is focused.
  *
  * Talks to the herdr server over its unix socket (NDJSON, one request per
  * connection) so the whole thing is a single process spawn with no shell.
@@ -47,7 +52,8 @@
  *     per-pane input routing that exists (pane.input.set) is for right-click.
  *   - The socket API has no "focus neighbour, else forward key" primitive.
  *     It has the pieces: pane.process_info (foreground processes of a pane),
- *     pane.focus_direction, and pane.send_keys (accepts "ctrl+h" chords).
+ *     pane.focus_direction / pane.resize, and pane.send_keys (accepts
+ *     "ctrl+h" / "alt+h" chords).
  *     Composing them is up to the client.
  *   - Plugins cannot hook keys in-process. A plugin is a manifest plus argv
  *     commands that herdr spawns per invocation; there is no long-lived
@@ -96,11 +102,14 @@
  *     route around it: herdr has nothing that reads metadata when deciding a
  *     key binding, so there is still nothing to consume the flag.
  *
- * Known trade-off: ctrl+h/j/k/l are now intercepted in every pane, so
- * shells lose ctrl+l (clear), ctrl+k (kill-line), ctrl+j (newline) and
- * terminals that send ^H for Backspace lose that too. Same trade-off
- * vim-tmux-navigator users accept; kitty/WezTerm distinguish ctrl+h from
- * Backspace via the kitty keyboard protocol, so Backspace itself survives.
+ * Known trade-off: ctrl+h/j/k/l and alt+h/j/k/l are now intercepted in
+ * every pane, so shells lose ctrl+l (clear), ctrl+k (kill-line), ctrl+j
+ * (newline) and terminals that send ^H for Backspace lose that too. Same
+ * trade-off vim-tmux-navigator users accept; kitty/WezTerm distinguish
+ * ctrl+h from Backspace via the kitty keyboard protocol, so Backspace itself
+ * survives. herdr's docs warn that plain alt chords can be swallowed by
+ * macOS option-key composing in some terminals; kitty/WezTerm with
+ * macos_option_as_alt (or equivalent) are fine.
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -265,24 +274,30 @@ static void invocation_pane(char *dst, size_t cap) {
 	dst[0] = '\0';
 }
 
+/* Split ratio delta per resize step; keep in sync with M.resize_amount in herdr_nav.lua. */
+#define RESIZE_AMOUNT "0.02"
+
 int main(int argc, char **argv) {
-	if (argc != 2) {
-		fprintf(stderr, "usage: %s <left|down|up|right>\n", argv[0]);
+	if (argc != 3 || (strcmp(argv[1], "focus") && strcmp(argv[1], "resize"))) {
+		fprintf(stderr, "usage: %s <focus|resize> <left|down|up|right>\n", argv[0]);
 		return 2;
 	}
-	const char *dir = argv[1], *chord;
+	int resize = !strcmp(argv[1], "resize");
+	const char *dir = argv[2], *key;
 	if (!strcmp(dir, "left"))
-		chord = "ctrl+h";
+		key = "h";
 	else if (!strcmp(dir, "down"))
-		chord = "ctrl+j";
+		key = "j";
 	else if (!strcmp(dir, "up"))
-		chord = "ctrl+k";
+		key = "k";
 	else if (!strcmp(dir, "right"))
-		chord = "ctrl+l";
+		key = "l";
 	else {
 		fprintf(stderr, "smart-nav: bad direction: %s\n", dir);
 		return 2;
 	}
+	char chord[16];
+	snprintf(chord, sizeof chord, "%s+%s", resize ? "alt" : "ctrl", key);
 
 	static char resp[RESP_CAP];
 	char req[512];
@@ -303,19 +318,28 @@ int main(int argc, char **argv) {
 	}
 
 	int forward = wants_the_chord(resp);
-	if (forward)
+	const char *what;
+	if (forward) {
+		what = "send_keys";
 		snprintf(req, sizeof req,
 			"{\"id\":\"2\",\"method\":\"pane.send_keys\",\"params\":{\"pane_id\":\"%s\",\"keys\":[\"%s\"]}}\n",
 			pane_id, chord);
-	else
+	} else if (resize) {
+		what = "resize";
+		snprintf(req, sizeof req,
+			"{\"id\":\"2\",\"method\":\"pane.resize\",\"params\":{\"pane_id\":\"%s\",\"direction\":\"%s\",\"amount\":" RESIZE_AMOUNT "}}\n",
+			pane_id, dir);
+	} else {
+		what = "focus_direction";
 		snprintf(req, sizeof req,
 			"{\"id\":\"2\",\"method\":\"pane.focus_direction\",\"params\":{\"pane_id\":\"%s\",\"direction\":\"%s\"}}\n",
 			pane_id, dir);
+	}
 
 	/* HERDR_SMART_NAV_DEBUG=1: one line per keypress in `herdr plugin log list`. */
 	if (getenv("HERDR_SMART_NAV_DEBUG"))
-		fprintf(stderr, "smart-nav: pane=%s dir=%s -> %s\n", pane_id, dir,
-			forward ? "forward chord to (n)vim" : "herdr focus_direction");
+		fprintf(stderr, "smart-nav: pane=%s %s %s -> %s\n", pane_id, argv[1], dir,
+			forward ? "forward chord to (n)vim" : what);
 
-	return rpc_ok(forward ? "send_keys" : "focus_direction", req, resp, sizeof resp) ? 0 : 1;
+	return rpc_ok(what, req, resp, sizeof resp) ? 0 : 1;
 }
