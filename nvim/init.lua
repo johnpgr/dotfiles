@@ -20,6 +20,7 @@ vim.o.autocomplete = true
 vim.o.complete = ".^5,w^5,b^5,u^5"
 vim.o.completeopt = "menu,popup"
 vim.o.syntax = "off"
+vim.o.signcolumn = "no"
 vim.o.exrc = true
 vim.o.secure = true
 vim.o.undofile = true

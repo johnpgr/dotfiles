@@ -141,9 +141,9 @@ require('oil').setup({
     show_hidden = false,
   },
   keymaps = {
-    ['q'] = function()
-      vim.api.nvim_win_close(0, true)
-    end,
+    -- ['q'] = function()
+    --   vim.api.nvim_win_close(0, true)
+    -- end,
     ['<RightMouse>'] = '<LeftMouse><cmd>lua require(\'oil.actions\').select.callback()<CR>',
     ['?'] = 'actions.show_help',
     ['<CR>'] = function()
