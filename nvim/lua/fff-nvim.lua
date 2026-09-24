@@ -1,5 +1,17 @@
-local fff_config = require("config.fff")
-local language_sources = require("config.language_sources")
+local map = vim.keymap.set
+local autocmd = vim.api.nvim_create_autocmd
+
+local function base_path()
+	local cwd = vim.fn.getcwd()
+	local home = (vim.uv or vim.loop).os_homedir()
+	if not home then
+		return cwd
+	end
+
+	local real_cwd = (vim.uv or vim.loop).fs_realpath(cwd) or vim.fn.fnamemodify(cwd, ":p"):gsub("/+$", "")
+	local real_home = (vim.uv or vim.loop).fs_realpath(home) or vim.fn.fnamemodify(home, ":p"):gsub("/+$", "")
+	return real_cwd == real_home and vim.fn.stdpath("config") or cwd
+end
 
 vim.pack.add({
 	{ src = "https://github.com/dmtrKovalenko/fff.nvim", version = vim.version.range("0.9") },
@@ -27,7 +39,7 @@ if not vim.g.icons_enabled then
 	end
 end
 
-vim.api.nvim_create_autocmd("PackChanged", {
+autocmd("PackChanged", {
 	callback = function(ev)
 		local name, kind = ev.data.spec.name, ev.data.kind
 		if name == "fff.nvim" and (kind == "install" or kind == "update") then
@@ -39,8 +51,18 @@ vim.api.nvim_create_autocmd("PackChanged", {
 	end,
 })
 
+local fff_download = require("fff.download")
+if not vim.uv.fs_stat(fff_download.get_binary_path()) then
+	local ok, err = pcall(fff_download.download_or_build_binary)
+	if not ok then
+		vim.schedule(function()
+			vim.notify("fff.nvim binary setup failed: " .. tostring(err), vim.log.levels.ERROR)
+		end)
+	end
+end
+
 vim.g.fff = vim.tbl_deep_extend("force", vim.g.fff or {}, {
-	base_path = fff_config.base_path(),
+	base_path = base_path(),
 	lazy_sync = true,
 	prompt = "",
 	title = "Find Files",
@@ -50,10 +72,10 @@ vim.g.fff = vim.tbl_deep_extend("force", vim.g.fff or {}, {
 })
 
 local function sync_base_path()
-	vim.g.fff = vim.tbl_deep_extend("force", vim.g.fff or {}, { base_path = fff_config.base_path() })
+	vim.g.fff = vim.tbl_deep_extend("force", vim.g.fff or {}, { base_path = base_path() })
 end
 
-vim.api.nvim_create_autocmd("DirChanged", {
+autocmd("DirChanged", {
 	group = vim.api.nvim_create_augroup("FffRootSync", {}),
 	callback = function()
 		if vim.v.event.scope == "window" then
@@ -72,49 +94,34 @@ local function cword_or_selection()
 	return vim.fn.expand("<cword>")
 end
 
-vim.keymap.set("n", "<leader>ff", function()
-	require("fff").find_files({ cwd = fff_config.base_path() })
+map("n", "<leader>ff", function()
+	require("fff").find_files({ cwd = base_path() })
 end, { desc = "Find" })
 
-vim.keymap.set("n", "<leader>fn", function()
+map("n", "<leader>fn", function()
 	require("fff").find_files({ cwd = vim.fn.stdpath("config") })
 end, { desc = "Find in Neovim config" })
 
-vim.keymap.set("n", "<leader>fp", function()
+map("n", "<leader>fp", function()
 	require("fff").find_files({ cwd = vim.fs.joinpath(vim.fn.stdpath("data"), "site", "pack") })
 end, { desc = "Find in vim.pack plugins" })
 
-vim.keymap.set("n", "<leader>fs", function()
-	local language = language_sources.name_for(vim.bo.filetype)
-	local path = language_sources.current()
-	if path then
-		require("fff").find_files({ cwd = path, title = language .. " stdlib files" })
-	end
-end, { desc = "Find in language stdlib" })
 
-vim.keymap.set("n", "<leader>sn", function()
+map("n", "<leader>sn", function()
 	require("fff").live_grep({ cwd = vim.fn.stdpath("config") })
 end, { desc = "Search in Neovim config" })
 
-vim.keymap.set("n", "<leader>sp", function()
+map("n", "<leader>sp", function()
 	require("fff").live_grep({ cwd = vim.fs.joinpath(vim.fn.stdpath("data"), "site", "pack") })
 end, { desc = "Search in vim.pack plugins" })
 
-vim.keymap.set("n", "<leader>ss", function()
-	local language = language_sources.name_for(vim.bo.filetype)
-	local path = language_sources.current()
-	if path then
-		require("fff").live_grep({ cwd = path, title = language .. " stdlib search" })
-	end
-end, { desc = "Search in language stdlib" })
-
-vim.keymap.set("n", "<leader>sd", function()
+map("n", "<leader>sd", function()
 	require("fff").live_grep({
-		cwd = fff_config.base_path(),
+		cwd = base_path(),
 		grep = { modes = { "plain", "fuzzy" } },
 	})
 end, { desc = "Search directory" })
 
-vim.keymap.set({ "n", "x" }, "<leader>sw", function()
-	require("fff").live_grep({ cwd = fff_config.base_path(), query = cword_or_selection() })
+map({ "n", "x" }, "<leader>sw", function()
+	require("fff").live_grep({ cwd = base_path(), query = cword_or_selection() })
 end, { desc = "Search current word / selection" })

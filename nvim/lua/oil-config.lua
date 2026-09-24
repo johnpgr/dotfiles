@@ -94,7 +94,46 @@ local function oil_action_run_cmd_on_file()
   end)
 end
 
+local function oil_action_open_previous()
+  local oil = require('oil')
+  local entry = oil.get_cursor_entry()
+  local dir = oil.get_current_dir()
+  if not entry or not dir then
+    return
+  end
+
+  local browser_win = vim.api.nvim_get_current_win()
+  local previous = vim.fn.winnr('#')
+  local target_win = previous > 0 and vim.fn.win_getid(previous) or 0
+  if target_win == 0 or not vim.api.nvim_win_is_valid(target_win) or target_win == browser_win then
+    vim.cmd.split()
+    target_win = vim.api.nvim_get_current_win()
+    vim.api.nvim_set_current_win(browser_win)
+  end
+
+  local path = vim.fs.joinpath(dir, entry.name)
+  vim.api.nvim_win_call(target_win, function()
+    vim.api.nvim_cmd({ cmd = 'edit', args = { path }, magic = { file = false, bar = false } }, {})
+  end)
+end
+
+function _G.get_oil_winbar()
+  local winid = vim.g.statusline_winid or vim.api.nvim_get_current_win()
+  local bufnr = vim.api.nvim_win_get_buf(winid)
+  if vim.bo[bufnr].filetype ~= 'oil' then
+    return ''
+  end
+
+  local dir = require('oil').get_current_dir(bufnr)
+  local result = dir and ((#dir > 1 and dir:gsub('/$', '') or dir) .. ':')
+    or vim.api.nvim_buf_get_name(bufnr)
+  local wininfo = vim.fn.getwininfo(winid)
+  local textoff = wininfo[1] and wininfo[1].textoff or 0
+  return string.rep(' ', textoff) .. result
+end
+
 require('oil').setup({
+  default_file_explorer = true,
   lsp_file_methods = { enabled = vim.version().minor ~= 12 },
   columns = columns,
   skip_confirm_for_simple_edits = true,
@@ -167,7 +206,8 @@ require('oil').setup({
       vim.cmd('edit ' .. vim.fn.fnameescape(full_path))
     end,
     ['<C-v>'] = { 'actions.select', opts = { vertical = true } },
-    ['<C-x>'] = { 'actions.select', opts = { horizontal = true } },
+    ['<C-s>'] = { 'actions.select', opts = { horizontal = true } },
+    ['P'] = { callback = oil_action_open_previous, mode = 'n', desc = 'Open in previous window' },
     ['<F1>'] = oil_action_run_cmd_on_file,
     ['<F5>'] = 'actions.refresh',
     ['~'] = { 'actions.cd', opts = { scope = 'tab' }, mode = 'n' },
@@ -185,3 +225,7 @@ require('oil').setup({
   watch_for_changes = true,
   constrain_cursor = 'name',
 })
+
+vim.keymap.set('n', '-', function()
+  require('oil').open()
+end, { desc = 'Open parent directory' })
