@@ -1,6 +1,6 @@
 onboarding = false
 [theme]
-name = "gruvbox-light"
+name = "catppuccin"
 auto_switch = false
 
 [[keys.command]]
@@ -65,3 +65,14 @@ key = "alt+l"
 type = "plugin_action"
 command = "johnpgr.smart-nav.resize-right"
 description = "resize pane right (vim-aware)"
+
+[ui]
+# On WSL, Herdr's default "auto" policy draws a block cursor itself.  Use
+# Windows Terminal's native cursor so Neovim can request its insert-mode bar.
+host_cursor = "native"
+
+[ui.sound]
+enabled = true
+
+[ui.toast]
+delivery = "system"
