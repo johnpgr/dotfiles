@@ -1,6 +1,6 @@
 onboarding = false
 [theme]
-name = "catppuccin"
+name = "gruvbox-light"
 auto_switch = false
 
 [[keys.command]]

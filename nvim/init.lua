@@ -57,6 +57,7 @@ end
 vim.opt.clipboard = "unnamedplus"
 
 vim.pack.add({
+    "https://github.com/vague-theme/vague.nvim",
 	"https://github.com/chomosuke/typst-preview.nvim",
 	"https://github.com/lewis6991/gitsigns.nvim",
 	"https://github.com/tpope/vim-abolish",
@@ -348,6 +349,12 @@ require("fff-nvim")
 require("neogit-config")
 require("oil-config")
 require("typst-preview").setup({})
+require("vague").setup({
+    transparent = true,
+    bold = false,
+    italic = false
+})
 
 vim.treesitter.start = function() end
 vim.cmd.syntax("off")
+-- vim.cmd.colorscheme("vague")

@@ -41,9 +41,9 @@
       "src": "https://github.com/neanias/everforest-nvim"
     },
     "fff.nvim": {
-      "rev": "fce72fa5d6a9be3d7aa94f53a8de1ffd6706f377",
-      "src": "https://github.com/dmtrKovalenko/fff.nvim",
-      "version": "0.9.0 - 0.10.0"
+      "rev": "bf97f177038472ba5ce7679ac9b39b2349522e71",
+      "src": "https://github.com/johnpgr/fff",
+      "version": "'main'"
     },
     "friendly-snippets": {
       "rev": "572f5660cf05f8cd8834e096d7b4c921ba18e175",
@@ -144,6 +144,10 @@
     "typst-preview.nvim": {
       "rev": "1c2e19486397be1c580b560fc50ee36abe329c46",
       "src": "https://github.com/chomosuke/typst-preview.nvim"
+    },
+    "vague.nvim": {
+      "rev": "f9060fdaf7b20f68575d6f8214da6f1cf0c72825",
+      "src": "https://github.com/vague-theme/vague.nvim"
     },
     "vim-abolish": {
       "rev": "dcbfe065297d31823561ba787f51056c147aa682",

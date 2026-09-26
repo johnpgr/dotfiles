@@ -14,7 +14,7 @@ local function base_path()
 end
 
 vim.pack.add({
-	{ src = "https://github.com/dmtrKovalenko/fff.nvim", version = vim.version.range("0.9") },
+	{ src = "https://github.com/johnpgr/fff", name = "fff.nvim", version = "main" },
 })
 
 if not vim.g.icons_enabled then
@@ -95,33 +95,45 @@ local function cword_or_selection()
 end
 
 map("n", "<leader>ff", function()
-	require("fff").find_files({ cwd = base_path() })
+	local cwd = base_path()
+	require("fff").find_files({ cwd = cwd, resume = true, resume_key = "ff:" .. cwd })
 end, { desc = "Find" })
 
 map("n", "<leader>fn", function()
-	require("fff").find_files({ cwd = vim.fn.stdpath("config") })
+	require("fff").find_files({ cwd = vim.fn.stdpath("config"), resume = true, resume_key = "fn" })
 end, { desc = "Find in Neovim config" })
 
 map("n", "<leader>fp", function()
-	require("fff").find_files({ cwd = vim.fs.joinpath(vim.fn.stdpath("data"), "site", "pack") })
+	require("fff").find_files({
+		cwd = vim.fs.joinpath(vim.fn.stdpath("data"), "site", "pack"),
+		resume = true,
+		resume_key = "fp",
+	})
 end, { desc = "Find in vim.pack plugins" })
 
 
 map("n", "<leader>sn", function()
-	require("fff").live_grep({ cwd = vim.fn.stdpath("config") })
+	require("fff").live_grep({ cwd = vim.fn.stdpath("config"), resume = true, resume_key = "sn" })
 end, { desc = "Search in Neovim config" })
 
 map("n", "<leader>sp", function()
-	require("fff").live_grep({ cwd = vim.fs.joinpath(vim.fn.stdpath("data"), "site", "pack") })
+	require("fff").live_grep({
+		cwd = vim.fs.joinpath(vim.fn.stdpath("data"), "site", "pack"),
+		resume = true,
+		resume_key = "sp",
+	})
 end, { desc = "Search in vim.pack plugins" })
 
 map("n", "<leader>sd", function()
+	local cwd = base_path()
 	require("fff").live_grep({
-		cwd = base_path(),
+		cwd = cwd,
+		resume = true,
+		resume_key = "sd:" .. cwd,
 		grep = { modes = { "plain", "fuzzy" } },
 	})
 end, { desc = "Search directory" })
 
 map({ "n", "x" }, "<leader>sw", function()
-	require("fff").live_grep({ cwd = base_path(), query = cword_or_selection() })
+	require("fff").live_grep({ cwd = base_path(), query = cword_or_selection(), resume_key = "sw" })
 end, { desc = "Search current word / selection" })
