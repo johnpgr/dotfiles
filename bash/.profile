@@ -9,5 +9,10 @@ export CARGO_INSTALL_ROOT="$HOME/.local"
 export GOBIN="$HOME/.local/bin"
 export PATH="$PATH:$HOME/.local/bin"
 export PATH="$PATH:$HOME/.cargo/bin"
-export PATH="$PATH:$HOME/.local/share/bob/nvim-bin"
 export PATH="$PATH:$HOME/.opencode/bin"
+
+# Bash login shells read .profile; load the interactive Bash setup too.
+case $- in
+    *i*) [ -n "$BASH_VERSION" ] && [ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc" ;;
+esac
+. "$HOME/.cargo/env"

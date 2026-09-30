@@ -1,9 +1,5 @@
 [[ $- != *i* ]] && return
-eval "$(/home/joao/.local/bin/mise activate bash)"
-[ -f ~/.profile ] && . ~/.profile
+eval "$(/opt/homebrew/opt/mise/bin/mise activate bash)"
 [ -f /etc/bashrc ] && . /etc/bashrc
 command -v fish >/dev/null 2>&1 && exec fish
-
-
-# Added by Antigravity CLI installer
-export PATH="/home/joao/.local/bin:$PATH"
+. "$HOME/.cargo/env"
