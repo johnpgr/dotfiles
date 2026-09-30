@@ -13,12 +13,13 @@ vim.g.loaded_nvim_dir_plugin = 1
 vim.g.mapleader = " "
 
 vim.o.confirm = true
-vim.o.termguicolors = false
+vim.o.termguicolors = true
 vim.o.splitright = true
 vim.o.splitbelow = true
 vim.o.autocomplete = true
 vim.o.complete = ".^5,w^5,b^5,u^5"
-vim.o.completeopt = "menu,popup"
+vim.o.completeopt = "menu,popup,preinsert"
+vim.o.infercase = true
 vim.o.syntax = "off"
 vim.o.signcolumn = "no"
 vim.o.exrc = true
@@ -57,17 +58,19 @@ end
 vim.opt.clipboard = "unnamedplus"
 
 vim.pack.add({
+    "https://github.com/sainnhe/everforest",
     "https://github.com/vague-theme/vague.nvim",
-	"https://github.com/chomosuke/typst-preview.nvim",
-	"https://github.com/lewis6991/gitsigns.nvim",
-	"https://github.com/tpope/vim-abolish",
-	"https://github.com/farmergreg/vim-lastplace",
-	"https://github.com/folke/which-key.nvim",
-	"https://github.com/johmsalas/text-case.nvim",
-	"https://github.com/Axlefublr/selabel.nvim",
-	"https://github.com/ChmaraX/herdr-nvim",
-	"https://github.com/stevearc/quicker.nvim",
-	"https://github.com/sindrets/diffview.nvim",
+    "https://github.com/chomosuke/typst-preview.nvim",
+    "https://github.com/lewis6991/gitsigns.nvim",
+    "https://github.com/tpope/vim-abolish",
+    "https://github.com/farmergreg/vim-lastplace",
+    "https://github.com/folke/which-key.nvim",
+    "https://github.com/johmsalas/text-case.nvim",
+    "https://github.com/Axlefublr/selabel.nvim",
+    "https://github.com/ChmaraX/herdr-nvim",
+    "https://github.com/stevearc/quicker.nvim",
+    "https://github.com/sindrets/diffview.nvim",
+    "https://github.com/vim-crystal/vim-crystal",
 })
 
 require("diffview").setup({
@@ -308,6 +311,33 @@ end, { desc = "Resize split right" })
 
 map("n", "<C-p>", "<C-w>p", { desc = "Focus previous window" })
 map("n", "<leader>q", "<cmd>quit<cr>", { desc = "Quit" })
+map("n", "<leader><space>", function()
+	local buffers = {}
+	for _, info in ipairs(vim.fn.getbufinfo({ buflisted = 1 })) do
+		local name = info.name ~= "" and vim.fn.fnamemodify(info.name, ":~:.") or "[No Name]"
+		table.insert(buffers, { bufnr = info.bufnr, name = name, lastused = info.lastused })
+	end
+
+	if #buffers == 0 then
+		vim.notify("No listed buffers", vim.log.levels.INFO)
+		return
+	end
+
+	table.sort(buffers, function(a, b)
+		return a.lastused > b.lastused
+	end)
+
+	vim.ui.select(buffers, {
+		prompt = "Open buffers",
+		format_item = function(buffer)
+			return buffer.name
+		end,
+	}, function(buffer)
+		if buffer then
+			vim.api.nvim_cmd({ cmd = "buffer", args = { tostring(buffer.bufnr) } }, {})
+		end
+	end)
+end, { desc = "Switch listed buffer" })
 map("n", "]t", "<cmd>tabnext<cr>", { desc = "Tab next" })
 map("n", "[t", "<cmd>tabprev<cr>", { desc = "Tab prev" })
 map("n", "<Esc>", "<cmd>noh<cr>", { desc = "Clear Highlights" })
@@ -315,6 +345,12 @@ map("n", "<leader>re", "<cmd>restart<cr>", { desc = "Restart" })
 map("n", "]t", "<cmd>tabnext<cr>", { desc = "Tab next" })
 map("n", "[t", "<cmd>tabprev<cr>", { desc = "Tab prev" })
 map("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
+map("i", "<Tab>", function()
+	if vim.fn.pumvisible() == 1 and #vim.fn.complete_info({ "items" }).items > 0 then
+		return "<C-y>"
+	end
+	return "<Tab>"
+end, { expr = true, desc = "Accept completion or insert tab" })
 map("n", "yig", ":%y<CR>", { desc = "Yank buffer" })
 map("n", "vig", "ggVG", { desc = "Visual select buffer" })
 map("n", "cig", ":%d<CR>i", { desc = "Change buffer" })
@@ -355,6 +391,10 @@ require("vague").setup({
     italic = false
 })
 
+vim.g.everforest_enable_italic = true
+vim.g.everforest_transparent_background = 1
+
 vim.treesitter.start = function() end
-vim.cmd.syntax("off")
+-- vim.cmd.syntax("off")
 -- vim.cmd.colorscheme("vague")
+vim.cmd.colorscheme("everforest")
