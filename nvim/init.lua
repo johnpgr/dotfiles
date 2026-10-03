@@ -12,16 +12,14 @@ vim.g.loaded_netrwPlugin = 1
 vim.g.loaded_nvim_dir_plugin = 1
 vim.g.mapleader = " "
 
+vim.o.number = true
 vim.o.confirm = true
 vim.o.termguicolors = true
 vim.o.splitright = true
 vim.o.splitbelow = true
-vim.o.autocomplete = true
-vim.o.complete = ".^5,w^5,b^5,u^5"
-vim.o.completeopt = "menu,popup,preinsert"
-vim.o.infercase = true
-vim.o.syntax = "off"
+vim.o.autocomplete = false
 vim.o.signcolumn = "no"
+vim.o.syntax = "off"
 vim.o.exrc = true
 vim.o.secure = true
 vim.o.undofile = true
@@ -70,8 +68,17 @@ vim.pack.add({
     "https://github.com/ChmaraX/herdr-nvim",
     "https://github.com/stevearc/quicker.nvim",
     "https://github.com/sindrets/diffview.nvim",
-    "https://github.com/vim-crystal/vim-crystal",
+    "https://github.com/windwp/nvim-ts-autotag",
 })
+
+require("nvim-ts-autotag").setup({
+	aliases = {
+		crystal = "html",
+	},
+})
+
+require("treesitter-config")
+require("blink-cmp")
 
 require("diffview").setup({
 	use_icons = false,
@@ -340,17 +347,14 @@ map("n", "<leader><space>", function()
 end, { desc = "Switch listed buffer" })
 map("n", "]t", "<cmd>tabnext<cr>", { desc = "Tab next" })
 map("n", "[t", "<cmd>tabprev<cr>", { desc = "Tab prev" })
-map("n", "<Esc>", "<cmd>noh<cr>", { desc = "Clear Highlights" })
+map("n", "<Esc>", function()
+	vim.api.nvim_buf_clear_namespace(0, vim.api.nvim_create_namespace("nvim.multicursor"), 0, -1)
+	vim.cmd.nohlsearch()
+end, { desc = "Clear multicursors and highlights" })
 map("n", "<leader>re", "<cmd>restart<cr>", { desc = "Restart" })
 map("n", "]t", "<cmd>tabnext<cr>", { desc = "Tab next" })
 map("n", "[t", "<cmd>tabprev<cr>", { desc = "Tab prev" })
 map("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
-map("i", "<Tab>", function()
-	if vim.fn.pumvisible() == 1 and #vim.fn.complete_info({ "items" }).items > 0 then
-		return "<C-y>"
-	end
-	return "<Tab>"
-end, { expr = true, desc = "Accept completion or insert tab" })
 map("n", "yig", ":%y<CR>", { desc = "Yank buffer" })
 map("n", "vig", "ggVG", { desc = "Visual select buffer" })
 map("n", "cig", ":%d<CR>i", { desc = "Change buffer" })
@@ -391,10 +395,10 @@ require("vague").setup({
     italic = false
 })
 
-vim.g.everforest_enable_italic = true
+vim.g.everforest_enable_italic = false
+vim.g.everforest_disable_italic_comment = 1
 vim.g.everforest_transparent_background = 1
+vim.g.everforest_float_style = "blend"
 
-vim.treesitter.start = function() end
--- vim.cmd.syntax("off")
 -- vim.cmd.colorscheme("vague")
 vim.cmd.colorscheme("everforest")

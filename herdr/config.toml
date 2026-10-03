@@ -1,6 +1,6 @@
 onboarding = false
 [theme]
-name = "gruvbox-light"
+name = "solarized-light"
 auto_switch = false
 
 [[keys.command]]
@@ -70,6 +70,10 @@ description = "resize pane right (vim-aware)"
 # On WSL, Herdr's default "auto" policy draws a block cursor itself.  Use
 # Windows Terminal's native cursor so Neovim can request its insert-mode bar.
 host_cursor = "native"
+prompt_new_tab_name = false
+tab_bar_position = "bottom"
+sidebar_start_collapsed = false
+sidebar_collapsed_mode = "hidden"
 
 [ui.sound]
 enabled = true

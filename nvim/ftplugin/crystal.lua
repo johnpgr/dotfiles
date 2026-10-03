@@ -1,3 +1,10 @@
+vim.treesitter.start()
+vim.bo.shiftwidth = 2
+vim.bo.softtabstop = 2
+vim.bo.tabstop = 2
+vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+vim.opt_local.indentkeys:append({ "=end", "=else", "=elsif", "=when", "=in", "=ensure", "=rescue" })
+
 local root
 
 local function crystal_stdlib()
@@ -56,3 +63,10 @@ vim.keymap.set("n", "<leader>oC", function()
 		require("oil").open(path)
 	end)
 end, vim.tbl_extend("force", opts, { desc = "Browse Crystal stdlib with Oil" }))
+
+vim.keymap.set(
+	"x",
+	"<leader>!",
+	":!crystal tool format - ",
+	vim.tbl_extend("force", opts, { desc = "Filter selection through crystal tool format" })
+)
