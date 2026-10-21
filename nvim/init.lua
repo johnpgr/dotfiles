@@ -58,7 +58,7 @@ end
 vim.opt.clipboard = "unnamedplus"
 
 vim.pack.add({
-    "https://github.com/morhetz/gruvbox",
+    "https://github.com/xiyaowong/transparent.nvim",
     "https://github.com/sainnhe/everforest",
     "https://github.com/vague-theme/vague.nvim",
     "https://github.com/sainnhe/sonokai",
@@ -74,6 +74,7 @@ vim.pack.add({
     "https://github.com/stevearc/quicker.nvim",
     "https://github.com/sindrets/diffview.nvim",
     "https://github.com/windwp/nvim-ts-autotag",
+    "https://github.com/morhetz/gruvbox",
 })
 
 require("nvim-ts-autotag").setup({
