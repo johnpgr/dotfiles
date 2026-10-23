@@ -14,7 +14,7 @@ local function base_path()
 end
 
 vim.pack.add({
-	{ src = "https://github.com/johnpgr/fff", name = "fff.nvim", version = "main" },
+	{ src = "https://github.com/dmtrKovalenko/fff", name = "fff.nvim", version = "main" },
 })
 
 if not vim.g.icons_enabled then
@@ -95,45 +95,40 @@ local function cword_or_selection()
 end
 
 map("n", "<leader>ff", function()
-	local cwd = base_path()
-	require("fff").find_files({ cwd = cwd, resume = true, resume_key = "ff:" .. cwd })
+	require("fff").find_files({ cwd = base_path() })
 end, { desc = "Find" })
 
+map("n", "<leader>'", function()
+	require("fff").resume()
+end, { desc = "Resume last picker" })
+
 map("n", "<leader>fn", function()
-	require("fff").find_files({ cwd = vim.fn.stdpath("config"), resume = true, resume_key = "fn" })
+	require("fff").find_files({ cwd = vim.fn.stdpath("config") })
 end, { desc = "Find in Neovim config" })
 
 map("n", "<leader>fp", function()
 	require("fff").find_files({
 		cwd = vim.fs.joinpath(vim.fn.stdpath("data"), "site", "pack"),
-		resume = true,
-		resume_key = "fp",
 	})
 end, { desc = "Find in vim.pack plugins" })
 
-
 map("n", "<leader>sn", function()
-	require("fff").live_grep({ cwd = vim.fn.stdpath("config"), resume = true, resume_key = "sn" })
+	require("fff").live_grep({ cwd = vim.fn.stdpath("config") })
 end, { desc = "Search in Neovim config" })
 
 map("n", "<leader>sp", function()
 	require("fff").live_grep({
 		cwd = vim.fs.joinpath(vim.fn.stdpath("data"), "site", "pack"),
-		resume = true,
-		resume_key = "sp",
 	})
 end, { desc = "Search in vim.pack plugins" })
 
 map("n", "<leader>sd", function()
-	local cwd = base_path()
 	require("fff").live_grep({
-		cwd = cwd,
-		resume = true,
-		resume_key = "sd:" .. cwd,
+		cwd = base_path(),
 		grep = { modes = { "plain", "fuzzy" } },
 	})
 end, { desc = "Search directory" })
 
 map({ "n", "x" }, "<leader>sw", function()
-	require("fff").live_grep({ cwd = base_path(), query = cword_or_selection(), resume_key = "sw" })
+	require("fff").live_grep({ cwd = base_path(), query = cword_or_selection() })
 end, { desc = "Search current word / selection" })

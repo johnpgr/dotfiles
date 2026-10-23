@@ -48,13 +48,13 @@ local opts = { buffer = true }
 
 vim.keymap.set("n", "<leader>fC", function()
 	with_stdlib(function(path)
-		require("fff").find_files({ cwd = path, resume = true, resume_key = "crystal-stdlib" })
+		require("fff").find_files({ cwd = path })
 	end)
 end, vim.tbl_extend("force", opts, { desc = "Find Crystal stdlib files" }))
 
 vim.keymap.set("n", "<leader>sC", function()
 	with_stdlib(function(path)
-		require("fff").live_grep({ cwd = path, resume = true, resume_key = "crystal-stdlib-grep" })
+		require("fff").live_grep({ cwd = path })
 	end)
 end, vim.tbl_extend("force", opts, { desc = "Search Crystal stdlib" }))
 

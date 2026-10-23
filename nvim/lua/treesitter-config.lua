@@ -30,3 +30,13 @@ vim.api.nvim_create_autocmd("ColorScheme", {
         end
     end,
 })
+
+vim.filetype.add({ extension = { ecr = "ecr" } })
+
+-- Reuses the embedded_template grammar under its own language name so that
+-- ECR can inject Crystal, while ERB and EJS keep their Ruby and JavaScript
+-- injections.
+vim.treesitter.language.add("ecr", {
+    path = vim.fs.joinpath(vim.fn.stdpath("data"), "site", "parser", "embedded_template.so"),
+    symbol_name = "embedded_template",
+})

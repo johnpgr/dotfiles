@@ -54,14 +54,14 @@ end
 vim.keymap.set("n", "<leader>fJ", function()
 	local path = java_stdlib()
 	if path then
-		require("fff").find_files({ cwd = path, resume = true, resume_key = "java-stdlib:" .. path })
+		require("fff").find_files({ cwd = path })
 	end
 end, { buffer = true, desc = "Find Java stdlib files" })
 
 vim.keymap.set("n", "<leader>sJ", function()
 	local path = java_stdlib()
 	if path then
-		require("fff").live_grep({ cwd = path, resume = true, resume_key = "java-stdlib-grep:" .. path })
+		require("fff").live_grep({ cwd = path })
 	end
 end, { buffer = true, desc = "Search Java stdlib" })
 

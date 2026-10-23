@@ -12,13 +12,14 @@ vim.g.loaded_netrwPlugin = 1
 vim.g.loaded_nvim_dir_plugin = 1
 vim.g.mapleader = " "
 
-vim.o.number = true
+vim.o.number = false
 vim.o.confirm = true
-vim.o.termguicolors = true
+vim.o.termguicolors = false
+vim.o.winborder = "single"
 vim.o.splitright = true
 vim.o.splitbelow = true
 vim.o.autocomplete = false
-vim.o.signcolumn = "no"
+vim.o.signcolumn = "yes"
 vim.o.syntax = "off"
 vim.o.exrc = true
 vim.o.secure = true
@@ -35,6 +36,7 @@ vim.o.tabstop = 4
 vim.o.wrap = false
 
 vim.opt.diffopt:append("linematch:60")
+require("statusline")
 
 if #vim.api.nvim_list_uis() > 0 then
 	ui2.enable()
@@ -56,8 +58,11 @@ end
 vim.opt.clipboard = "unnamedplus"
 
 vim.pack.add({
+    "https://github.com/morhetz/gruvbox",
     "https://github.com/sainnhe/everforest",
     "https://github.com/vague-theme/vague.nvim",
+    "https://github.com/sainnhe/sonokai",
+    "https://github.com/loctvl842/monokai-pro.nvim",
     "https://github.com/chomosuke/typst-preview.nvim",
     "https://github.com/lewis6991/gitsigns.nvim",
     "https://github.com/tpope/vim-abolish",
@@ -74,6 +79,7 @@ vim.pack.add({
 require("nvim-ts-autotag").setup({
 	aliases = {
 		crystal = "html",
+		ecr = "html",
 	},
 })
 
@@ -194,6 +200,13 @@ require("which-key").setup({
 })
 
 require("gitsigns").setup({
+    signs = {
+        add = { text = '+' },
+        change = { text = '~' },
+        delete = { text = '_' },
+        topdelete = { text = '‾' },
+        changedelete = { text = '~' },
+    },
 	attach_to_untracked = true,
 	preview_config = {
 		border = "single",
@@ -395,10 +408,52 @@ require("vague").setup({
     italic = false
 })
 
+-- [LSPs]
+require("lsp-keymaps")
+vim.lsp.semantic_tokens.enable(false)
+
+vim.lsp.config("lattice", {
+  cmd = { "lattice" },
+  filetypes = { "crystal" },
+  root_markers = { "shard.yml", ".git" },
+})
+
+vim.lsp.config("ameba_ls", {
+  cmd = { "ameba-ls" },
+  filetypes = { "crystal" },
+  root_markers = { "shard.yml", ".ameba.yml", ".git" },
+})
+
+vim.lsp.config("tsgo", {
+  cmd = { "tsc", "--lsp", "--stdio" },
+  filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
+  root_markers = { "tsconfig.json", "jsconfig.json", "package.json", ".git" },
+})
+
+vim.lsp.enable({
+    "lattice",
+    "ameba_ls",
+    "tsgo",
+})
+
+require("monokai-pro").setup({
+  transparent_background = true,
+})
+
 vim.g.everforest_enable_italic = false
 vim.g.everforest_disable_italic_comment = 1
 vim.g.everforest_transparent_background = 1
 vim.g.everforest_float_style = "blend"
 
+vim.g.sonokai_style = 'shusia'
+vim.g.sonokai_better_performance = 1
+vim.g.sonokai_transparent_background = 1
+vim.g.sonokai_float_style = "blend"
+vim.g.gruvbox_sign_column = 'bg0'
+vim.g.gruvbox_bold = 0
+
 -- vim.cmd.colorscheme("vague")
-vim.cmd.colorscheme("everforest")
+-- vim.cmd.colorscheme("sonokai")
+-- vim.cmd.colorscheme("monokai-pro-classic")
+-- vim.cmd.colorscheme("everforest")
+vim.cmd.colorscheme("gruvbox")
