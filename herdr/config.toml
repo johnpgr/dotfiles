@@ -81,5 +81,5 @@ enabled = true
 delivery = "system"
 
 [theme]
-name = "gruvbox-light"
+name = "terminal"
 auto_switch = false

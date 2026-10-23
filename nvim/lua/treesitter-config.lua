@@ -2,6 +2,15 @@ vim.pack.add({
     "https://github.com/nvim-treesitter/nvim-treesitter",
 })
 
+if vim.fn.executable("tree-sitter") == 1 then
+    require("nvim-treesitter").install({ "embedded_template" })
+else
+    vim.notify(
+        "ECR Treesitter support needs the tree-sitter CLI (brew install tree-sitter-cli)",
+        vim.log.levels.WARN
+    )
+end
+
 vim.api.nvim_create_autocmd("User", {
     pattern = "TSUpdate",
     callback = function()
@@ -33,10 +42,13 @@ vim.api.nvim_create_autocmd("ColorScheme", {
 
 vim.filetype.add({ extension = { ecr = "ecr" } })
 
--- Reuses the embedded_template grammar under its own language name so that
--- ECR can inject Crystal, while ERB and EJS keep their Ruby and JavaScript
--- injections.
-vim.treesitter.language.add("ecr", {
-    path = vim.fs.joinpath(vim.fn.stdpath("data"), "site", "parser", "embedded_template.so"),
-    symbol_name = "embedded_template",
-})
+-- Keep ECR's parser name so the queries in queries/ecr can inject Crystal.
+-- The parser is installed asynchronously above, so only register it once the
+-- compiled library exists.
+local embedded_template_parser = vim.fs.joinpath(vim.fn.stdpath("data"), "site", "parser", "embedded_template.so")
+if vim.uv.fs_stat(embedded_template_parser) then
+    vim.treesitter.language.add("ecr", {
+        path = embedded_template_parser,
+        symbol_name = "embedded_template",
+    })
+end

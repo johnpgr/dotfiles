@@ -89,6 +89,7 @@ require("blink-cmp")
 
 vim.lsp.enable("rust_analyzer")
 vim.lsp.enable("tsgo")
+vim.lsp.enable("clangd")
 
 require("diffview").setup({
 	use_icons = false,
@@ -428,11 +429,11 @@ vim.lsp.config("ameba_ls", {
   root_markers = { "shard.yml", ".ameba.yml", ".git" },
 })
 
-vim.lsp.config("tsgo", {
-  cmd = { "tsc", "--lsp", "--stdio" },
-  filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
-  root_markers = { "tsconfig.json", "jsconfig.json", "package.json", ".git" },
-})
+-- vim.lsp.config("tsgo", {
+--   cmd = { "tsc", "--lsp", "--stdio" },
+--   filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
+--   root_markers = { "tsconfig.json", "jsconfig.json", "package.json", ".git" },
+-- })
 
 vim.lsp.enable({
     "lattice",

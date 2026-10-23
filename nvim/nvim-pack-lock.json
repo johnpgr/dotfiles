@@ -78,6 +78,10 @@
       "rev": "b023c5280b16fe2366f5e779d8d2756b3e5ee9c3",
       "src": "https://github.com/sainnhe/sonokai"
     },
+    "spark.nvim": {
+      "rev": "f9d7be69269ea26fd75021d3beda76994801ccc4",
+      "src": "https://github.com/wym2010/spark.nvim"
+    },
     "text-case.nvim": {
       "rev": "e898cfd46fa6cde0e83abb624a16e67d2ffc6457",
       "src": "https://github.com/johmsalas/text-case.nvim"
