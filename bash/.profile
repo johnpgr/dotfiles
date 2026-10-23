@@ -18,3 +18,7 @@ export PATH="$PATH:$HOME/.opencode/bin"
 case $- in
     *i*) [ -n "$BASH_VERSION" ] && [ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc" ;;
 esac
+
+
+# Added by Antigravity CLI installer
+export PATH="/Users/gabriel/.local/bin:$PATH"

@@ -4,3 +4,7 @@ command -v mise >/dev/null 2>&1 && eval "$(mise activate bash)"
 [ -f /etc/bashrc ] && . /etc/bashrc
 command -v fish >/dev/null 2>&1 && exec fish
 . "$HOME/.cargo/env"
+
+
+# Added by Antigravity CLI installer
+export PATH="/Users/gabriel/.local/bin:$PATH"

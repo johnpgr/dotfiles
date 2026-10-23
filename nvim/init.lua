@@ -15,9 +15,9 @@ vim.g.mapleader = " "
 vim.o.number = false
 vim.o.confirm = true
 vim.o.termguicolors = false
-vim.o.winborder = "single"
 vim.o.splitright = true
 vim.o.splitbelow = true
+vim.o.winborder = "single"
 vim.o.autocomplete = false
 vim.o.signcolumn = "yes"
 vim.o.syntax = "off"
@@ -86,6 +86,9 @@ require("nvim-ts-autotag").setup({
 
 require("treesitter-config")
 require("blink-cmp")
+
+vim.lsp.enable("rust_analyzer")
+vim.lsp.enable("tsgo")
 
 require("diffview").setup({
 	use_icons = false,
@@ -457,4 +460,9 @@ vim.g.gruvbox_bold = 0
 -- vim.cmd.colorscheme("sonokai")
 -- vim.cmd.colorscheme("monokai-pro-classic")
 -- vim.cmd.colorscheme("everforest")
-vim.cmd.colorscheme("gruvbox")
+
+vim.cmd[[
+    colorscheme gruvbox
+    hi StatusLine cterm=none ctermbg=none ctermfg=15
+    hi StatusLineNC cterm=none ctermbg=none ctermfg=8
+]]
