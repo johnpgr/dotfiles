@@ -7,6 +7,9 @@ local function has_executable(name)
 	return vim.fn.executable(name) == 1
 end
 
+if vim.g.icons_enabled == nil then
+	vim.g.icons_enabled = true
+end
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 vim.g.loaded_nvim_dir_plugin = 1
@@ -75,8 +78,16 @@ vim.pack.add({
     "https://github.com/stevearc/quicker.nvim",
     "https://github.com/sindrets/diffview.nvim",
     "https://github.com/windwp/nvim-ts-autotag",
+    "https://github.com/nvim-mini/mini.icons",
+    "https://github.com/SmiteshP/nvim-navic",
+    "https://github.com/utilyre/barbecue.nvim",
     "https://github.com/morhetz/gruvbox",
 })
+
+if vim.g.icons_enabled then
+	require("mini.icons").setup()
+	require("mini.icons").mock_nvim_web_devicons()
+end
 
 require("nvim-ts-autotag").setup({
 	aliases = {
@@ -93,7 +104,7 @@ vim.lsp.enable("tsgo")
 vim.lsp.enable("clangd")
 
 require("diffview").setup({
-	use_icons = false,
+	use_icons = vim.g.icons_enabled,
 	view = {
 		merge_tool = {
 			layout = "diff3_mixed",
@@ -160,7 +171,7 @@ map({ "n", "x" }, "tc", pick_case, { desc = "Text case conversion" })
 
 require("which-key").setup({
 	preset = "helix",
-	icons = vim.g.icons_enabled and { mappings = false } or {
+	icons = vim.g.icons_enabled and { mappings = true } or {
 		breadcrumb = "",
 		separator = "->",
 		group = "",
@@ -468,3 +479,39 @@ vim.cmd[[
     hi StatusLine cterm=none ctermbg=none ctermfg=15
     hi StatusLineNC cterm=none ctermbg=none ctermfg=8
 ]]
+
+
+-- Barbecue's devicons table lookup misses mini.icons' dynamic file mappings.
+require("barbecue.theme").get_file_icon = function(filename)
+    if not vim.g.icons_enabled then
+        return nil
+    end
+    local icon, highlight = MiniIcons.get("file", filename)
+    return { icon, highlight = highlight }
+end
+
+require("barbecue").setup({
+    attach_navic = false,
+    show_navic = false,
+    show_dirname = true,
+    show_basename = true,
+    exclude_filetypes = {
+        "netrw", "oil", "help", "toggleterm", "neogitstatus",
+        "NeogitStatus", "NeogitCommitMessage", "qf",
+        "DiffviewFiles", "DiffviewFileHistory",
+    },
+    kinds = vim.g.icons_enabled and {} or false,
+    symbols = {
+        separator = vim.g.icons_enabled and "" or ">",
+        ellipsis = "…",
+    },
+    theme = {
+        normal = { bg = "NONE" },
+    },
+    custom_section = function(bufnr)
+        if vim.bo[bufnr].modified then
+            return { { vim.g.icons_enabled and " ●" or " [+]", "Comment" } }
+        end
+        return " "
+    end,
+})

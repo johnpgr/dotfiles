@@ -4,6 +4,10 @@
       "rev": "0abc8f390b278c3b4aabc4c004ac8a088b65cf24",
       "src": "https://github.com/L3MON4D3/LuaSnip"
     },
+    "barbecue.nvim": {
+      "rev": "3e31404f0b93a2c30d151abf0648650ac811c664",
+      "src": "https://github.com/utilyre/barbecue.nvim"
+    },
     "blink.cmp": {
       "rev": "78336bc89ee5365633bcf754d93df01678b5c08f",
       "src": "https://github.com/saghen/blink.cmp",
@@ -12,6 +16,10 @@
     "diffview.nvim": {
       "rev": "4516612fe98ff56ae0415a259ff6361a89419b0a",
       "src": "https://github.com/sindrets/diffview.nvim"
+    },
+    "dropbar.nvim": {
+      "rev": "f7c6fa21e2a7c32576e7a1791774a3736987f467",
+      "src": "https://github.com/Bekaboo/dropbar.nvim"
     },
     "everforest": {
       "rev": "85a86eb62409e3ec88713bff3d1b9d7374e112e4",
@@ -46,6 +54,10 @@
       "rev": "281bb1a2c60c3618c854bef2c0933276eb2362c2",
       "src": "https://github.com/nvim-mini/mini.bufremove"
     },
+    "mini.icons": {
+      "rev": "eab3e692d796d78ea6ffc978d8a380ff26fcf4e3",
+      "src": "https://github.com/nvim-mini/mini.icons"
+    },
     "monokai-pro.nvim": {
       "rev": "a68e38b8e55d69a215d0f02598900a79c356da9d",
       "src": "https://github.com/loctvl842/monokai-pro.nvim"
@@ -53,6 +65,10 @@
     "neogit": {
       "rev": "5adc81b26232954cd7a90f158aa7844c18fc3165",
       "src": "https://github.com/NeogitOrg/neogit"
+    },
+    "nvim-navic": {
+      "rev": "455808fd0fae06e6d70fadfd61432275db8f34ce",
+      "src": "https://github.com/SmiteshP/nvim-navic"
     },
     "nvim-treesitter": {
       "rev": "910fdf6f49e9dee7e7257c7d11a76b040fdfb9de",
@@ -113,6 +129,10 @@
     "which-key.nvim": {
       "rev": "3aab2147e74890957785941f0c1ad87d0a44c15a",
       "src": "https://github.com/folke/which-key.nvim"
+    },
+    "winbar.nvim": {
+      "rev": "b417a01833d1dea26c612163e5430e8055f17d0d",
+      "src": "https://github.com/Ramilito/winbar.nvim"
     }
   }
 }
