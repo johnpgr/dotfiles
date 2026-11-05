@@ -81,5 +81,5 @@ enabled = true
 delivery = "system"
 
 [theme]
-name = "terminal"
+name = "catppuccin-latte"
 auto_switch = false

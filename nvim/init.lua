@@ -7,7 +7,9 @@ local function has_executable(name)
 	return vim.fn.executable(name) == 1
 end
 
-vim.g.icons_enabled = true
+if vim.g.icons_enabled == nil then
+	vim.g.icons_enabled = true
+end
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 vim.g.loaded_nvim_dir_plugin = 1
@@ -69,7 +71,6 @@ vim.pack.add({
     "https://github.com/sainnhe/sonokai",
     "https://github.com/chomosuke/typst-preview.nvim",
     "https://github.com/lewis6991/gitsigns.nvim",
-    -- "https://github.com/lukas-reineke/indent-blankline.nvim",
     "https://github.com/tpope/vim-abolish",
     "https://github.com/farmergreg/vim-lastplace",
     "https://github.com/folke/which-key.nvim",
@@ -79,14 +80,12 @@ vim.pack.add({
     "https://github.com/stevearc/quicker.nvim",
     "https://github.com/sindrets/diffview.nvim",
     "https://github.com/windwp/nvim-ts-autotag",
+    "https://github.com/SmiteshP/nvim-navic",
+    "https://github.com/utilyre/barbecue.nvim",
     "https://github.com/morhetz/gruvbox",
-    -- "https://github.com/Bekaboo/dropbar.nvim",
 })
 
--- require("ibl").setup({
--- 	indent = { char = "┊", tab_char = "┊" },
--- 	scope = { enabled = false },
--- })
+require("mini")
 
 require("nvim-ts-autotag").setup({
 	aliases = {
@@ -99,11 +98,10 @@ require("treesitter-config")
 require("blink-cmp")
 
 vim.lsp.enable("rust_analyzer")
-vim.lsp.enable("tsgo")
 vim.lsp.enable("clangd")
 
 require("diffview").setup({
-	use_icons = false,
+	use_icons = vim.g.icons_enabled,
 	view = {
 		merge_tool = {
 			layout = "diff3_mixed",
@@ -170,7 +168,7 @@ map({ "n", "x" }, "tc", pick_case, { desc = "Text case conversion" })
 
 require("which-key").setup({
 	preset = "helix",
-	icons = vim.g.icons_enabled and { mappings = false } or {
+	icons = vim.g.icons_enabled and { mappings = true } or {
 		breadcrumb = "",
 		separator = "->",
 		group = "",
@@ -332,18 +330,23 @@ end, { desc = "Focus split up" })
 map("n", "<C-l>", function()
 	herdr_nav.navigate("l")
 end, { desc = "Focus split right" })
-map("n", "<M-h>", function()
+map("n", "<A-Left>", function()
 	herdr_nav.resize("h")
 end, { desc = "Resize split left" })
-map("n", "<M-j>", function()
+map("n", "<A-Down>", function()
 	herdr_nav.resize("j")
 end, { desc = "Resize split down" })
-map("n", "<M-k>", function()
+map("n", "<A-Up>", function()
 	herdr_nav.resize("k")
 end, { desc = "Resize split up" })
-map("n", "<M-l>", function()
+map("n", "<A-Right>", function()
 	herdr_nav.resize("l")
 end, { desc = "Resize split right" })
+
+map("n", "<A-j>", ":copy .<CR>", { desc = "Duplicar linha para baixo" })
+map("v", "<A-j>", ":copy '><CR>gv", { desc = "Duplicar seleção para baixo" })
+map("n", "<A-k>", ":copy .-1<CR>", { desc = "Duplicar linha para cima" })
+map("v", "<A-k>", ":copy '<-1<CR>gv", { desc = "Duplicar seleção para cima" })
 
 map("n", "<C-p>", "<C-w>p", { desc = "Focus previous window" })
 map("n", "<leader>q", "<cmd>quit<cr>", { desc = "Quit" })
@@ -381,8 +384,6 @@ map("n", "<Esc>", function()
 	vim.cmd.nohlsearch()
 end, { desc = "Clear multicursors and highlights" })
 map("n", "<leader>re", "<cmd>restart<cr>", { desc = "Restart" })
-map("n", "]t", "<cmd>tabnext<cr>", { desc = "Tab next" })
-map("n", "[t", "<cmd>tabprev<cr>", { desc = "Tab prev" })
 map("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 map("n", "yig", ":%y<CR>", { desc = "Yank buffer" })
 map("n", "vig", "ggVG", { desc = "Visual select buffer" })
@@ -413,25 +414,12 @@ autocmd("TextYankPost", {
 })
 
 require("compile")
-require("mini")
 require("fff-nvim")
 require("neogit-config")
 require("oil-config")
 require("nvim-tree-config")
 require("typst-preview").setup({})
 
-local dropbar_icons = {
-	enable = vim.g.icons_enabled,
-}
-
-if not vim.g.icons_enabled then
-	dropbar_icons.ui = {
-		bar = { separator = " > ", extends = "…" },
-		menu = { separator = " ", indicator = ">" },
-	}
-end
-
--- require("dropbar").setup({ icons = dropbar_icons })
 require("vague").setup({
     transparent = true,
     bold = false,
@@ -479,8 +467,40 @@ vim.g.gruvbox_sign_column = 'bg0'
 vim.g.gruvbox_bold = 0
 vim.g.adwaita_transparent = true
 
-vim.cmd[[
-    colorscheme adwaita
-    "hi StatusLine cterm=none ctermbg=none ctermfg=15
-    "hi StatusLineNC cterm=none ctermbg=none ctermfg=8
-]]
+vim.cmd.colorscheme("adwaita")
+
+
+-- Barbecue's devicons table lookup misses mini.icons' dynamic file mappings.
+require("barbecue.theme").get_file_icon = function(filename)
+    if not vim.g.icons_enabled then
+        return nil
+    end
+    local icon, highlight = MiniIcons.get("file", filename)
+    return { icon, highlight = highlight }
+end
+
+require("barbecue").setup({
+    attach_navic = false,
+    show_navic = false,
+    show_dirname = true,
+    show_basename = true,
+    exclude_filetypes = {
+        "netrw", "oil", "help", "toggleterm", "neogitstatus",
+        "NeogitStatus", "NeogitCommitMessage", "qf",
+        "DiffviewFiles", "DiffviewFileHistory",
+    },
+    kinds = vim.g.icons_enabled and {} or false,
+    symbols = {
+        separator = vim.g.icons_enabled and "" or ">",
+        ellipsis = "…",
+    },
+    theme = {
+        normal = { bg = "NONE" },
+    },
+    custom_section = function(bufnr)
+        if vim.bo[bufnr].modified then
+            return { { vim.g.icons_enabled and " ●" or " [+]", "Comment" } }
+        end
+        return " "
+    end,
+})

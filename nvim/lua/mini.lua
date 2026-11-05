@@ -4,13 +4,14 @@ vim.pack.add({
     "https://github.com/nvim-mini/mini.icons",
 })
 
-require("mini.icons").setup({
-    lsp = {
-        ["function"] = { glyph = "󰆧" },
-    },
-})
-
-MiniIcons.mock_nvim_web_devicons()
+if vim.g.icons_enabled then
+    require("mini.icons").setup({
+        lsp = {
+            ["function"] = { glyph = "󰆧" },
+        },
+    })
+    require("mini.icons").mock_nvim_web_devicons()
+end
 
 require("mini.align").setup({
     mappings = {
