@@ -6,7 +6,7 @@ if vim.fn.executable("tree-sitter") == 1 then
     require("nvim-treesitter").install({ "embedded_template" })
 else
     vim.notify(
-        "ECR Treesitter support needs the tree-sitter CLI (brew install tree-sitter-cli)",
+        "ECR Treesitter support needs the tree-sitter CLI (e.g. brew install tree-sitter-cli on macOS, or npm install -g tree-sitter-cli)",
         vim.log.levels.WARN
     )
 end

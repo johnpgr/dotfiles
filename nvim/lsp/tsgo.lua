@@ -5,6 +5,8 @@ return {
 		return vim.lsp.rpc.start({ bin, "--lsp", "--stdio" }, dispatchers)
 	end,
 	filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
+	-- Content mappers (such as Reylo's .sql imports) run only when the client permits external code.
+	init_options = { runExternalCode = true },
 	root_markers = {
 		{ "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "bun.lock", "bun.lockb" },
 		{ "tsconfig.json", "jsconfig.json", "package.json" },

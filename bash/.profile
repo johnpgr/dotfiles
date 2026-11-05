@@ -14,6 +14,12 @@ export PATH="$PATH:$HOME/.opencode/bin"
 [ -f "$HOME/.local/share/bob/env/env.sh" ] && . "$HOME/.local/share/bob/env/env.sh"
 . "$HOME/.cargo/env"
 
+# Suppress Claude Code agent_summary side-queries (https://gist.github.com/flamerix-ai/c3905705cc4205e5de3011fa2e74efce).
+case " ${BUN_OPTIONS-} " in
+    *" --preload=$HOME/.local/share/no-agent-summary.js "*) ;;
+    *) export BUN_OPTIONS="${BUN_OPTIONS:+$BUN_OPTIONS }--preload=$HOME/.local/share/no-agent-summary.js" ;;
+esac
+
 # Finish environment setup before .bashrc replaces Bash with Fish.
 case $- in
     *i*) [ -n "$BASH_VERSION" ] && [ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc" ;;
@@ -21,4 +27,4 @@ esac
 
 
 # Added by Antigravity CLI installer
-export PATH="/Users/gabriel/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"

@@ -7,4 +7,4 @@ command -v fish >/dev/null 2>&1 && exec fish
 
 
 # Added by Antigravity CLI installer
-export PATH="/Users/gabriel/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"

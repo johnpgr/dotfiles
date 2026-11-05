@@ -7,19 +7,22 @@ local function has_executable(name)
 	return vim.fn.executable(name) == 1
 end
 
+vim.g.icons_enabled = true
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 vim.g.loaded_nvim_dir_plugin = 1
 vim.g.mapleader = " "
 
-vim.o.number = false
+vim.o.number = true
+vim.o.cursorline = true
 vim.o.confirm = true
-vim.o.termguicolors = false
+vim.o.termguicolors = true
 vim.o.splitright = true
 vim.o.splitbelow = true
 vim.o.winborder = "single"
 vim.o.autocomplete = false
-vim.o.signcolumn = "yes"
+vim.o.signcolumn = "no"
+vim.o.foldcolumn = "1"
 vim.o.syntax = "off"
 vim.o.exrc = true
 vim.o.secure = true
@@ -59,12 +62,14 @@ vim.opt.clipboard = "unnamedplus"
 
 vim.pack.add({
     "https://github.com/xiyaowong/transparent.nvim",
+    "https://github.com/travisvroman/adwaita.nvim",
     "https://github.com/sainnhe/everforest",
+    "https://github.com/Mofiqul/vscode.nvim",
     "https://github.com/vague-theme/vague.nvim",
     "https://github.com/sainnhe/sonokai",
-    "https://github.com/loctvl842/monokai-pro.nvim",
     "https://github.com/chomosuke/typst-preview.nvim",
     "https://github.com/lewis6991/gitsigns.nvim",
+    -- "https://github.com/lukas-reineke/indent-blankline.nvim",
     "https://github.com/tpope/vim-abolish",
     "https://github.com/farmergreg/vim-lastplace",
     "https://github.com/folke/which-key.nvim",
@@ -75,7 +80,13 @@ vim.pack.add({
     "https://github.com/sindrets/diffview.nvim",
     "https://github.com/windwp/nvim-ts-autotag",
     "https://github.com/morhetz/gruvbox",
+    -- "https://github.com/Bekaboo/dropbar.nvim",
 })
+
+-- require("ibl").setup({
+-- 	indent = { char = "┊", tab_char = "┊" },
+-- 	scope = { enabled = false },
+-- })
 
 require("nvim-ts-autotag").setup({
 	aliases = {
@@ -406,7 +417,21 @@ require("mini")
 require("fff-nvim")
 require("neogit-config")
 require("oil-config")
+require("nvim-tree-config")
 require("typst-preview").setup({})
+
+local dropbar_icons = {
+	enable = vim.g.icons_enabled,
+}
+
+if not vim.g.icons_enabled then
+	dropbar_icons.ui = {
+		bar = { separator = " > ", extends = "…" },
+		menu = { separator = " ", indicator = ">" },
+	}
+end
+
+-- require("dropbar").setup({ icons = dropbar_icons })
 require("vague").setup({
     transparent = true,
     bold = false,
@@ -441,10 +466,6 @@ vim.lsp.enable({
     "tsgo",
 })
 
-require("monokai-pro").setup({
-  transparent_background = true,
-})
-
 vim.g.everforest_enable_italic = false
 vim.g.everforest_disable_italic_comment = 1
 vim.g.everforest_transparent_background = 1
@@ -456,14 +477,10 @@ vim.g.sonokai_transparent_background = 1
 vim.g.sonokai_float_style = "blend"
 vim.g.gruvbox_sign_column = 'bg0'
 vim.g.gruvbox_bold = 0
-
--- vim.cmd.colorscheme("vague")
--- vim.cmd.colorscheme("sonokai")
--- vim.cmd.colorscheme("monokai-pro-classic")
--- vim.cmd.colorscheme("everforest")
+vim.g.adwaita_transparent = true
 
 vim.cmd[[
-    colorscheme gruvbox
-    hi StatusLine cterm=none ctermbg=none ctermfg=15
-    hi StatusLineNC cterm=none ctermbg=none ctermfg=8
+    colorscheme adwaita
+    "hi StatusLine cterm=none ctermbg=none ctermfg=15
+    "hi StatusLineNC cterm=none ctermbg=none ctermfg=8
 ]]
