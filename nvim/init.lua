@@ -13,8 +13,9 @@ vim.g.loaded_nvim_dir_plugin = 1
 vim.g.mapleader = " "
 
 vim.o.number = false
+vim.o.cursorline = true
 vim.o.confirm = true
-vim.o.termguicolors = false
+vim.o.termguicolors = true
 vim.o.splitright = true
 vim.o.splitbelow = true
 vim.o.winborder = "single"
@@ -321,18 +322,23 @@ end, { desc = "Focus split up" })
 map("n", "<C-l>", function()
 	herdr_nav.navigate("l")
 end, { desc = "Focus split right" })
-map("n", "<M-h>", function()
+map("n", "<A-Left>", function()
 	herdr_nav.resize("h")
 end, { desc = "Resize split left" })
-map("n", "<M-j>", function()
+map("n", "<A-Down>", function()
 	herdr_nav.resize("j")
 end, { desc = "Resize split down" })
-map("n", "<M-k>", function()
+map("n", "<A-Up>", function()
 	herdr_nav.resize("k")
 end, { desc = "Resize split up" })
-map("n", "<M-l>", function()
+map("n", "<A-Right>", function()
 	herdr_nav.resize("l")
 end, { desc = "Resize split right" })
+
+map("n", "<A-j>", ":copy .<CR>", { desc = "Duplicar linha para baixo" })
+map("v", "<A-j>", ":copy '><CR>gv", { desc = "Duplicar seleção para baixo" })
+map("n", "<A-k>", ":copy .-1<CR>", { desc = "Duplicar linha para cima" })
+map("v", "<A-k>", ":copy '<-1<CR>gv", { desc = "Duplicar seleção para cima" })
 
 map("n", "<C-p>", "<C-w>p", { desc = "Focus previous window" })
 map("n", "<leader>q", "<cmd>quit<cr>", { desc = "Quit" })
@@ -457,13 +463,8 @@ vim.g.sonokai_float_style = "blend"
 vim.g.gruvbox_sign_column = 'bg0'
 vim.g.gruvbox_bold = 0
 
--- vim.cmd.colorscheme("vague")
--- vim.cmd.colorscheme("sonokai")
--- vim.cmd.colorscheme("monokai-pro-classic")
--- vim.cmd.colorscheme("everforest")
-
 vim.cmd[[
-    colorscheme gruvbox
+    colorscheme everforest
     hi StatusLine cterm=none ctermbg=none ctermfg=15
     hi StatusLineNC cterm=none ctermbg=none ctermfg=8
 ]]
