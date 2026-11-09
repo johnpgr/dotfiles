@@ -535,6 +535,19 @@ autocmd("ColorScheme", {
     end,
 })
 
+autocmd("ColorScheme", {
+    group = vim.api.nvim_create_augroup("FloatBackground", { clear = true }),
+    callback = function()
+        local normal = vim.api.nvim_get_hl(0, { name = "Normal", link = false })
+        for _, name in ipairs({ "NormalFloat", "FloatBorder", "FloatTitle", "FloatFooter" }) do
+            local highlight = vim.api.nvim_get_hl(0, { name = name, link = false })
+            highlight.bg = normal.bg
+            highlight.ctermbg = normal.ctermbg
+            vim.api.nvim_set_hl(0, name, highlight)
+        end
+    end,
+})
+
 -- Colorschemes define DiagnosticUnderline* as plain underline; a ColorScheme
 -- hook is the only place that covers every present and future theme.
 autocmd("ColorScheme", {
