@@ -14,7 +14,8 @@ vim.g.loaded_nvim_dir_plugin = 1
 vim.g.mapleader = " "
 
 vim.o.number = true
-vim.o.cursorline = false
+vim.o.cursorline = true
+vim.o.cursorlineopt = "number"
 vim.o.confirm = true
 vim.o.termguicolors = false
 vim.o.splitright = true
@@ -545,6 +546,19 @@ autocmd("ColorScheme", {
             highlight.ctermbg = normal.ctermbg
             vim.api.nvim_set_hl(0, name, highlight)
         end
+    end,
+})
+
+-- With cursorlineopt=number only the number is marked, so a CursorLineNr
+-- background would read as a stray block; keep the gutter background instead.
+autocmd("ColorScheme", {
+    group = vim.api.nvim_create_augroup("CursorLineNumberBackground", { clear = true }),
+    callback = function()
+        local line_number = vim.api.nvim_get_hl(0, { name = "LineNr", link = false })
+        local highlight = vim.api.nvim_get_hl(0, { name = "CursorLineNr", link = false })
+        highlight.bg = line_number.bg
+        highlight.ctermbg = line_number.ctermbg
+        vim.api.nvim_set_hl(0, "CursorLineNr", highlight)
     end,
 })
 
