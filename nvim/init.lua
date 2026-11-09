@@ -7,24 +7,23 @@ local function has_executable(name)
 	return vim.fn.executable(name) == 1
 end
 
-if vim.g.icons_enabled == nil then
-	vim.g.icons_enabled = true
-end
+vim.g.icons_enabled = true
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 vim.g.loaded_nvim_dir_plugin = 1
 vim.g.mapleader = " "
 
 vim.o.number = true
-vim.o.cursorline = true
+vim.o.cursorline = false
 vim.o.confirm = true
-vim.o.termguicolors = true
+vim.o.termguicolors = false
 vim.o.splitright = true
 vim.o.splitbelow = true
 vim.o.winborder = "single"
 vim.o.autocomplete = false
-vim.o.signcolumn = "no"
-vim.o.foldcolumn = "1"
+vim.o.signcolumn = "yes"
+vim.o.foldcolumn = "0"
+vim.o.numberwidth = 1
 vim.o.syntax = "off"
 vim.o.exrc = true
 vim.o.secure = true
@@ -71,7 +70,9 @@ vim.pack.add({
     "https://github.com/sainnhe/sonokai",
     "https://github.com/chomosuke/typst-preview.nvim",
     "https://github.com/lewis6991/gitsigns.nvim",
+    "https://github.com/luukvbaal/statuscol.nvim",
     "https://github.com/tpope/vim-abolish",
+    "https://github.com/lukas-reineke/indent-blankline.nvim",
     "https://github.com/farmergreg/vim-lastplace",
     "https://github.com/folke/which-key.nvim",
     "https://github.com/johmsalas/text-case.nvim",
@@ -92,6 +93,11 @@ require("nvim-ts-autotag").setup({
 		crystal = "html",
 		ecr = "html",
 	},
+})
+
+require("ibl").setup({
+	indent = { char = "│", tab_char = "│" },
+	scope = { enabled = false },
 })
 
 require("treesitter-config")
@@ -214,17 +220,25 @@ require("which-key").setup({
 })
 
 require("gitsigns").setup({
-    signs = {
-        add = { text = '+' },
-        change = { text = '~' },
-        delete = { text = '_' },
-        topdelete = { text = '‾' },
-        changedelete = { text = '~' },
-    },
 	attach_to_untracked = true,
 	preview_config = {
 		border = "single",
 		focusable = false,
+	},
+})
+
+local statuscol_builtin = require("statuscol.builtin")
+require("statuscol").setup({
+	segments = {
+		{
+			sign = { namespace = { "gitsigns", "diagnostic%.signs" }, maxwidth = 1, colwidth = 1, wrap = true },
+			click = "v:lua.ScSa",
+		},
+		{
+			text = { statuscol_builtin.lnumfunc, " " },
+			condition = { true, statuscol_builtin.not_empty },
+			click = "v:lua.ScLa",
+		},
 	},
 })
 
@@ -427,6 +441,19 @@ require("vague").setup({
 })
 
 -- [LSPs]
+vim.diagnostic.config({
+    virtual_text = { source = "if_many" },
+    severity_sort = true,
+    signs = {
+        text = {
+            [vim.diagnostic.severity.ERROR] = "■",
+            [vim.diagnostic.severity.WARN] = "■",
+            [vim.diagnostic.severity.INFO] = "■",
+            [vim.diagnostic.severity.HINT] = "■",
+        },
+    },
+})
+
 require("lsp-keymaps")
 vim.lsp.semantic_tokens.enable(false)
 
@@ -454,31 +481,6 @@ vim.lsp.enable({
     "tsgo",
 })
 
-vim.g.everforest_enable_italic = false
-vim.g.everforest_disable_italic_comment = 1
-vim.g.everforest_transparent_background = 1
-vim.g.everforest_float_style = "blend"
-
-vim.g.sonokai_style = 'shusia'
-vim.g.sonokai_better_performance = 1
-vim.g.sonokai_transparent_background = 1
-vim.g.sonokai_float_style = "blend"
-vim.g.gruvbox_sign_column = 'bg0'
-vim.g.gruvbox_bold = 0
-vim.g.adwaita_transparent = true
-
-vim.cmd.colorscheme("adwaita")
-
-
--- Barbecue's devicons table lookup misses mini.icons' dynamic file mappings.
-require("barbecue.theme").get_file_icon = function(filename)
-    if not vim.g.icons_enabled then
-        return nil
-    end
-    local icon, highlight = MiniIcons.get("file", filename)
-    return { icon, highlight = highlight }
-end
-
 require("barbecue").setup({
     attach_navic = false,
     show_navic = false,
@@ -504,3 +506,58 @@ require("barbecue").setup({
         return " "
     end,
 })
+
+vim.g.everforest_enable_italic = false
+vim.g.everforest_disable_italic_comment = 1
+vim.g.everforest_transparent_background = 1
+vim.g.everforest_float_style = "blend"
+
+vim.g.sonokai_style = 'shusia'
+vim.g.sonokai_better_performance = 1
+vim.g.sonokai_transparent_background = 1
+vim.g.sonokai_float_style = "blend"
+vim.g.sonokai_diagnostic_virtual_text = "colored"
+
+vim.g.gruvbox_sign_column = 'bg0'
+vim.g.gruvbox_bold = 0
+
+vim.g.adwaita_transparent = true
+
+autocmd("ColorScheme", {
+    group = vim.api.nvim_create_augroup("WinbarBackground", { clear = true }),
+    callback = function()
+        for _, name in ipairs({ "WinBar", "WinBarNC" }) do
+            local highlight = vim.api.nvim_get_hl(0, { name = name, link = false })
+            highlight.bg = "NONE"
+            highlight.ctermbg = "NONE"
+            vim.api.nvim_set_hl(0, name, highlight)
+        end
+    end,
+})
+
+-- Colorschemes define DiagnosticUnderline* as plain underline; a ColorScheme
+-- hook is the only place that covers every present and future theme.
+autocmd("ColorScheme", {
+    group = vim.api.nvim_create_augroup("DiagnosticUndercurl", { clear = true }),
+    callback = function()
+        for _, severity in ipairs({ "Error", "Warn", "Info", "Hint", "Ok" }) do
+            local name = "DiagnosticUnderline" .. severity
+            local highlight = vim.api.nvim_get_hl(0, { name = name, link = false })
+            highlight.underline = false
+            highlight.undercurl = true
+            highlight.cterm = { undercurl = true }
+            vim.api.nvim_set_hl(0, name, highlight)
+        end
+    end,
+})
+
+vim.cmd.colorscheme("adwaita")
+
+-- Barbecue's devicons table lookup misses mini.icons' dynamic file mappings.
+require("barbecue.theme").get_file_icon = function(filename)
+    if not vim.g.icons_enabled then
+        return nil
+    end
+    local icon, highlight = MiniIcons.get("file", filename)
+    return { icon, highlight = highlight }
+end

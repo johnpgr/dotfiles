@@ -114,6 +114,10 @@
       "rev": "f9d7be69269ea26fd75021d3beda76994801ccc4",
       "src": "https://github.com/wym2010/spark.nvim"
     },
+    "statuscol.nvim": {
+      "rev": "887b8a03ea3804628505c9002fd07bd06a3db2e0",
+      "src": "https://github.com/luukvbaal/statuscol.nvim"
+    },
     "text-case.nvim": {
       "rev": "e898cfd46fa6cde0e83abb624a16e67d2ffc6457",
       "src": "https://github.com/johmsalas/text-case.nvim"
