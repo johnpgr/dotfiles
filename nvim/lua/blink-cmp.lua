@@ -12,8 +12,24 @@ require("blink.cmp").setup({
 		preset = "none",
 		["<C-space>"] = { "show", "hide" },
 		["<CR>"] = { "accept", "fallback" },
-		["<Tab>"] = { "accept", "snippet_forward", "fallback" },
-		["<S-Tab>"] = { "snippet_backward", "fallback" },
+		-- blink's snippet_forward/backward use ls.jumpable(), which stays true for
+		-- an abandoned snippet anywhere in the buffer and teleports the cursor
+		-- back to it. locally_jumpable() requires the cursor to be inside it.
+		["<Tab>"] = {
+			"accept",
+			function()
+				local ls = require("luasnip")
+				return ls.locally_jumpable(1) and ls.jump(1)
+			end,
+			"fallback",
+		},
+		["<S-Tab>"] = {
+			function()
+				local ls = require("luasnip")
+				return ls.locally_jumpable(-1) and ls.jump(-1)
+			end,
+			"fallback",
+		},
 		["<C-y>"] = { "accept", "fallback" },
 		["<C-n>"] = { "select_next", "fallback" },
 		["<C-p>"] = { "select_prev", "fallback" },
