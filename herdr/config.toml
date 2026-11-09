@@ -81,5 +81,5 @@ enabled = true
 delivery = "system"
 
 [theme]
-name = "catppuccin-latte"
+name = "gruvbox"
 auto_switch = false

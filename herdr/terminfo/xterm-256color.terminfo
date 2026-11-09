@@ -1,0 +1,4 @@
+# Herdr renders extended underline styles but gives panes the xterm-256color identity.
+xterm-256color|xterm with 256 colors and extended underline styles,
+	Smulx=\E[4:%p1%dm,
+	use=xterm-256color,
