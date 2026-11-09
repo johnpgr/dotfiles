@@ -1,0 +1,15 @@
+id: no-untyped-object-contract
+language: Tsx
+severity: error
+message: Untyped object contract.
+note: Declare the exact shape, or use an exact-key type such as `Record<Status, T>`.
+rule:
+  any:
+    - pattern:
+        context: type T = Record<string, unknown>
+        selector: generic_type
+    - pattern:
+        context: type T = Record<string, any>
+        selector: generic_type
+    - kind: predefined_type
+      regex: ^object$

@@ -1,0 +1,20 @@
+id: undocumented-type-assertion
+valid:
+  - "const tags = ['a', 'b'] as const;"
+  - |
+    function first(items: Item[]) {
+      // The caller rejects empty arrays before this point.
+      const head = items[0] as Item;
+      return head;
+    }
+  - |
+    // The schema guarantees a string here.
+    return payload.name as string;
+invalid:
+  - "const user = response as User;"
+  - |
+    // Loads the first item.
+    function first(items: Item[]) {
+      const head = items[0] as Item;
+      return head;
+    }

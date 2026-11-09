@@ -1,0 +1,28 @@
+id: no-unknown-signature
+language: Tsx
+# A warning, not an error: the parse function at the I/O boundary is the one
+# legitimate place for an `unknown` parameter. Suppress it there with
+# `// ast-grep-ignore: no-unknown-signature`.
+severity: warning
+message: "`unknown` in a parameter or return type outside the parse boundary."
+note: Use the concrete type. Only the function that parses untrusted input may accept `unknown`.
+rule:
+  kind: predefined_type
+  regex: ^unknown$
+  inside:
+    kind: type_annotation
+    any:
+      - inside:
+          kind: required_parameter
+      - inside:
+          kind: optional_parameter
+      - inside:
+          field: return_type
+          any:
+            - kind: function_declaration
+            - kind: function_expression
+            - kind: arrow_function
+            - kind: method_definition
+            - kind: method_signature
+            - kind: function_signature
+            - kind: abstract_method_signature

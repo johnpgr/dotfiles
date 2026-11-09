@@ -1,0 +1,8 @@
+id: no-untyped-object-contract
+valid:
+  - "type Totals = Record<Status, number>;"
+  - "function render(user: User): void {}"
+invalid:
+  - "function render(props: Record<string, unknown>): void {}"
+  - "type Bag = Record<string, any>;"
+  - "function render(props: object): void {}"

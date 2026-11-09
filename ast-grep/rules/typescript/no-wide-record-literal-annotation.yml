@@ -1,0 +1,17 @@
+id: no-wide-record-literal-annotation
+language: Tsx
+severity: error
+message: A `Record<string, T>` annotation on an object literal discards its known keys.
+note: Annotate with an exact-key type such as `Record<Status, T>`, or use `satisfies`.
+rule:
+  kind: variable_declarator
+  all:
+    - has:
+        field: type
+        has:
+          pattern:
+            context: type T = Record<string, $VALUE>
+            selector: generic_type
+    - has:
+        field: value
+        kind: object

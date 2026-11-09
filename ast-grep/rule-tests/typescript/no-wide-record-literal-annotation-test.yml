@@ -1,0 +1,8 @@
+id: no-wide-record-literal-annotation
+valid:
+  - "const labels: Record<Status, string> = { open: 'Open', closed: 'Closed' };"
+  - "const labels = { open: 'Open' } satisfies Record<string, string>;"
+  - "const cache: Record<string, Entry> = createCache();"
+invalid:
+  - "const labels: Record<string, string> = { open: 'Open', closed: 'Closed' };"
+  - "let counts: Record<string, number> = {};"

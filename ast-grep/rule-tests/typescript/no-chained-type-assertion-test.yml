@@ -1,0 +1,7 @@
+id: no-chained-type-assertion
+valid:
+  - "const user = response as User;"
+  - "const tags = ['a', 'b'] as const;"
+invalid:
+  - "const user = response as unknown as User;"
+  - "const user = response as any as User;"

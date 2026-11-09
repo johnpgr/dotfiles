@@ -1,0 +1,18 @@
+id: no-unknown-type-guard
+language: Tsx
+severity: error
+message: Hand-written type guard over an `unknown` value.
+note: Parse untrusted input once at the I/O boundary with the project's schema library. Data the program wrote itself is already typed.
+rule:
+  kind: type_predicate_annotation
+  inside:
+    field: return_type
+    has:
+      field: parameters
+      has:
+        kind: required_parameter
+        has:
+          field: type
+          has:
+            kind: predefined_type
+            regex: ^unknown$

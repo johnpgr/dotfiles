@@ -1,0 +1,6 @@
+id: no-unknown-type-guard
+valid:
+  - "function isOpen(issue: Issue): issue is OpenIssue { return issue.state === 'open'; }"
+invalid:
+  - "function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === 'object'; }"
+  - "const isUser = (value: unknown): value is User => typeof value === 'object';"

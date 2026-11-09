@@ -1,0 +1,8 @@
+ruleDirs:
+  - rules
+testConfigs:
+  - testDir: rule-tests
+# One Tsx rule set covers both extensions. The cost: legacy `<T>value`
+# assertions in .ts files do not parse under the TSX grammar.
+languageGlobs:
+  tsx: ["*.ts", "*.mts", "*.cts", "*.tsx"]

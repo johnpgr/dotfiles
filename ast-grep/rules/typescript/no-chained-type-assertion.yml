@@ -1,0 +1,9 @@
+id: no-chained-type-assertion
+language: Tsx
+severity: error
+message: Chained type assertion through `unknown` or `any`.
+note: Correct the source type, or parse the value at the I/O boundary with the project's schema library.
+rule:
+  any:
+    - pattern: $EXPR as unknown as $TYPE
+    - pattern: $EXPR as any as $TYPE

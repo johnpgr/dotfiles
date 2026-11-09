@@ -1,0 +1,9 @@
+id: no-unknown-signature
+valid:
+  - "function load(id: string): Promise<User> { return fetchUser(id); }"
+  - "try { run(); } catch (error: unknown) { report(error); }"
+  - "const values: unknown[] = [];"
+invalid:
+  - "function load(input: unknown): User { return parse(input); }"
+  - "const read = (key?: unknown) => key;"
+  - "function read(key: string): unknown { return store[key]; }"

@@ -1,0 +1,31 @@
+id: undocumented-type-assertion
+language: Tsx
+severity: warning
+message: Type assertion without a comment that states its invariant.
+note: Put a comment directly above the statement that says why the assertion is true, or remove the assertion.
+utils:
+  enclosing-statement:
+    any:
+      - kind: lexical_declaration
+      - kind: variable_declaration
+      - kind: expression_statement
+      - kind: return_statement
+      - kind: throw_statement
+      - kind: if_statement
+      - kind: public_field_definition
+      - kind: pair
+rule:
+  kind: as_expression
+  not:
+    any:
+      - pattern: $EXPR as const
+      # A chain is reported once, at its outermost assertion.
+      - inside:
+          kind: as_expression
+      # The nearest enclosing statement must directly follow a comment.
+      - inside:
+          matches: enclosing-statement
+          follows:
+            kind: comment
+          stopBy:
+            matches: enclosing-statement
