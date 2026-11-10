@@ -89,6 +89,10 @@ vim.pack.add({
 
 require("mini")
 
+require("transparent").setup({
+    exclude_groups = { "StatusLine", "StatusLineNC", "WinBar", "WinBarNC", "barbecue_normal" },
+})
+
 require("nvim-ts-autotag").setup({
 	aliases = {
 		crystal = "html",
@@ -106,6 +110,7 @@ require("blink-cmp")
 
 vim.lsp.enable("rust_analyzer")
 vim.lsp.enable("clangd")
+vim.lsp.enable("clojure_lsp")
 
 require("diffview").setup({
 	use_icons = vim.g.icons_enabled,
@@ -536,18 +541,40 @@ autocmd("ColorScheme", {
     end,
 })
 
+local function match_float_backgrounds()
+    local normal = vim.api.nvim_get_hl(0, { name = "Normal", link = false })
+    for _, name in ipairs({ "NormalFloat", "FloatBorder", "FloatTitle", "FloatFooter", "Pmenu" }) do
+        local highlight = vim.api.nvim_get_hl(0, { name = name, link = false })
+        highlight.bg = normal.bg
+        highlight.ctermbg = normal.ctermbg
+        if name == "Pmenu" then
+            highlight.reverse = false
+            if highlight.cterm then
+                highlight.cterm.reverse = false
+            end
+        end
+        vim.api.nvim_set_hl(0, name, highlight)
+    end
+
+    local selection = vim.api.nvim_get_hl(0, { name = "PmenuSel", link = false })
+    selection.underline = false
+    selection.undercurl = false
+    if selection.cterm then
+        selection.cterm.underline = false
+        selection.cterm.undercurl = false
+    end
+    vim.api.nvim_set_hl(0, "PmenuSel", selection)
+
+    local thumb = vim.api.nvim_get_hl(0, { name = "PmenuThumb", link = false })
+    thumb.ctermbg = 8
+    vim.api.nvim_set_hl(0, "PmenuThumb", thumb)
+end
+
 autocmd("ColorScheme", {
     group = vim.api.nvim_create_augroup("FloatBackground", { clear = true }),
-    callback = function()
-        local normal = vim.api.nvim_get_hl(0, { name = "Normal", link = false })
-        for _, name in ipairs({ "NormalFloat", "FloatBorder", "FloatTitle", "FloatFooter" }) do
-            local highlight = vim.api.nvim_get_hl(0, { name = name, link = false })
-            highlight.bg = normal.bg
-            highlight.ctermbg = normal.ctermbg
-            vim.api.nvim_set_hl(0, name, highlight)
-        end
-    end,
+    callback = match_float_backgrounds,
 })
+match_float_backgrounds()
 
 -- With cursorlineopt=number only the number is marked, so a CursorLineNr
 -- background would read as a stray block; keep the gutter background instead.
@@ -578,7 +605,7 @@ autocmd("ColorScheme", {
     end,
 })
 
-vim.cmd.colorscheme("adwaita")
+-- Colorscheme follows the terminal defaults.
 
 -- Barbecue's devicons table lookup misses mini.icons' dynamic file mappings.
 require("barbecue.theme").get_file_icon = function(filename)

@@ -1,5 +1,16 @@
 local M = {}
 
+local function match_winbar_highlights()
+	vim.api.nvim_set_hl(0, "StatusLine", { link = "WinBar" })
+	vim.api.nvim_set_hl(0, "StatusLineNC", { link = "WinBar" })
+end
+
+match_winbar_highlights()
+vim.api.nvim_create_autocmd("ColorScheme", {
+	group = vim.api.nvim_create_augroup("StatuslineHighlights", { clear = true }),
+	callback = match_winbar_highlights,
+})
+
 function M.lsp_clients()
 	local win = vim.g.statusline_winid or vim.api.nvim_get_current_win()
 	local names = {}
