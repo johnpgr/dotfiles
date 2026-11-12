@@ -1,5 +1,10 @@
 set fish_greeting
 
+# pinentry-curses needs the controlling terminal; WSL has no graphical prompt.
+if status is-interactive
+    set -gx GPG_TTY (tty)
+end
+
 if test -n "$SSH_CONNECTION"
     set -gx EDITOR vim
 else
