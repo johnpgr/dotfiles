@@ -43,6 +43,40 @@ vim.o.wrap = false
 vim.opt.diffopt:append("linematch:60")
 require("statusline")
 
+-- tsconfig files legitimately contain comments and trailing commas, and jsonls
+-- only parses them without errors when the filetype is jsonc.
+vim.filetype.add({
+	filename = {
+		["tsconfig.json"] = "jsonc",
+		["jsconfig.json"] = "jsonc",
+	},
+	pattern = {
+		[".*/[tj]sconfig%..*%.json"] = "jsonc",
+	},
+})
+
+-- Neovim's jsonc syntax flags trailing commas as errors, but tsconfig files may
+-- legally contain them, so clear that group in tsconfig buffers.
+autocmd("FileType", {
+	pattern = "jsonc",
+	callback = function()
+		local bufnr = vim.api.nvim_get_current_buf()
+		if not vim.api.nvim_buf_get_name(bufnr):match("[tj]sconfig[^/]*%.json$") then
+			return
+		end
+
+		-- The runtime loads the syntax file from a FileType handler of its own,
+		-- so clear after those have run.
+		vim.schedule(function()
+			if vim.api.nvim_buf_is_valid(bufnr) then
+				vim.api.nvim_buf_call(bufnr, function()
+					vim.cmd("silent! syntax clear jsonTrailingCommaError")
+				end)
+			end
+		end)
+	end,
+})
+
 if #vim.api.nvim_list_uis() > 0 then
 	ui2.enable()
 else
@@ -111,6 +145,7 @@ require("blink-cmp")
 vim.lsp.enable("rust_analyzer")
 vim.lsp.enable("clangd")
 vim.lsp.enable("clojure_lsp")
+vim.lsp.enable("jsonls")
 
 require("diffview").setup({
 	use_icons = vim.g.icons_enabled,
