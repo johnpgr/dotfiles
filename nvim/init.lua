@@ -607,6 +607,30 @@ autocmd("ColorScheme", {
 
 -- Colorscheme follows the terminal defaults.
 
+-- Without termguicolors Neovim draws Visual as a cterm 0/15 pair. The light
+-- terminal palette maps *both* of those entries to black, so the selection
+-- becomes a solid black block with invisible text. Reverse video inherits
+-- whatever fg/bg the terminal actually uses instead.
+local function reverse_visual_without_truecolor()
+    if vim.o.termguicolors then
+        return
+    end
+
+    for _, name in ipairs({ "Visual", "VisualNOS" }) do
+        local highlight = vim.api.nvim_get_hl(0, { name = name, link = false })
+        highlight.ctermfg = nil
+        highlight.ctermbg = nil
+        highlight.cterm = { reverse = true }
+        vim.api.nvim_set_hl(0, name, highlight)
+    end
+end
+
+autocmd("ColorScheme", {
+    group = vim.api.nvim_create_augroup("VisualReverse", { clear = true }),
+    callback = reverse_visual_without_truecolor,
+})
+reverse_visual_without_truecolor()
+
 -- Barbecue's devicons table lookup misses mini.icons' dynamic file mappings.
 require("barbecue.theme").get_file_icon = function(filename)
     if not vim.g.icons_enabled then
