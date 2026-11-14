@@ -6,7 +6,7 @@ function claude-ds --description "Run Claude Code against the DeepSeek API (V4.1
     end
 
     # DeepSeek recommends max, but max spent most of a routine review-fix task thinking.
-    set -l effort high
+    set -l effort max
     set -q CLAUDE_CODE_EFFORT_LEVEL; and set effort $CLAUDE_CODE_EFFORT_LEVEL
 
     env -u ANTHROPIC_API_KEY \
