@@ -624,21 +624,25 @@ autocmd("ColorScheme", {
     end,
 })
 
--- Colorschemes define DiagnosticUnderline* as plain underline; a ColorScheme
--- hook is the only place that covers every present and future theme.
+-- Colorschemes define DiagnosticUnderline* as plain underline, and the built-in
+-- defaults do the same, so run this once for the defaults and again after every
+-- colorscheme load.
+local function undercurl_diagnostics()
+    for _, severity in ipairs({ "Error", "Warn", "Info", "Hint", "Ok" }) do
+        local name = "DiagnosticUnderline" .. severity
+        local highlight = vim.api.nvim_get_hl(0, { name = name, link = false })
+        highlight.underline = false
+        highlight.undercurl = true
+        highlight.cterm = { undercurl = true }
+        vim.api.nvim_set_hl(0, name, highlight)
+    end
+end
+
 autocmd("ColorScheme", {
     group = vim.api.nvim_create_augroup("DiagnosticUndercurl", { clear = true }),
-    callback = function()
-        for _, severity in ipairs({ "Error", "Warn", "Info", "Hint", "Ok" }) do
-            local name = "DiagnosticUnderline" .. severity
-            local highlight = vim.api.nvim_get_hl(0, { name = name, link = false })
-            highlight.underline = false
-            highlight.undercurl = true
-            highlight.cterm = { undercurl = true }
-            vim.api.nvim_set_hl(0, name, highlight)
-        end
-    end,
+    callback = undercurl_diagnostics,
 })
+undercurl_diagnostics()
 
 -- Colorscheme follows the terminal defaults.
 
@@ -665,6 +669,38 @@ autocmd("ColorScheme", {
     callback = reverse_visual_without_truecolor,
 })
 reverse_visual_without_truecolor()
+
+-- The built-in highlight definitions give these groups only GUI colours.
+-- Without termguicolors Comment and the indent-blankline guide fall back to the
+-- terminal's default foreground and read as bright as the code, and CursorLine,
+-- which fff uses for the selected row, draws no background at all. Use the
+-- palette's dim grey and a dim background instead.
+local function apply_cterm_fallbacks_without_truecolor()
+    if vim.o.termguicolors then
+        return
+    end
+
+    for _, name in ipairs({ "Comment", "@ibl.indent.char.1" }) do
+        local highlight = vim.api.nvim_get_hl(0, { name = name, link = false })
+        if not highlight.ctermfg then
+            vim.api.nvim_set_hl(0, name, { ctermfg = 8, update = true })
+        end
+    end
+
+    local cursorline = vim.api.nvim_get_hl(0, { name = "CursorLine", link = false })
+    if not cursorline.ctermbg then
+        vim.api.nvim_set_hl(0, "CursorLine", { ctermbg = 236, update = true })
+    end
+end
+
+local cterm_fallback_group = vim.api.nvim_create_augroup("CtermFallbacks", { clear = true })
+autocmd("ColorScheme", { group = cterm_fallback_group, callback = apply_cterm_fallbacks_without_truecolor })
+autocmd("OptionSet", {
+    group = cterm_fallback_group,
+    pattern = "termguicolors",
+    callback = apply_cterm_fallbacks_without_truecolor,
+})
+apply_cterm_fallbacks_without_truecolor()
 
 -- Barbecue's devicons table lookup misses mini.icons' dynamic file mappings.
 require("barbecue.theme").get_file_icon = function(filename)
